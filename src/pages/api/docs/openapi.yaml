@@ -1,0 +1,198 @@
+openapi: 3.0.0
+info:
+  title: Flashcards API
+  description: API for managing flashcards in the Flashcards Creator App
+  version: 1.0.0
+servers:
+  - url: https://api.flashcards-creator.example.com/api
+    description: Production server
+  - url: http://localhost:3000/api
+    description: Local development server
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    FlashcardCreate:
+      type: object
+      required:
+        - front
+        - back
+        - source
+        - generation_id
+      properties:
+        front:
+          type: string
+          maxLength: 200
+          description: The front content of the flashcard (question)
+        back:
+          type: string
+          maxLength: 500
+          description: The back content of the flashcard (answer)
+        source:
+          type: string
+          enum: [ai-full, ai-edited, manual]
+          description: The source of the flashcard
+        generation_id:
+          type: [integer, "null"]
+          description: The ID of the generation (required for AI sources, must be null for manual)
+      example:
+        front: "What is a closure in JavaScript?"
+        back: "A closure is a function that has access to its outer function's variables even after the outer function has returned."
+        source: "manual"
+        generation_id: null
+
+    FlashcardsCreateCommand:
+      type: object
+      required:
+        - flashcards
+      properties:
+        flashcards:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/FlashcardCreate"
+      example:
+        flashcards:
+          - front: "What is a closure in JavaScript?"
+            back: "A closure is a function that has access to its outer function's variables even after the outer function has returned."
+            source: "manual"
+            generation_id: null
+          - front: "What is the event loop in JavaScript?"
+            back: "The event loop is a mechanism in JavaScript that allows asynchronous operations to be executed non-blocking while the main thread continues to run."
+            source: "ai-full"
+            generation_id: 123
+
+    Flashcard:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: The unique identifier for the flashcard
+        front:
+          type: string
+          description: The front content of the flashcard (question)
+        back:
+          type: string
+          description: The back content of the flashcard (answer)
+        source:
+          type: string
+          enum: [ai-full, ai-edited, manual]
+          description: The source of the flashcard
+        generation_id:
+          type: [integer, "null"]
+          description: The ID of the generation if applicable
+        created_at:
+          type: string
+          format: date-time
+          description: The creation timestamp
+        updated_at:
+          type: string
+          format: date-time
+          description: The last update timestamp
+
+    FlashcardsResponse:
+      type: object
+      properties:
+        flashcards:
+          type: array
+          items:
+            $ref: "#/components/schemas/Flashcard"
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error type or message
+        details:
+          type: object
+          description: Additional details about the error
+
+paths:
+  /flashcards:
+    post:
+      summary: Create one or more flashcards
+      description: |
+        Creates one or more flashcards in a single request. Each flashcard can be from different sources:
+        - manual: Created directly by the user (generation_id must be null)
+        - ai-full: Created entirely by AI (generation_id required)
+        - ai-edited: Created by AI but edited by the user (generation_id required)
+      operationId: createFlashcards
+      security:
+        - BearerAuth: []
+      tags:
+        - Flashcards
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FlashcardsCreateCommand"
+      responses:
+        "201":
+          description: Flashcards successfully created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FlashcardsResponse"
+        "400":
+          description: Invalid input data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                invalidData:
+                  value:
+                    error: "Invalid request data"
+                    details:
+                      flashcards:
+                        _errors: ["At least one flashcard is required"]
+                invalidSource:
+                  value:
+                    error: "Invalid request data"
+                    details:
+                      source:
+                        _errors: ["Invalid enum value. Expected 'ai-full' | 'ai-edited' | 'manual'"]
+                invalidGeneration:
+                  value:
+                    error: "Invalid generation references"
+                    details: ["Generation ID 123 not found"]
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                error: "Unauthorized"
+        "429":
+          description: Too many requests
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Rate limit exceeded"
+                  message:
+                    type: string
+                    example: "Too many flashcards creation requests, please try again later."
+                  resetAt:
+                    type: string
+                    format: date-time
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                error: "Failed to create flashcards"
+                details: "Database error"
