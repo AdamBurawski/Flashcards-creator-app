@@ -3,6 +3,8 @@ import { z } from "zod";
 import { generateFlashcards } from "../../lib/generation.service";
 import type { GenerateFlashcardsCommand, GenerationCreateResponseDto } from "../../types";
 
+export const prerender = false;
+
 // Validation schema for the request body
 const generateFlashcardsSchema = z.object({
   source_text: z
