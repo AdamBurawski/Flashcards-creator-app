@@ -1,5 +1,5 @@
 import { Button } from "./ui/button";
-import type { FlashcardProposalViewModel } from "./FlashcardGenerationView";
+import type { FlashcardProposalViewModel } from "../hooks/useGenerateFlashcards";
 import type { FlashcardCreateDto, FlashcardsCreateCommand } from "../types";
 
 interface BulkSaveButtonProps {

@@ -36,6 +36,10 @@ const TextInputArea = ({ value, onChange, isLoading }: TextInputAreaProps) => {
     textColor = "text-green-600";
   }
 
+  // Komunikat błędu walidacji do powiązania z aria-describedby
+  const validationId = "text-input-validation";
+  const counterStatusId = "text-input-counter";
+
   return (
     <Card>
       <CardContent className="pt-6">
@@ -44,7 +48,9 @@ const TextInputArea = ({ value, onChange, isLoading }: TextInputAreaProps) => {
             <label htmlFor="sourceText" className="block text-sm font-medium">
               Wprowadź tekst źródłowy
             </label>
-            <span className={`text-sm ${textColor}`}>{validationStatus}</span>
+            <span className={`text-sm ${textColor}`} id={validationId} aria-live="polite">
+              {validationStatus}
+            </span>
           </div>
 
           <textarea
@@ -54,11 +60,23 @@ const TextInputArea = ({ value, onChange, isLoading }: TextInputAreaProps) => {
             value={value}
             onChange={handleChange}
             disabled={isLoading}
+            aria-required="true"
+            aria-invalid={!isValid && textLength > 0}
+            aria-describedby={`${validationId} ${counterStatusId}`}
           />
 
           <div className="flex justify-between items-center">
-            <span className="text-sm text-muted-foreground">Długość tekstu: {textLength} znaków</span>
-            <div className="w-32 h-2 bg-gray-200 rounded-full overflow-hidden">
+            <span className="text-sm text-muted-foreground" id={counterStatusId}>
+              Długość tekstu: {textLength} znaków
+            </span>
+            <div
+              className="w-32 h-2 bg-gray-200 rounded-full overflow-hidden"
+              role="progressbar"
+              aria-valuemin={0}
+              aria-valuemax={maxLength}
+              aria-valuenow={textLength}
+              aria-valuetext={`${textLength} z ${maxLength} znaków`}
+            >
               <div
                 className={`h-full rounded-full ${
                   !isValid ? "bg-destructive" : textLength < minLength + 500 ? "bg-amber-500" : "bg-green-600"

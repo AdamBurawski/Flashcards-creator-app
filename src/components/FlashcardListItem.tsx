@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Card, CardContent } from "./ui/card";
 import { Button } from "./ui/button";
-import type { FlashcardProposalViewModel } from "./FlashcardGenerationView";
+import type { FlashcardProposalViewModel } from "../hooks/useGenerateFlashcards";
 
 interface FlashcardListItemProps {
   flashcard: FlashcardProposalViewModel;
@@ -20,6 +20,13 @@ const FlashcardListItem = ({ flashcard, onAccept, onReject, onEdit, index }: Fla
   // Maksymalne długości tekstu dla przodu i tyłu fiszki
   const maxFrontLength = 200;
   const maxBackLength = 500;
+
+  // Generowanie identyfikatorów dla dostępności
+  const frontInputId = `flashcard-front-${index}`;
+  const backInputId = `flashcard-back-${index}`;
+  const frontErrorId = `front-error-${index}`;
+  const backErrorId = `back-error-${index}`;
+  const validationErrorId = `validation-error-${index}`;
 
   // Walidacja długości tekstu
   const validateText = (): boolean => {
@@ -59,30 +66,41 @@ const FlashcardListItem = ({ flashcard, onAccept, onReject, onEdit, index }: Fla
   };
 
   return (
-    <Card className={`mb-4 ${flashcard.accepted ? "border-green-500" : ""}`}>
+    <Card
+      className={`mb-4 ${flashcard.accepted ? "border-green-500" : ""}`}
+      aria-labelledby={`flashcard-${index}-title`}
+    >
       <CardContent className="p-6">
         <div className="space-y-6">
           {/* Przód fiszki */}
           <div className="space-y-2">
-            <div className="text-sm font-medium text-muted-foreground">Przód fiszki</div>
+            <div id={`flashcard-${index}-title`} className="text-sm font-medium text-muted-foreground">
+              Przód fiszki
+            </div>
             {isEditing ? (
               <div className="space-y-1">
                 <textarea
+                  id={frontInputId}
                   className="w-full p-2 border rounded-md h-24 resize-none bg-background"
                   value={frontText}
                   onChange={(e) => setFrontText(e.target.value)}
+                  aria-labelledby={`flashcard-${index}-title`}
+                  aria-describedby={frontErrorId}
+                  aria-invalid={frontText.length > maxFrontLength}
                 />
-                <div className="text-xs text-muted-foreground">
+                <div id={frontErrorId} className="text-xs text-muted-foreground">
                   {frontText.length}/{maxFrontLength} znaków
                 </div>
               </div>
             ) : (
-              <div className="p-3 bg-secondary rounded-md">{flashcard.front}</div>
+              <div className="p-3 bg-secondary rounded-md" aria-label="Treść przodu fiszki">
+                {flashcard.front}
+              </div>
             )}
           </div>
 
           {/* Separator */}
-          <div className="h-px w-full bg-border" />
+          <div className="h-px w-full bg-border" role="separator" aria-hidden="true" />
 
           {/* Tył fiszki */}
           <div className="space-y-2">
@@ -90,22 +108,34 @@ const FlashcardListItem = ({ flashcard, onAccept, onReject, onEdit, index }: Fla
             {isEditing ? (
               <div className="space-y-1">
                 <textarea
+                  id={backInputId}
                   className="w-full p-2 border rounded-md h-32 resize-none bg-background"
                   value={backText}
                   onChange={(e) => setBackText(e.target.value)}
+                  aria-label="Tył fiszki"
+                  aria-describedby={backErrorId}
+                  aria-invalid={backText.length > maxBackLength}
                 />
-                <div className="text-xs text-muted-foreground">
+                <div id={backErrorId} className="text-xs text-muted-foreground">
                   {backText.length}/{maxBackLength} znaków
                 </div>
               </div>
             ) : (
-              <div className="p-3 bg-secondary rounded-md whitespace-pre-wrap">{flashcard.back}</div>
+              <div className="p-3 bg-secondary rounded-md whitespace-pre-wrap" aria-label="Treść tyłu fiszki">
+                {flashcard.back}
+              </div>
             )}
           </div>
 
           {/* Komunikat błędu walidacji */}
           {validationError && (
-            <div className="p-2 text-sm text-destructive bg-destructive/10 rounded-md">{validationError}</div>
+            <div
+              id={validationErrorId}
+              className="p-2 text-sm text-destructive bg-destructive/10 rounded-md"
+              role="alert"
+            >
+              {validationError}
+            </div>
           )}
 
           {/* Przyciski akcji */}
@@ -115,7 +145,9 @@ const FlashcardListItem = ({ flashcard, onAccept, onReject, onEdit, index }: Fla
                 <Button variant="outline" onClick={handleCancelEdit}>
                   Anuluj
                 </Button>
-                <Button onClick={handleSaveEdit}>Zapisz zmiany</Button>
+                <Button onClick={handleSaveEdit} aria-describedby={validationError ? validationErrorId : undefined}>
+                  Zapisz zmiany
+                </Button>
               </>
             ) : (
               <>
@@ -123,13 +155,17 @@ const FlashcardListItem = ({ flashcard, onAccept, onReject, onEdit, index }: Fla
                   variant="outline"
                   onClick={() => onAccept(index)}
                   className={flashcard.accepted ? "bg-green-100" : ""}
+                  aria-pressed={flashcard.accepted}
+                  aria-label={
+                    flashcard.accepted ? "Fiszka zaakceptowana. Kliknij, aby cofnąć akceptację." : "Zaakceptuj fiszkę"
+                  }
                 >
                   {flashcard.accepted ? "Zaakceptowano" : "Akceptuj"}
                 </Button>
-                <Button variant="outline" onClick={handleStartEdit}>
+                <Button variant="outline" onClick={handleStartEdit} aria-label="Edytuj fiszkę">
                   Edytuj
                 </Button>
-                <Button variant="destructive" onClick={() => onReject(index)}>
+                <Button variant="destructive" onClick={() => onReject(index)} aria-label="Odrzuć fiszkę">
                   Odrzuć
                 </Button>
               </>
