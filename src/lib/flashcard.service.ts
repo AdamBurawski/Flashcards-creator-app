@@ -16,6 +16,30 @@ export async function createFlashcards(
   flashcards: FlashcardCreateDto[],
   userId: string = DEFAULT_USER_ID
 ): Promise<CreateFlashcardsResult> {
+  // Check if we're bypassing database operations
+  const bypassEnv = import.meta.env.BYPASS_DATABASE;
+  const isBypassMode = bypassEnv === "true" || bypassEnv === true;
+  
+  if (isBypassMode) {
+    console.log(`[BYPASS] Simulating creation of ${flashcards.length} flashcards`);
+    
+    // Generate fake IDs and timestamps
+    const now = new Date().toISOString();
+    const mockFlashcards: FlashcardDto[] = flashcards.map((flashcard, index) => ({
+      id: Math.floor(Math.random() * 10000) + 1,
+      front: flashcard.front,
+      back: flashcard.back,
+      source: flashcard.source,
+      generation_id: flashcard.generation_id,
+      created_at: now,
+      updated_at: now
+    }));
+    
+    return {
+      flashcards: mockFlashcards
+    };
+  }
+
   const supabase = supabaseClient;
 
   try {
@@ -87,6 +111,15 @@ export async function validateGenerationExists(
   generationId: number,
   userId: string = DEFAULT_USER_ID
 ): Promise<boolean> {
+  // Check if we are bypassing database operations
+  const bypassEnv = import.meta.env.BYPASS_DATABASE;
+  const isBypassMode = bypassEnv === "true" || bypassEnv === true;
+  
+  if (isBypassMode) {
+    console.log(`[BYPASS] Skipping validation for generation ID ${generationId}`);
+    return true;
+  }
+
   // Skip validation during development if needed
   if (import.meta.env.MODE === "development") {
     return true;

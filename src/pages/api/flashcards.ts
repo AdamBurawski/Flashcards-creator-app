@@ -95,6 +95,11 @@ export const POST: APIRoute = async ({ request }) => {
   let userId: string = DEFAULT_USER_ID;
 
   try {
+    // Sprawdzamy wartość zmiennej BYPASS_DATABASE
+    const bypassEnv = import.meta.env.BYPASS_DATABASE;
+    const isBypassMode = bypassEnv === "true" || bypassEnv === true;
+    console.log(`[DEBUG] BYPASS_DATABASE mode: ${isBypassMode}, value: ${bypassEnv}`);
+
     // 1. Authenticate the user
     if (import.meta.env.MODE === "production") {
       const authUserId = await authenticateUser(request);
@@ -159,7 +164,32 @@ export const POST: APIRoute = async ({ request }) => {
 
     const { flashcards } = validationResult.data;
 
-    // 3. Validate generation_id references (where applicable)
+    // Jeśli jesteśmy w trybie BYPASS_DATABASE, nie sprawdzamy referencji i symulujemy zapis
+    if (isBypassMode) {
+      console.log("[BYPASS_DATABASE] Simulating flashcard creation in API endpoint");
+      
+      // Generuj sztuczną odpowiedź
+      const now = new Date().toISOString();
+      const mockFlashcards = flashcards.map((card, idx) => ({
+        id: 10000 + idx,
+        front: card.front,
+        back: card.back,
+        source: card.source,
+        generation_id: card.generation_id,
+        created_at: now,
+        updated_at: now
+      }));
+      
+      return new Response(
+        JSON.stringify({ flashcards: mockFlashcards }), 
+        { 
+          status: 201, 
+          headers: { "Content-Type": "application/json" } 
+        }
+      );
+    }
+
+    // 3. Tylko jeśli nie w trybie bypass - Validate generation_id references
     const generationValidations = flashcards
       .filter((card) => card.generation_id !== null)
       .map(async (card) => {
@@ -194,7 +224,7 @@ export const POST: APIRoute = async ({ request }) => {
       );
     }
 
-    // 4. Create the flashcards
+    // 4. Create the flashcards (tylko jeśli nie w trybie bypass)
     try {
       // Call service to create flashcards
       const result = await createFlashcards(flashcards, userId);

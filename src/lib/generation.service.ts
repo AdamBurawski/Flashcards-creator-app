@@ -6,8 +6,11 @@ import { AIService, AIServiceError } from "./ai.service";
 // When in development, we can mock AI service results for testing
 const isDevelopment = import.meta.env.MODE === "development";
 
-// For testing - set this to true to bypass database operations
-const BYPASS_DATABASE = true;
+// Wykrywanie trybu obejścia bazy danych - odczytujemy z env lub używamy domyślnej wartości
+const bypassEnv = import.meta.env.BYPASS_DATABASE;
+const BYPASS_DATABASE = bypassEnv === "true" || bypassEnv === true || false; // Domyślnie false
+
+console.log(`[DEBUG-GENERATION] BYPASS_DATABASE set to: ${BYPASS_DATABASE}, env value: ${bypassEnv}`);
 
 interface GenerationResult {
   generationId: number;
