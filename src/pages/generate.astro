@@ -1,0 +1,14 @@
+---
+import Layout from "../layouts/Layout.astro";
+import FlashcardGenerationView from "../components/FlashcardGenerationView";
+---
+
+<Layout title="Generator Fiszek">
+  <main class="container mx-auto p-4 md:p-6 lg:p-8 min-h-screen">
+    <div class="mb-8">
+      <h1 class="text-3xl font-bold">Generator Fiszek</h1>
+      <p class="text-muted-foreground mt-2">Wprowadź tekst, aby wygenerować fiszki za pomocą sztucznej inteligencji</p>
+    </div>
+    <FlashcardGenerationView client:load />
+  </main>
+</Layout>
