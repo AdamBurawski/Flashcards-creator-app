@@ -1,4 +1,4 @@
-import { ChangeEvent } from "react";
+import type { ChangeEvent } from "react";
 import { Card, CardContent } from "./ui/card";
 
 interface TextInputAreaProps {

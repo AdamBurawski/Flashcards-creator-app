@@ -1,9 +1,15 @@
 import { useState } from "react";
 import TextInputArea from "./TextInputArea";
 import { Button } from "./ui/button";
-import type { GenerateFlashcardsCommand, GenerationCreateResponseDto, FlashcardProposalDto } from "../types";
+import SkeletonLoader from "./SkeletonLoader";
+import FlashcardList from "./FlashcardList";
+import type { GenerateFlashcardsCommand, GenerationCreateResponseDto, FlashcardProposalDto, Source } from "../types";
 
-interface FlashcardProposalViewModel extends FlashcardProposalDto {
+// Rozszerzamy model widoku dla komponentów potomnych
+export interface FlashcardProposalViewModel {
+  front: string;
+  back: string;
+  source: Source;
   accepted: boolean;
   edited: boolean;
 }
@@ -25,6 +31,35 @@ const FlashcardGenerationView = () => {
     return sourceText.length >= 1000 && sourceText.length <= 10000;
   };
 
+  // Obsługa akceptacji fiszki
+  const handleAcceptFlashcard = (index: number) => {
+    setFlashcardProposals((prevProposals) =>
+      prevProposals.map((proposal, i) => (i === index ? { ...proposal, accepted: !proposal.accepted } : proposal))
+    );
+  };
+
+  // Obsługa odrzucenia fiszki
+  const handleRejectFlashcard = (index: number) => {
+    setFlashcardProposals((prevProposals) => prevProposals.filter((_, i) => i !== index));
+  };
+
+  // Obsługa edycji fiszki
+  const handleEditFlashcard = (index: number, front: string, back: string) => {
+    setFlashcardProposals((prevProposals) =>
+      prevProposals.map((proposal, i) =>
+        i === index
+          ? {
+              ...proposal,
+              front,
+              back,
+              edited: true,
+              source: "ai-edited" as Source,
+            }
+          : proposal
+      )
+    );
+  };
+
   // Funkcja obsługująca generowanie fiszek
   const handleGenerateFlashcards = async () => {
     if (!isTextValid()) {
@@ -34,6 +69,9 @@ const FlashcardGenerationView = () => {
 
     setIsLoading(true);
     setErrorMessage(null);
+    // Resetowanie poprzednich propozycji przy nowej generacji
+    setFlashcardProposals([]);
+    setGenerationId(null);
 
     try {
       const command: GenerateFlashcardsCommand = {
@@ -87,7 +125,16 @@ const FlashcardGenerationView = () => {
         </Button>
       </div>
 
-      {/* Tutaj dodamy później komponenty FlashcardList i BulkSaveButton */}
+      {isLoading && <SkeletonLoader />}
+
+      {!isLoading && flashcardProposals.length > 0 && (
+        <FlashcardList
+          flashcards={flashcardProposals}
+          onAccept={handleAcceptFlashcard}
+          onReject={handleRejectFlashcard}
+          onEdit={handleEditFlashcard}
+        />
+      )}
     </div>
   );
 };
