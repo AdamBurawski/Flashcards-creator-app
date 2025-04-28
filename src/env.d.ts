@@ -12,12 +12,31 @@ declare global {
 }
 
 interface ImportMetaEnv {
+  readonly DATABASE_URL: string;
   readonly SUPABASE_URL: string;
-  readonly SUPABASE_KEY: string;
+  readonly SUPABASE_ANON_KEY: string;
+  readonly PUBLIC_SUPABASE_URL: string;
+  readonly PUBLIC_SUPABASE_ANON_KEY: string;
+  readonly MODE: "development" | "production";
+  readonly BASE_URL: string;
+  readonly BYPASS_DATABASE?: string | boolean;
   readonly OPENROUTER_API_KEY: string;
-  // more env variables...
 }
 
 interface ImportMeta {
   readonly env: ImportMetaEnv;
+}
+
+// Reprezentuje aktywny stan elementu UI
+declare global {
+  interface ActiveVariants {
+    readonly value: string;
+    readonly isInProgress: boolean;
+    readonly isPrimary: boolean;
+    readonly isSecondary: boolean;
+    readonly isDestructive: boolean;
+    readonly isOutline: boolean;
+    readonly isGhost: boolean;
+    readonly isLink: boolean;
+  }
 }

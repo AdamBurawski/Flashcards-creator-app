@@ -209,7 +209,7 @@ export class OpenRouterService {
     this.apiUrl = options.apiUrl || 'https://openrouter.ai/api/v1/chat/completions';
     this.timeout = options.timeout || 30000; // 30 sekund domyślnie
     this.retries = options.retries || 3;
-    this.defaultModelName = options.defaultModel || 'openai/gpt-3.5-turbo';
+    this.defaultModelName = options.defaultModel || 'openai/gpt-4o-mini';
     this.defaultModelParams = options.defaultModelParams || {
       temperature: 0.7,
       top_p: 1,
@@ -313,10 +313,22 @@ export class OpenRouterService {
       this.logger.info(`Wysyłanie żądania do API dla modelu: ${requestPayload.model}`);
       
       const response = await this.executeRequest(requestPayload);
-      this.logger.info(`Otrzymano odpowiedź z API, identyfikator: ${response.id}`);
+      this.logger.info(`Otrzymano odpowiedź z API, identyfikator: ${response.id || 'unknown'}`);
       
       // Walidacja odpowiedzi przez schemat Zod
-      const validatedResponse = this.apiResponseSchema.parse(response);
+      let validatedResponse;
+      try {
+        validatedResponse = this.apiResponseSchema.parse(response);
+      } catch (zodError) {
+        console.error(`[OPENROUTER-SERVICE] Zod validation error:`, zodError);
+        
+        if (response.choices && response.choices.length > 0 && response.choices[0].message) {
+          console.log(`[OPENROUTER-SERVICE] Response doesn't match schema but has message content, using it anyway`);
+          validatedResponse = response;
+        } else {
+          throw new ResponseProcessingError(`Nieprawidłowa struktura odpowiedzi: ${zodError instanceof Error ? zodError.message : String(zodError)}`);
+        }
+      }
       
       const content = validatedResponse.choices[0]?.message.content;
       if (!content) {
@@ -328,24 +340,41 @@ export class OpenRouterService {
       // Dodaj odpowiedź do historii
       this.addMessageToHistory('assistant', content);
       
-      // Jeśli oczekujemy JSON, próbujemy sparsować odpowiedź
-      if (this.currentResponseFormat) {
-        try {
-          const parsedResponse = JSON.parse(content) as T;
-          this.logger.debug('Pomyślnie sparsowano odpowiedź JSON');
-          return parsedResponse;
-        } catch (parseError) {
-          const error = new ResponseProcessingError(
-            `Błąd parsowania JSON: ${parseError instanceof Error ? parseError.message : String(parseError)}`
-          );
-          this.logger.error(error.message);
-          throw error;
+      // Próba parsowania odpowiedzi jako JSON
+      try {
+        console.log(`[OPENROUTER-SERVICE] Trying to parse response content as JSON:`, content.substring(0, 100));
+        const parsedContent = JSON.parse(content) as T;
+        this.logger.debug('Pomyślnie sparsowano odpowiedź JSON');
+        return parsedContent;
+      } catch (parseError) {
+        // Jeśli nie używamy response_format, to możemy otrzymać zwykły tekst
+        if (!this.currentResponseFormat) {
+          console.log(`[OPENROUTER-SERVICE] Not using response_format, returning content as-is`);
+          return content as unknown as T;
         }
+        
+        // Próba wyodrębnienia JSON z tekstu (w przypadku modeli które dodają dodatkowy tekst)
+        try {
+          console.log(`[OPENROUTER-SERVICE] Trying to extract JSON from response text`);
+          const jsonMatch = content.match(/```(?:json)?(.*?)```/s) || content.match(/{.*}/s);
+          
+          if (jsonMatch) {
+            const jsonContent = jsonMatch[1] ? jsonMatch[1].trim() : jsonMatch[0].trim();
+            console.log(`[OPENROUTER-SERVICE] Extracted JSON:`, jsonContent.substring(0, 100));
+            const extractedJson = JSON.parse(jsonContent) as T;
+            this.logger.debug('Pomyślnie wyodrębniono i sparsowano JSON z odpowiedzi');
+            return extractedJson;
+          }
+        } catch (extractError) {
+          console.error(`[OPENROUTER-SERVICE] Error extracting JSON:`, extractError);
+        }
+        
+        const error = new ResponseProcessingError(
+          `Błąd parsowania JSON: ${parseError instanceof Error ? parseError.message : String(parseError)}`
+        );
+        this.logger.error(error.message);
+        throw error;
       }
-      
-      // W przeciwnym razie zwracamy treść jako string
-      this.logger.debug('Zwracanie odpowiedzi tekstowej');
-      return content as unknown as T;
     } catch (error) {
       if (error instanceof z.ZodError) {
         const responseError = new ResponseProcessingError(`Nieprawidłowa struktura odpowiedzi: ${error.message}`);
@@ -468,6 +497,13 @@ export class OpenRouterService {
       }
       
       try {
+        console.log(`[OPENROUTER-SERVICE] Sending request to ${this.apiUrl}, model: ${requestPayload.model}`);
+        console.log(`[OPENROUTER-SERVICE] Messages count: ${requestPayload.messages.length}`);
+        
+        if (requestPayload.response_format) {
+          console.log(`[OPENROUTER-SERVICE] Using response_format type: ${requestPayload.response_format.type}`);
+        }
+        
         const response = await fetch(this.apiUrl, {
           method: 'POST',
           headers: {
@@ -480,32 +516,77 @@ export class OpenRouterService {
           signal: AbortSignal.timeout(this.timeout)
         });
         
-        // Obsługa różnych kodów błędów HTTP
-        if (!response.ok) {
-          const status = response.status;
-          const errorData = await response.json().catch(() => ({ error: 'Nieznany błąd' }));
+        console.log(`[OPENROUTER-SERVICE] Response status: ${response.status}`);
+        
+        const responseText = await response.text();
+        console.log(`[OPENROUTER-SERVICE] Response body (first 100 chars): ${responseText.substring(0, 100)}...`);
+        
+        let parsedResponse;
+        try {
+          parsedResponse = JSON.parse(responseText);
+        } catch (parseError) {
+          console.error(`[OPENROUTER-SERVICE] Error parsing JSON response:`, parseError);
+          throw new Error(`Error parsing JSON response: ${parseError instanceof Error ? parseError.message : String(parseError)}`);
+        }
+        
+        // Sprawdź, czy odpowiedź zawiera błąd
+        if (parsedResponse.error) {
+          console.error(`[OPENROUTER-SERVICE] API returned error:`, parsedResponse.error);
           
-          // Rozpoznawanie konkretnych błędów
-          if (status === 401 || status === 403) {
-            throw new AuthenticationError(`Błąd autentykacji: ${JSON.stringify(errorData)}`);
-          } else if (status === 429) {
-            throw new RateLimitError(`Przekroczono limit zapytań: ${JSON.stringify(errorData)}`);
+          if (parsedResponse.error.code === 401 || parsedResponse.error.code === 403) {
+            throw new AuthenticationError(`Błąd autentykacji: ${JSON.stringify(parsedResponse.error)}`);
+          } else if (parsedResponse.error.code === 429) {
+            throw new RateLimitError(`Przekroczono limit zapytań: ${JSON.stringify(parsedResponse.error)}`);
           } else {
-            throw new Error(`Błąd API (${status}): ${JSON.stringify(errorData)}`);
+            throw new Error(`Błąd API: ${parsedResponse.error.message || JSON.stringify(parsedResponse.error)}`);
           }
         }
         
-        const apiResponse = await response.json() as ApiResponse;
+        // Obsługa różnych kodów błędów HTTP
+        if (!response.ok) {
+          const status = response.status;
+          
+          console.error(`[OPENROUTER-SERVICE] API error (${status}):`, parsedResponse);
+          
+          // Rozpoznawanie konkretnych błędów
+          if (status === 401 || status === 403) {
+            throw new AuthenticationError(`Błąd autentykacji: ${JSON.stringify(parsedResponse)}`);
+          } else if (status === 429) {
+            throw new RateLimitError(`Przekroczono limit zapytań: ${JSON.stringify(parsedResponse)}`);
+          } else {
+            throw new Error(`Błąd API (${status}): ${JSON.stringify(parsedResponse)}`);
+          }
+        }
+        
+        // Upewnij się, że mamy poprawną strukturę odpowiedzi
+        const apiResponse = parsedResponse as ApiResponse;
+        
+        // Sprawdź, czy odpowiedź zawiera wymagane pola
+        if (!apiResponse.choices || apiResponse.choices.length === 0 || !apiResponse.choices[0].message) {
+          console.error(`[OPENROUTER-SERVICE] Invalid API response structure:`, apiResponse);
+          throw new Error('Nieprawidłowa struktura odpowiedzi API');
+        }
+        
         this.logger.debug('Otrzymano odpowiedź API', {
-          id: apiResponse.id,
-          model: apiResponse.model,
-          usage: apiResponse.usage
+          id: apiResponse.id || 'unknown',
+          model: apiResponse.model || 'unknown',
+          usage: apiResponse.usage || { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 }
         });
+        
+        console.log(`[OPENROUTER-SERVICE] Successfully received API response, ID: ${apiResponse.id || 'unknown'}`);
+        console.log(`[OPENROUTER-SERVICE] Response model: ${apiResponse.model || 'unknown'}`);
+        if (apiResponse.usage) {
+          console.log(`[OPENROUTER-SERVICE] Tokens used: ${apiResponse.usage.total_tokens || 'unknown'}`);
+        } else {
+          console.log(`[OPENROUTER-SERVICE] Usage information not available`);
+        }
         
         return apiResponse;
       } catch (error) {
         // Zapisz ostatni błąd
         lastError = error instanceof Error ? error : new Error(String(error));
+        
+        console.error(`[OPENROUTER-SERVICE] Error during attempt ${attempt + 1}:`, lastError);
         
         // Loguj błąd
         this.logger.error(

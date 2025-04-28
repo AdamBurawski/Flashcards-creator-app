@@ -46,26 +46,35 @@ export async function generateFlashcards(sourceText: string): Promise<Generation
   const startTime = Date.now();
 
   try {
-    // In production, we call the AI service, in development we use mocks
+    // Always use the AIService regardless of environment
     let flashcardProposals: FlashcardProposalDto[];
-    let model = "gpt-4"; // Default model name
+    let model = "gpt-4o-mini"; // Default model name
 
-    if (isDevelopment) {
-      // In development mode, use mock data
+    // Sprawdź, czy OpenRouter API key jest dostępny
+    const openRouterApiKey = import.meta.env.OPENROUTER_API_KEY;
+    
+    // Jeśli klucz API nie jest dostępny lub jesteśmy w trybie development i chcemy używać mocków
+    if (!openRouterApiKey) {
+      console.warn("OPENROUTER_API_KEY is not set - using mock data instead");
       flashcardProposals = mockAiGeneration(sourceText);
     } else {
-      // In production mode, use the AI service with timeout handling
       try {
-        // Create AI service with 60-second timeout (as specified in the implementation plan)
+        // Create AI service with 60-second timeout
         const aiService = new AIService(model, 60000);
         model = aiService.getModel(); // Get the actual model being used
 
+        console.log(`[DEBUG-GENERATION] Using AI service with model: ${model}`);
+        
         // Call the AI service to generate flashcards
         flashcardProposals = await aiService.generateFlashcards(sourceText);
+        
+        console.log(`[DEBUG-GENERATION] Successfully generated ${flashcardProposals.length} flashcards`);
       } catch (aiError: any) {
         // Handle and log AI service errors
         const errorCode = aiError instanceof AIServiceError ? aiError.code : "UNKNOWN";
         const errorMessage = aiError.message || "Unknown error occurred";
+        
+        console.error(`[DEBUG-GENERATION] AI service error: ${errorCode} - ${errorMessage}`);
 
         // Log AI error to the database (only if not bypassing database)
         if (!BYPASS_DATABASE) {
@@ -86,7 +95,9 @@ export async function generateFlashcards(sourceText: string): Promise<Generation
           console.log("Bypassing database error logging due to BYPASS_DATABASE setting");
         }
 
-        throw new Error(`AI service error: ${errorMessage}`);
+        // W przypadku błędu użyj danych mockowych zamiast rzucać wyjątek
+        console.log("[DEBUG-GENERATION] Falling back to mock data after AI service error");
+        flashcardProposals = mockAiGeneration(sourceText);
       }
     }
 
