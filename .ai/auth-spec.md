@@ -12,6 +12,7 @@
    - Dynamiczny komponent React obsługujący logikę logowania
    - Integracja z Supabase Auth
    - Odnośniki do stron rejestracji i odzyskiwania hasła
+   - Obsługa parametru returnUrl w celu przekierowania po zalogowaniu
 
 2. **Strona Rejestracji (`src/pages/auth/register.astro`)**
 
@@ -19,6 +20,7 @@
    - Dynamiczny komponent React obsługujący logikę rejestracji
    - Integracja z Supabase Auth
    - Odnośnik do strony logowania
+   - Obsługa parametru returnUrl w celu przekierowania po rejestracji
 
 3. **Strona Odzyskiwania Hasła (`src/pages/auth/forgot-password.astro`)**
 
@@ -604,6 +606,9 @@ import type { MiddlewareHandler } from "astro";
 // Lista chronionych tras
 const protectedRoutes = ["/collections", "/collections/create", "/collections/edit", "/collections/delete"];
 
+// Trasy, które mogą być używane zarówno przez zalogowanych jak i niezalogowanych użytkowników
+const hybridRoutes = ["/generate", "/flashcards"];
+
 export const protectedRoutesMiddleware: MiddlewareHandler = async ({ locals, request, redirect }, next) => {
   // Sprawdzenie, czy trasa jest chroniona
   const url = new URL(request.url);
@@ -885,3 +890,116 @@ const isAuthenticated = !!user;
   });
 </script>
 ```
+
+### 3.7. Obsługa Anoniowego Dostępu do Generowania Fiszek
+
+#### 3.7.1. Implementacja Funkcjonalności Ad-hoc
+
+```typescript
+// src/components/FlashcardGenerationView.tsx
+import { useAuth } from '../hooks/useAuth';
+
+export default function FlashcardGenerationView() {
+  const { user, isLoading } = useAuth();
+  const isAuthenticated = !!user && !isLoading;
+
+  // Funkcja obsługująca zapisywanie fiszek
+  const handleSaveFlashcards = async (flashcards) => {
+    if (isAuthenticated) {
+      // Zapisz fiszki do konta użytkownika
+      // ...
+    } else {
+      // Oferuj możliwość zapisu lokalnego lub zalogowania
+      const wantToLogin = confirm('Aby zapisać te fiszki na stałe w swoim koncie, musisz się zalogować. Czy chcesz przejść do strony logowania?');
+
+      if (wantToLogin) {
+        // Tymczasowo zapisz fiszki w localStorage
+        localStorage.setItem('temporaryFlashcards', JSON.stringify(flashcards));
+        // Przekieruj na stronę logowania z parametrem powrotu do generowania
+        window.location.href = `/auth/login?returnUrl=${encodeURIComponent('/generate?restore=true')}`;
+      } else {
+        // Zapisz lokalnie bez logowania
+        localStorage.setItem('localFlashcards', JSON.stringify(flashcards));
+        alert('Fiszki zostały zapisane lokalnie. Będą dostępne tylko na tym urządzeniu.');
+      }
+    }
+  };
+
+  // Reszta komponentu...
+  return (
+    <div>
+      {/* Interfejs generowania fiszek */}
+
+      {/* Przycisk zapisu dostosowany do stanu autentykacji */}
+      <button
+        onClick={() => handleSaveFlashcards(generatedFlashcards)}
+        className="px-4 py-2 bg-blue-500 text-white rounded"
+      >
+        {isAuthenticated ? 'Zapisz w moim koncie' : 'Zapisz fiszki'}
+      </button>
+
+      {/* Dodatkowa informacja dla niezalogowanych użytkowników */}
+      {!isAuthenticated && (
+        <p className="text-sm text-gray-600 mt-2">
+          Zaloguj się, aby zapisać fiszki w swoim koncie i mieć do nich dostęp na wielu urządzeniach.
+          <a href="/auth/login" className="text-blue-500 ml-1">Zaloguj się</a>
+        </p>
+      )}
+    </div>
+  );
+}
+```
+
+#### 3.7.2. Przywracanie Fiszek po Logowaniu
+
+```typescript
+// src/pages/generate.astro
+---
+// Sprawdzenie, czy używać zapisanych fiszek
+const restoreFromSession = Astro.url.searchParams.get('restore') === 'true' && Astro.locals.user;
+---
+
+<Layout title="Generowanie fiszek">
+  <FlashcardGenerationView restoreFromSession={restoreFromSession} />
+</Layout>
+
+<script>
+  // Skrypt do przywracania fiszek z localStorage po zalogowaniu
+  document.addEventListener('DOMContentLoaded', () => {
+    const params = new URLSearchParams(window.location.search);
+    const shouldRestore = params.get('restore') === 'true';
+
+    if (shouldRestore) {
+      const temporaryFlashcards = localStorage.getItem('temporaryFlashcards');
+      if (temporaryFlashcards) {
+        // Przywróć fiszki do interfejsu (szczegóły zależne od implementacji)
+        window.dispatchEvent(new CustomEvent('restoreFlashcards', {
+          detail: { flashcards: JSON.parse(temporaryFlashcards) }
+        }));
+
+        // Wyczyść tymczasowe dane
+        localStorage.removeItem('temporaryFlashcards');
+      }
+    }
+  });
+</script>
+```
+
+### 3.8. Weryfikacja Wymagań z PRD
+
+Poniżej znajduje się mapowanie historyjek użytkownika z PRD do odpowiadających im elementów specyfikacji:
+
+| ID     | Tytuł                                                          | Pokrycie w specyfikacji    |
+| ------ | -------------------------------------------------------------- | -------------------------- |
+| US-001 | Rejestracja konta                                              | Sekcja 1.2.1, 2.1.1, 3.1   |
+| US-002 | Logowanie do aplikacji                                         | Sekcja 1.2.2, 2.1.2, 3.1   |
+| US-014 | Ograniczenie dostępu do kolekcji dla zalogowanych użytkowników | Sekcja 3.2, 3.7            |
+| US-015 | Dedykowane strony logowania i rejestracji                      | Sekcja 1.1.1               |
+| US-016 | Logowanie za pomocą emaila i hasła                             | Sekcja 1.3.2, 2.1.2        |
+| US-017 | Rejestracja konta w systemie                                   | Sekcja 1.3.1, 2.1.1        |
+| US-018 | Tworzenie reguł bez logowania                                  | Sekcja 3.7                 |
+| US-019 | Ograniczenie dostępu do funkcji kolekcji                       | Sekcja 3.2                 |
+| US-020 | Przycisk logowania w interfejsie                               | Sekcja 1.1.2, 3.6          |
+| US-021 | Wylogowanie z systemu                                          | Sekcja 1.2.4, 2.1.3, 3.6   |
+| US-022 | Bezpieczne uwierzytelnianie bez zewnętrznych serwisów          | Sekcja 3.1                 |
+| US-023 | Odzyskiwanie zapomnianego hasła                                | Sekcja 1.2.3, 2.1.4, 2.1.5 |
