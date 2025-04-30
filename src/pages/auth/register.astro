@@ -1,0 +1,28 @@
+---
+import AuthLayout from "../../layouts/AuthLayout.astro";
+import RegisterForm from "../../components/auth/RegisterForm";
+
+// Pobranie parametru returnUrl, jeśli istnieje
+const returnUrl = Astro.url.searchParams.get("returnUrl") || "/";
+---
+
+<AuthLayout title="Rejestracja | Flashcards Creator">
+  <Fragment slot="description"> Utwórz konto, aby zapisywać i zarządzać fiszkami </Fragment>
+
+  <div>
+    <h1 class="text-xl font-semibold text-gray-900 text-center mb-6">Utwórz nowe konto</h1>
+
+    <RegisterForm client:load returnUrl={returnUrl} />
+  </div>
+
+  <div slot="footer">
+    Masz już konto?
+    <a
+      href={`/auth/login?returnUrl=${encodeURIComponent(returnUrl)}`}
+      class="font-medium text-primary hover:text-primary-dark"
+    >
+      Zaloguj się
+    </a>
+  </div>
+</AuthLayout>
+
