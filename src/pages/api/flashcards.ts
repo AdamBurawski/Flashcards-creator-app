@@ -91,7 +91,7 @@ async function authenticateUser(request: Request): Promise<string | null> {
 }
 
 // API endpoint handler for creating flashcards
-export const POST: APIRoute = async ({ request }) => {
+export const POST: APIRoute = async ({ request, locals }) => {
   let userId: string = DEFAULT_USER_ID;
 
   try {
@@ -101,7 +101,13 @@ export const POST: APIRoute = async ({ request }) => {
     console.log(`[DEBUG] BYPASS_DATABASE mode: ${isBypassMode}, value: ${bypassEnv}`);
 
     // 1. Authenticate the user
-    if (import.meta.env.MODE === "production") {
+    // Najpierw sprawdź, czy użytkownik jest już uwierzytelniony przez middleware
+    if (locals.user && locals.user.id) {
+      userId = locals.user.id;
+      console.log(`Użytkownik już uwierzytelniony przez middleware: ${locals.user.email}, ID: ${userId}`);
+    } 
+    // Jeśli nie, spróbuj uwierzytelnić za pomocą nagłówka autoryzacji
+    else if (import.meta.env.MODE === "production") {
       const authUserId = await authenticateUser(request);
 
       if (!authUserId) {
@@ -226,6 +232,9 @@ export const POST: APIRoute = async ({ request }) => {
 
     // 4. Create the flashcards (tylko jeśli nie w trybie bypass)
     try {
+      // Zapisz dodatkowe informacje do logów przed utworzeniem fiszek
+      console.log(`Tworzenie fiszek dla user_id: ${userId}`);
+      
       // Call service to create flashcards
       const result = await createFlashcards(flashcards, userId);
 
@@ -249,20 +258,23 @@ export const POST: APIRoute = async ({ request }) => {
         }
       );
     }
-  } catch (error) {
-    // Unexpected errors
+  } catch (error: any) {
     await logError({
-      source: ErrorSource.FLASHCARD_CREATE,
-      error_code: "UNEXPECTED_ERROR",
+      source: ErrorSource.SERVER_ERROR,
+      error_code: "UNHANDLED_ERROR",
       error_message: String(error),
       user_id: userId,
-      metadata: { endpoint: "POST /flashcards" },
     });
 
-    // Return generic error for unexpected errors
-    return new Response(JSON.stringify({ error: "Internal server error" }), {
-      status: 500,
-      headers: { "Content-Type": "application/json" },
-    });
+    return new Response(
+      JSON.stringify({
+        error: "An unexpected error occurred",
+        details: import.meta.env.DEV ? String(error) : undefined,
+      }),
+      {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
   }
 };

@@ -2,6 +2,7 @@ import type { APIRoute } from "astro";
 import { z } from "zod";
 import { generateFlashcards } from "../../lib/generation.service";
 import type { GenerateFlashcardsCommand, GenerationCreateResponseDto } from "../../types";
+import { DEFAULT_USER_ID } from "../../db/supabase.client";
 
 export const prerender = false;
 
@@ -14,8 +15,18 @@ const generateFlashcardsSchema = z.object({
 });
 
 // API endpoint handler for generating flashcards
-export const POST: APIRoute = async ({ request }) => {
+export const POST: APIRoute = async ({ request, locals }) => {
+  let userId = DEFAULT_USER_ID;
+
   try {
+    // Określ user_id na podstawie uwierzytelnionego użytkownika
+    if (locals.user && locals.user.id) {
+      userId = locals.user.id;
+      console.log(`Generowanie fiszek dla uwierzytelnionego użytkownika: ${locals.user.email}, ID: ${userId}`);
+    } else {
+      console.log(`Brak uwierzytelnionego użytkownika, używam domyślnego ID: ${userId}`);
+    }
+
     // 1. Get and validate the request body
     const body = (await request.json()) as GenerateFlashcardsCommand;
 
@@ -35,9 +46,9 @@ export const POST: APIRoute = async ({ request }) => {
 
     const { source_text } = validationResult.data;
 
-    // 2. Call generation service to generate flashcards
+    // 2. Call generation service to generate flashcards with the user's ID
     try {
-      const result = await generateFlashcards(source_text);
+      const result = await generateFlashcards(source_text, userId);
 
       const response: GenerationCreateResponseDto = {
         generation_id: result.generationId,

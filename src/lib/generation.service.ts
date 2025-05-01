@@ -33,9 +33,8 @@ function calculateSourceTextHash(sourceText: string): string {
 }
 
 // The main function to generate flashcards
-export async function generateFlashcards(sourceText: string): Promise<GenerationResult> {
-  // Use the default user ID for now
-  const userId = DEFAULT_USER_ID;
+export async function generateFlashcards(sourceText: string, userId: string = DEFAULT_USER_ID): Promise<GenerationResult> {
+  console.log(`Generowanie fiszek dla użytkownika z ID: ${userId}`);
 
   // Calculate hash and other metadata
   const sourceTextHash = calculateSourceTextHash(sourceText);
