@@ -2,6 +2,27 @@ import { useState } from "react";
 import { Button } from "../ui/button";
 import { supabase } from "../../db/supabase.client";
 
+// Synchronizuj sesję z serwerem
+const syncSessionWithServer = async (session: any) => {
+  try {
+    console.log("Synchronizacja sesji po rejestracji...");
+    const response = await fetch("/api/auth/sync-session", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ session }),
+    });
+
+    const data = await response.json();
+    console.log("Odpowiedź z synchronizacji po rejestracji:", data);
+    return data.success;
+  } catch (error) {
+    console.error("Błąd podczas synchronizacji sesji po rejestracji:", error);
+    return false;
+  }
+};
+
 interface RegisterFormProps {
   returnUrl?: string;
 }
@@ -93,6 +114,12 @@ const RegisterForm = ({ returnUrl = "/" }: RegisterFormProps) => {
 
       if (data.user) {
         console.log("Zarejestrowano użytkownika:", data.user);
+
+        // Po rejestracji synchronizuj sesję z serwerem
+        if (data.session) {
+          await syncSessionWithServer(data.session);
+        }
+
         setIsSuccess(true);
         // Przekierowanie po 2 sekundach
         setTimeout(() => {

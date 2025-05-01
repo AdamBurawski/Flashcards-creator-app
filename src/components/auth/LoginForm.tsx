@@ -2,6 +2,27 @@ import { useState } from "react";
 import { Button } from "../ui/button";
 import { supabase } from "../../db/supabase.client";
 
+// Synchronizuj sesję z serwerem
+const syncSessionWithServer = async (session: any) => {
+  try {
+    console.log("Synchronizacja sesji po zalogowaniu...");
+    const response = await fetch("/api/auth/sync-session", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ session }),
+    });
+
+    const data = await response.json();
+    console.log("Odpowiedź z synchronizacji po zalogowaniu:", data);
+    return data.success;
+  } catch (error) {
+    console.error("Błąd podczas synchronizacji sesji po zalogowaniu:", error);
+    return false;
+  }
+};
+
 interface LoginFormProps {
   returnUrl?: string;
 }
@@ -75,6 +96,10 @@ const LoginForm = ({ returnUrl = "/" }: LoginFormProps) => {
 
       if (data.session) {
         console.log("Zalogowano użytkownika:", data.user);
+
+        // Po zalogowaniu synchronizuj sesję z serwerem
+        await syncSessionWithServer(data.session);
+
         setIsSuccess(true);
         // Przekierowanie po 1 sekundzie
         setTimeout(() => {

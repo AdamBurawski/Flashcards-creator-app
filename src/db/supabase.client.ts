@@ -5,17 +5,45 @@ import type { Database } from "./database.types";
 const url = import.meta.env.PUBLIC_SUPABASE_URL;
 const key = import.meta.env.PUBLIC_SUPABASE_KEY;
 
+// Jeśli brak kluczy, zwracaj komunikat ale nie rzucaj błędu, co pozwoli aplikacji się uruchomić
 if (!url || !key) {
-  throw new Error("Brak kluczy Supabase w zmiennych środowiskowych");
+  console.warn("Brak kluczy Supabase w zmiennych środowiskowych - klient używa pustych wartości");
 }
 
-export const supabase = createClient<Database>(url, key, {
+export const supabase = createClient<Database>(url || '', key || '', {
   auth: {
     autoRefreshToken: true,
     persistSession: true,
-    detectSessionInUrl: true,
-    storageKey: "sb-auth-token",
-    flowType: "pkce" // Użyj PKCE dla większego bezpieczeństwa
+    detectSessionInUrl: false,
+    // Używamy localStorage, co ułatwia dostęp do sesji
+    storage: {
+      getItem: (key) => {
+        try {
+          // W środowisku SSR localStorage nie jest dostępny
+          if (typeof window === 'undefined') return null;
+          return window.localStorage.getItem(key);
+        } catch (error) {
+          console.error('Błąd podczas odczytu z localStorage:', error);
+          return null;
+        }
+      },
+      setItem: (key, value) => {
+        try {
+          if (typeof window === 'undefined') return;
+          window.localStorage.setItem(key, value);
+        } catch (error) {
+          console.error('Błąd podczas zapisu do localStorage:', error);
+        }
+      },
+      removeItem: (key) => {
+        try {
+          if (typeof window === 'undefined') return;
+          window.localStorage.removeItem(key);
+        } catch (error) {
+          console.error('Błąd podczas usuwania z localStorage:', error);
+        }
+      }
+    }
   }
 });
 

@@ -1,6 +1,32 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "../../hooks/useAuth";
 import LogoutButton from "./LogoutButton";
+import { supabase } from "../../db/supabase.client";
+
+// Synchronizuj sesję z serwerem
+const syncSessionWithServer = async () => {
+  try {
+    const { data } = await supabase.auth.getSession();
+    if (data.session) {
+      console.log("Synchronizacja sesji z serwerem w AuthMenu...");
+      const response = await fetch("/api/auth/sync-session", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ session: data.session }),
+      });
+
+      const responseData = await response.json();
+      console.log("Odpowiedź z synchronizacji w AuthMenu:", responseData);
+      return responseData.success;
+    }
+    return false;
+  } catch (error) {
+    console.error("Błąd podczas synchronizacji sesji w AuthMenu:", error);
+    return false;
+  }
+};
 
 interface AuthMenuProps {
   initialIsAuthenticated?: boolean;
@@ -14,7 +40,12 @@ export default function AuthMenu({ initialIsAuthenticated = false }: AuthMenuPro
   // Po zamontowaniu komponentu używaj danych z hooka useAuth
   useEffect(() => {
     setMounted(true);
-  }, []);
+
+    // Synchronizuj sesję z serwerem przy załadowaniu komponentu
+    if (initialIsAuthenticated || user) {
+      syncSessionWithServer();
+    }
+  }, [initialIsAuthenticated, user]);
 
   // Dopóki komponent nie jest zamontowany, używaj stanu z serwera
   const isAuthenticated = mounted ? !!user : initialIsAuthenticated;
