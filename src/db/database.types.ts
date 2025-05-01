@@ -34,6 +34,44 @@ export type Database = {
   }
   public: {
     Tables: {
+      collections: {
+        Row: {
+          id: number
+          name: string
+          description: string
+          user_id: string
+          flashcard_count: number
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: number
+          name: string
+          description?: string
+          user_id: string
+          flashcard_count?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: number
+          name?: string
+          description?: string
+          user_id?: string
+          flashcard_count?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "collections_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       flashcards: {
         Row: {
           back: string
@@ -44,6 +82,7 @@ export type Database = {
           source: string
           updated_at: string
           user_id: string
+          collection_id: number | null
         }
         Insert: {
           back: string
@@ -54,6 +93,7 @@ export type Database = {
           source: string
           updated_at?: string
           user_id: string
+          collection_id?: number | null
         }
         Update: {
           back?: string
@@ -64,6 +104,7 @@ export type Database = {
           source?: string
           updated_at?: string
           user_id?: string
+          collection_id?: number | null
         }
         Relationships: [
           {
@@ -73,6 +114,20 @@ export type Database = {
             referencedRelation: "generations"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "flashcards_collection_id_fkey"
+            columns: ["collection_id"]
+            isOneToOne: false
+            referencedRelation: "collections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flashcards_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
         ]
       }
       generation_error_logs: {

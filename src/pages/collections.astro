@@ -1,13 +1,35 @@
 ---
 import Layout from "../layouts/Layout.astro";
 import AuthStatus from "../components/AuthStatus";
+import NewCollectionButton from "../components/collections/NewCollectionButton";
+import CollectionsList from "../components/collections/CollectionsList";
 
 // Sprawdzenie użytkownika (powinno być obsłużone przez middleware)
-const { user } = Astro.locals;
+const { user, supabase } = Astro.locals;
 
 // Jeśli w jakiś sposób trafimy tu bez użytkownika, przekieruj do logowania
 if (!user) {
   return Astro.redirect("/auth/login?returnUrl=/collections");
+}
+
+// Pobierz kolekcje użytkownika
+let collections = [];
+if (supabase) {
+  try {
+    const { data, error } = await supabase
+      .from("collections")
+      .select("id, name, description, created_at, updated_at, flashcard_count")
+      .eq("user_id", user.id)
+      .order("updated_at", { ascending: false });
+
+    if (!error && data) {
+      collections = data;
+    } else if (error) {
+      console.error("Błąd podczas pobierania kolekcji:", error);
+    }
+  } catch (error) {
+    console.error("Błąd podczas pobierania kolekcji:", error);
+  }
 }
 ---
 
@@ -21,21 +43,15 @@ if (!user) {
 
     <div class="bg-white shadow rounded-lg p-6">
       <h2 class="text-xl font-semibold mb-4">Witaj, {user.email}!</h2>
-      <p class="mb-4">Twoje kolekcje fiszek będą wyświetlane tutaj.</p>
+      <p class="mb-4">Twoje kolekcje fiszek są wyświetlane poniżej.</p>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
-        <!-- Przykładowa pusta kolekcja -->
-        <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition">
-          <div class="flex justify-between items-start">
-            <h3 class="text-lg font-medium">Utwórz nową kolekcję</h3>
-          </div>
-          <p class="text-gray-600 text-sm mt-2">Kliknij, aby utworzyć nową kolekcję fiszek</p>
-          <div class="mt-4 flex justify-center">
-            <button class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"> + Nowa kolekcja </button>
-          </div>
-        </div>
+      <!-- Lista kolekcji -->
+      <CollectionsList collections={collections} client:load />
+
+      <div class="mt-8">
+        <h3 class="text-lg font-medium mb-3">Utwórz nową kolekcję</h3>
+        <NewCollectionButton client:load />
       </div>
     </div>
   </div>
 </Layout>
-

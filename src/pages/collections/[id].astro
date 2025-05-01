@@ -1,0 +1,80 @@
+---
+export const prerender = false;
+
+import Layout from "../../layouts/Layout.astro";
+import CollectionDetails from "../../components/collections/CollectionDetails";
+
+// Pobierz ID kolekcji z parametrów URL
+const { id } = Astro.params;
+const collectionId = parseInt(id || "", 10);
+
+// Sprawdź, czy ID jest prawidłowe
+if (isNaN(collectionId)) {
+  return Astro.redirect("/collections");
+}
+
+// Sprawdź, czy użytkownik jest zalogowany
+const { user, supabase } = Astro.locals;
+if (!user) {
+  return Astro.redirect("/auth/login?returnUrl=/collections");
+}
+
+// Pobierz dane kolekcji
+let collection = null;
+let flashcards = [];
+let error = null;
+
+if (supabase) {
+  try {
+    // Pobierz dane kolekcji
+    const { data: collectionData, error: collectionError } = await supabase
+      .from("collections")
+      .select("*")
+      .eq("id", collectionId)
+      .eq("user_id", user.id)
+      .single();
+
+    if (collectionError) {
+      console.error("Błąd podczas pobierania kolekcji:", collectionError);
+      error = "Nie udało się pobrać danych kolekcji.";
+    } else if (!collectionData) {
+      error = "Kolekcja nie została znaleziona.";
+    } else {
+      collection = collectionData;
+
+      // Pobierz fiszki przypisane do tej kolekcji
+      const { data: flashcardsData, error: flashcardsError } = await supabase
+        .from("flashcards")
+        .select("*")
+        .eq("collection_id", collectionId)
+        .eq("user_id", user.id)
+        .order("id", { ascending: true });
+
+      if (flashcardsError) {
+        console.error("Błąd podczas pobierania fiszek:", flashcardsError);
+        error = "Nie udało się pobrać fiszek.";
+      } else {
+        flashcards = flashcardsData || [];
+      }
+    }
+  } catch (err) {
+    console.error("Nieoczekiwany błąd:", err);
+    error = "Wystąpił nieoczekiwany błąd.";
+  }
+}
+---
+
+<Layout title={collection ? `${collection.name} | Flashcards Creator` : "Kolekcja | Flashcards Creator"}>
+  <div class="max-w-7xl mx-auto px-4 py-8">
+    <div class="mb-6">
+      <a href="/collections" class="text-blue-600 hover:underline flex items-center gap-1">
+        &larr; Powrót do kolekcji
+      </a>
+    </div>
+
+    {error && <div class="bg-red-50 border border-red-200 text-red-600 p-4 rounded mb-6">{error}</div>}
+
+    {!error && collection && <CollectionDetails collection={collection} flashcards={flashcards} client:load />}
+  </div>
+</Layout>
+
