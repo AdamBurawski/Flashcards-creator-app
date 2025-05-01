@@ -1,5 +1,11 @@
 // src/types.ts
 import type { Database } from "./db/database.types";
+import type { User as SupabaseUser } from "@supabase/supabase-js";
+
+// ------------------------------------------------------------------------------------------------
+// User authentication types
+// ------------------------------------------------------------------------------------------------
+export type User = SupabaseUser;
 
 // ------------------------------------------------------------------------------------------------
 // Aliases for base database types extracted from the Database model definitions

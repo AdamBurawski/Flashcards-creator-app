@@ -1,15 +1,26 @@
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "./database.types";
 
-// Zmienne środowiskowe dla Supabase
-const supabaseUrl = import.meta.env.SUPABASE_URL;
-const supabaseKey = import.meta.env.SUPABASE_KEY;
+// Utworzenie klienta Supabase po stronie klienta
+const url = import.meta.env.PUBLIC_SUPABASE_URL;
+const key = import.meta.env.PUBLIC_SUPABASE_KEY;
+
+if (!url || !key) {
+  throw new Error("Brak kluczy Supabase w zmiennych środowiskowych");
+}
+
+export const supabase = createClient<Database>(url, key, {
+  auth: {
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: true,
+    storageKey: "sb-auth-token",
+    flowType: "pkce" // Użyj PKCE dla większego bezpieczeństwa
+  }
+});
 
 // Default user ID for development purposes
 export const DEFAULT_USER_ID = "00000000-0000-0000-0000-000000000000";
 
-// Klient Supabase do użycia w aplikacji
-export const supabaseClient = createClient<Database>(supabaseUrl, supabaseKey);
-
 // Eksport typu klienta Supabase
-export type SupabaseClient = typeof supabaseClient;
+export type SupabaseClient = typeof supabase;

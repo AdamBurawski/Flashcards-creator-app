@@ -1,8 +1,9 @@
 ---
 // Header.astro - Komponent nagłówka z obsługą stanu autentykacji
 import LogoutButton from "./auth/LogoutButton";
+import AuthMenu from "./auth/AuthMenu";
 
-// Pobierz dane użytkownika z locals
+// Pobierz dane użytkownika z locals (przyda się tylko dla początkowego renderowania)
 const { user } = Astro.locals;
 const isAuthenticated = !!user;
 ---
@@ -15,25 +16,8 @@ const isAuthenticated = !!user;
       <a href="/" class="text-gray-700 hover:text-gray-900">Strona główna</a>
       <a href="/generate" class="text-gray-700 hover:text-gray-900">Generowanie</a>
 
-      {
-        isAuthenticated ? (
-          <div class="flex items-center gap-2">
-            <a href="/collections" class="text-gray-700 hover:text-gray-900">
-              Kolekcje
-            </a>
-            <LogoutButton client:load />
-          </div>
-        ) : (
-          <div class="flex gap-2">
-            <a href="/auth/login" class="px-4 py-2 rounded bg-gray-200 text-gray-800 hover:bg-gray-300">
-              Zaloguj
-            </a>
-            <a href="/auth/register" class="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700">
-              Zarejestruj
-            </a>
-          </div>
-        )
-      }
+      <!-- Używamy komponentu React do obsługi stanu logowania -->
+      <AuthMenu client:load initialIsAuthenticated={isAuthenticated} />
     </nav>
   </div>
 </header>

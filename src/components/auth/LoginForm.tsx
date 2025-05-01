@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Button } from "../ui/button";
+import { supabase } from "../../db/supabase.client";
 
 interface LoginFormProps {
   returnUrl?: string;
@@ -16,6 +17,7 @@ const LoginForm = ({ returnUrl = "/" }: LoginFormProps) => {
     general?: string;
   }>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
 
   const validateForm = () => {
     const errors: {
@@ -56,22 +58,54 @@ const LoginForm = ({ returnUrl = "/" }: LoginFormProps) => {
     setFormErrors({});
 
     try {
-      // Komunikacja z API będzie zaimplementowana później
-      console.log("Login form submitted", formData);
+      console.log("Próba logowania z danymi:", formData.email);
 
-      // Symulacja opóźnienia
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      // Użyj bezpośrednio Supabase do logowania
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: formData.email,
+        password: formData.password,
+      });
 
-      // Tymczasowe rozwiązanie - przekierowanie
-      window.location.href = returnUrl;
+      if (error) {
+        console.error("Błąd logowania Supabase:", error);
+        throw error;
+      }
+
+      console.log("Dane logowania:", data);
+
+      if (data.session) {
+        console.log("Zalogowano użytkownika:", data.user);
+        setIsSuccess(true);
+        // Przekierowanie po 1 sekundzie
+        setTimeout(() => {
+          window.location.href = returnUrl;
+        }, 1000);
+      } else {
+        setFormErrors({
+          general: "Nieprawidłowy email lub hasło",
+        });
+      }
     } catch (error) {
+      console.error("Błąd podczas logowania:", error);
       setFormErrors({
-        general: "Wystąpił błąd podczas logowania. Sprawdź dane logowania i spróbuj ponownie.",
+        general:
+          error instanceof Error
+            ? error.message
+            : "Wystąpił błąd podczas logowania. Sprawdź dane logowania i spróbuj ponownie.",
       });
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  if (isSuccess) {
+    return (
+      <div className="p-3 bg-green-50 border border-green-200 text-green-600 rounded text-sm" role="alert">
+        <div className="font-medium">Zalogowano pomyślnie!</div>
+        <p>Za chwilę nastąpi przekierowanie...</p>
+      </div>
+    );
+  }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6" noValidate>

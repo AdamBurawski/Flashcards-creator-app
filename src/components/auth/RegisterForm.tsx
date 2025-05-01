@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Button } from "../ui/button";
+import { supabase } from "../../db/supabase.client";
 
 interface RegisterFormProps {
   returnUrl?: string;
@@ -18,6 +19,7 @@ const RegisterForm = ({ returnUrl = "/" }: RegisterFormProps) => {
     general?: string;
   }>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
 
   const validateForm = () => {
     const errors: {
@@ -74,22 +76,52 @@ const RegisterForm = ({ returnUrl = "/" }: RegisterFormProps) => {
     setFormErrors({});
 
     try {
-      // Komunikacja z API będzie zaimplementowana później
-      console.log("Register form submitted", formData);
+      console.log("Próba rejestracji z danymi:", formData.email);
 
-      // Symulacja opóźnienia
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      // Użyj bezpośrednio Supabase do rejestracji
+      const { data, error } = await supabase.auth.signUp({
+        email: formData.email,
+        password: formData.password,
+      });
 
-      // Tymczasowe rozwiązanie - przekierowanie
-      window.location.href = returnUrl;
+      if (error) {
+        console.error("Błąd rejestracji Supabase:", error);
+        throw error;
+      }
+
+      console.log("Dane rejestracji:", data);
+
+      if (data.user) {
+        console.log("Zarejestrowano użytkownika:", data.user);
+        setIsSuccess(true);
+        // Przekierowanie po 2 sekundach
+        setTimeout(() => {
+          window.location.href = returnUrl;
+        }, 2000);
+      } else {
+        setFormErrors({
+          general: "Wystąpił błąd podczas rejestracji. Spróbuj ponownie.",
+        });
+      }
     } catch (error) {
+      console.error("Błąd podczas rejestracji:", error);
       setFormErrors({
-        general: "Wystąpił błąd podczas rejestracji. Spróbuj ponownie później.",
+        general:
+          error instanceof Error ? error.message : "Wystąpił błąd podczas rejestracji. Spróbuj ponownie później.",
       });
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  if (isSuccess) {
+    return (
+      <div className="p-3 bg-green-50 border border-green-200 text-green-600 rounded text-sm" role="alert">
+        <div className="font-medium">Rejestracja przebiegła pomyślnie!</div>
+        <p>Zostałeś automatycznie zalogowany. Za chwilę nastąpi przekierowanie...</p>
+      </div>
+    );
+  }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6" noValidate>

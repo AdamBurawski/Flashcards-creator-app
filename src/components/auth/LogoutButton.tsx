@@ -1,27 +1,15 @@
 import { useState } from "react";
 import { Button } from "../ui/button";
+import { useAuth } from "../../hooks/useAuth";
 
 const LogoutButton = () => {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const { logout } = useAuth();
 
   const handleLogout = async () => {
     try {
       setIsLoggingOut(true);
-
-      const response = await fetch("/api/auth/logout", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        window.location.href = "/";
-      } else {
-        console.error("Błąd podczas wylogowywania:", data.message);
-      }
+      await logout();
     } catch (error) {
       console.error("Błąd podczas wylogowywania:", error);
     } finally {
