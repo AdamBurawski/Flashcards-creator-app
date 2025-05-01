@@ -1,3 +1,4 @@
+---
 import Layout from "./Layout.astro";
 
 interface Props {
@@ -5,6 +6,7 @@ interface Props {
 }
 
 const { title } = Astro.props;
+---
 
 <Layout title={title}>
   <div class="min-h-screen flex flex-col items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
@@ -17,14 +19,14 @@ const { title } = Astro.props;
           <slot name="description" />
         </p>
       </div>
-      
+
       <div class="bg-white py-8 px-6 shadow-md rounded-lg">
         <slot />
       </div>
-      
+
       <div class="mt-6 text-center text-sm">
         <slot name="footer" />
       </div>
     </div>
   </div>
-</Layout> 
+</Layout>

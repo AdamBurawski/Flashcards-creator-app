@@ -1,0 +1,61 @@
+---
+// Header.astro - Komponent nagłówka z obsługą stanu autentykacji
+import LogoutButton from "./auth/LogoutButton";
+
+// Pobierz dane użytkownika z locals
+const { user } = Astro.locals;
+const isAuthenticated = !!user;
+---
+
+<header class="w-full p-4 bg-white shadow-sm">
+  <div class="max-w-7xl mx-auto flex justify-between items-center">
+    <a href="/" class="text-xl font-bold text-gray-900">Flashcards Creator</a>
+
+    <nav class="flex gap-4 items-center">
+      <a href="/" class="text-gray-700 hover:text-gray-900">Strona główna</a>
+      <a href="/generate" class="text-gray-700 hover:text-gray-900">Generowanie</a>
+
+      {
+        isAuthenticated ? (
+          <div class="flex items-center gap-2">
+            <a href="/collections" class="text-gray-700 hover:text-gray-900">
+              Kolekcje
+            </a>
+            <LogoutButton client:load />
+          </div>
+        ) : (
+          <div class="flex gap-2">
+            <a href="/auth/login" class="px-4 py-2 rounded bg-gray-200 text-gray-800 hover:bg-gray-300">
+              Zaloguj
+            </a>
+            <a href="/auth/register" class="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700">
+              Zarejestruj
+            </a>
+          </div>
+        )
+      }
+    </nav>
+  </div>
+</header>
+
+<script>
+  // JavaScript dla obsługi wylogowania
+  document.getElementById("logout-button")?.addEventListener("click", async () => {
+    try {
+      const response = await fetch("/api/auth/logout", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        window.location.href = "/";
+      }
+    } catch (error) {
+      console.error("Błąd podczas wylogowywania:", error);
+    }
+  });
+</script>
