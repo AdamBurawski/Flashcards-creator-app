@@ -19,6 +19,9 @@ export const POST: APIRoute = async ({ request, locals, cookies }) => {
           sameSite: "lax",
           maxAge: 60 * 60 * 24 * 7, // tydzień
         });
+        
+        // Zapisz też w locals
+        locals.token = session.access_token;
       }
 
       // Próba ustawienia sesji w Supabase
@@ -55,6 +58,7 @@ export const POST: APIRoute = async ({ request, locals, cookies }) => {
           success: true,
           message: "Sesja zsynchronizowana pomyślnie",
           user: data.session?.user,
+          token: session.access_token,
         }),
         {
           status: 200,

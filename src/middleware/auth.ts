@@ -19,6 +19,8 @@ export const authMiddleware: MiddlewareHandler = async ({ locals, request, cooki
   if (authHeader && authHeader.startsWith("Bearer ")) {
     accessToken = authHeader.split(" ")[1];
     console.log("Znaleziono token autoryzacyjny w nagłówku!");
+    // Zapisz token w locals do późniejszego użycia
+    locals.token = accessToken;
   }
 
   // Pobierz wszystkie ciasteczka z żądania dla lepszego debugowania
@@ -35,6 +37,17 @@ export const authMiddleware: MiddlewareHandler = async ({ locals, request, cooki
     "sb-access-token": sbAccessToken ? "Istnieje" : "Brak", 
     "sb-refresh-token": sbRefreshToken ? "Istnieje" : "Brak"
   });
+
+  // Cookie sprawdzenie
+  const supabaseCookie = cookies.get("supabase-auth-token")?.value;
+  if (supabaseCookie) {
+    console.log("Znaleziono ciasteczko supabase-auth-token!");
+    // Używamy go jako token jeśli nie ma tokenu w nagłówku
+    if (!accessToken) {
+      accessToken = supabaseCookie;
+      locals.token = accessToken;
+    }
+  }
 
   // Stwórz klienta Supabase
   const supabaseClient = createClient<Database>(supabaseUrl || '', supabaseKey || '', {
@@ -59,13 +72,17 @@ export const authMiddleware: MiddlewareHandler = async ({ locals, request, cooki
   try {
     // Sprawdź sesję tylko wtedy, gdy mamy jakiś token
     if (accessToken || sbAccessToken) {
-      // 1. Jeśli mamy token z nagłówka, ustaw go bezpośrednio
+      console.log("Próbuję uwierzytelnić użytkownika z tokenem");
+      
+      // 1. Jeśli mamy token z nagłówka lub z ciasteczka, ustaw go bezpośrednio
       if (accessToken) {
         const { data: { user }, error } = await supabaseClient.auth.getUser(accessToken);
         if (!error && user) {
           console.log("Uwierzytelniono użytkownika z tokenu:", user.email);
           locals.user = user;
           return await next();
+        } else if (error) {
+          console.error("Błąd podczas uwierzytelniania z tokenem:", error.message);
         }
       }
 
@@ -78,9 +95,12 @@ export const authMiddleware: MiddlewareHandler = async ({ locals, request, cooki
         console.log("User email:", session.user.email);
         locals.session = session;
         locals.user = session.user;
+        locals.token = session.access_token; // Zapisz token w locals
       } else {
         console.log("Brak aktywnej sesji");
       }
+    } else {
+      console.log("Brak tokenu lub ciasteczka sesji - użytkownik niezalogowany");
     }
   } catch (error) {
     console.error("Błąd podczas uwierzytelniania:", error);

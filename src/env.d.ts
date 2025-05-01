@@ -15,6 +15,7 @@ declare global {
       supabase: SupabaseClient<Database>;
       user: User | null;
       session: Session | null;
+      token: string | null;
     }
   }
 }
