@@ -11,6 +11,7 @@ A flashcard creation application that leverages AI to help users quickly generat
     - [Frontend](#frontend)
     - [Backend](#backend)
     - [AI Integration](#ai-integration)
+    - [Testing](#testing)
     - [CI/CD \& Hosting](#cicd--hosting)
   - [Getting Started](#getting-started)
     - [Prerequisites](#prerequisites)
@@ -54,6 +55,13 @@ The goal is to streamline the process of creating effective learning materials w
 ### AI Integration
 
 - [Openrouter.ai](https://openrouter.ai/) - API service providing access to various LLM models (OpenAI, Anthropic, Google, etc.) with configurable spending limits
+
+### Testing
+
+- [Vitest](https://vitest.dev/)/[Jest](https://jestjs.io/) - Test runners for unit and integration testing
+- [React Testing Library](https://testing-library.com/docs/react-testing-library/intro/) - Testing utilities for React components
+- [Playwright](https://playwright.dev/) - End-to-end testing framework for browser automation
+- [Supertest](https://github.com/ladjs/supertest) - HTTP assertions for API testing
 
 ### CI/CD & Hosting
 
