@@ -1,25 +1,12 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { generateFlashcards } from "../generation.service";
-import { AIService, AIServiceError } from "../ai.service";
+import { mockSupabaseClient } from "../../tests/setup/mocks/supabase.mock";
 
-// Mock supabase client
+// Musimy zdefiniować mocki PRZED importem testowanych modułów
 vi.mock("../../db/supabase.client", () => ({
+  supabase: mockSupabaseClient,
   DEFAULT_USER_ID: "test-user-id",
-  supabaseClient: {
-    from: vi.fn(() => ({
-      insert: vi.fn(() => ({
-        select: vi.fn(() => ({
-          single: vi.fn(() => ({
-            data: { id: 123 },
-            error: null,
-          })),
-        })),
-      })),
-    })),
-  },
 }));
 
-// Mock the AI service
 vi.mock("../ai.service", () => ({
   AIService: vi.fn(),
   AIServiceError: class AIServiceError extends Error {
@@ -31,6 +18,10 @@ vi.mock("../ai.service", () => ({
     }
   },
 }));
+
+// Teraz możemy importować testowane moduły
+import { generateFlashcards } from "../generation.service";
+import { AIService, AIServiceError } from "../ai.service";
 
 describe("Generations Service", () => {
   beforeEach(() => {
@@ -48,6 +39,16 @@ describe("Generations Service", () => {
       ]),
       getModel: vi.fn().mockReturnValue("gpt-4"),
     }));
+
+    // Konfiguracja mocka Supabase dla każdego testu
+    mockSupabaseClient.from.mockReturnValue({
+      insert: vi.fn().mockReturnValue({
+        select: vi.fn().mockResolvedValue({
+          data: [{ id: 123 }],
+          error: null,
+        }),
+      }),
+    });
   });
 
   afterEach(() => {
@@ -90,26 +91,11 @@ describe("Generations Service", () => {
 
   it("should handle database errors", async () => {
     // Override the mock to simulate a database error
-    vi.mocked(AIService).mockImplementation(() => ({
-      generateFlashcards: vi.fn().mockResolvedValue([
-        {
-          front: "Test question",
-          back: "Test answer",
-          source: "ai-full",
-        },
-      ]),
-      getModel: vi.fn().mockReturnValue("gpt-4"),
-    }));
-
-    // Mock supabase error response
-    const supabaseClientMock = require("../../db/supabase.client").supabaseClient;
-    supabaseClientMock.from.mockReturnValue({
+    mockSupabaseClient.from.mockReturnValue({
       insert: vi.fn().mockReturnValue({
-        select: vi.fn().mockReturnValue({
-          single: vi.fn().mockReturnValue({
-            data: null,
-            error: { message: "Database error" },
-          }),
+        select: vi.fn().mockResolvedValue({
+          data: null,
+          error: { message: "Database error" },
         }),
       }),
     });
