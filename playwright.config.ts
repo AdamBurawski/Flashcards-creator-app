@@ -1,5 +1,8 @@
 import { defineConfig, devices } from '@playwright/test';
 
+// import dotenv from 'dotenv';
+// dotenv.config({ path: path.resolve(process.cwd(), '.env.test') });
+
 /**
  * Konfiguracja Playwright dla testów e2e
  * @see https://playwright.dev/docs/test-configuration
