@@ -238,6 +238,29 @@ export type Database = {
           success: boolean
           id: number
         }
+      },
+      insert_flashcards: {
+        Args: {
+          flashcards_data: {
+            user_id: string
+            items: Array<{
+              front: string
+              back: string
+              source: string
+              generation_id: number | null
+            }>
+          }
+        }
+        Returns: {
+          success: boolean
+          ids: number[]
+        }
+      },
+      get_available_flashcards_for_import: {
+        Args: {
+          gen_id: number
+        }
+        Returns: Record<string, any>[]
       }
     }
     Enums: {

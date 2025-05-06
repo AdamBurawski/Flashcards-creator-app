@@ -52,3 +52,46 @@ export const DEFAULT_USER_ID = "00000000-0000-0000-0000-000000000000";
 
 // Eksport typu klienta Supabase
 export type SupabaseClient = typeof supabase;
+
+// Deklaracja typów dla funkcji RPC
+export type Database = {
+  public: {
+    Tables: {
+      // Tutaj domyślne tabele...
+    };
+    Functions: {
+      insert_flashcards: {
+        Args: {
+          flashcards_data: {
+            user_id: string;
+            items: Array<{
+              front: string;
+              back: string;
+              source: string;
+              generation_id: number | null;
+            }>;
+          };
+        };
+        Returns: {
+          success: boolean;
+          ids: number[];
+        };
+      };
+      insert_generation: {
+        Args: {
+          generation_data: Record<string, any>;
+        };
+        Returns: {
+          success: boolean;
+          id: number;
+        };
+      };
+      get_available_flashcards_for_import: {
+        Args: {
+          gen_id: number;
+        };
+        Returns: Record<string, any>[];
+      };
+    };
+  };
+};
