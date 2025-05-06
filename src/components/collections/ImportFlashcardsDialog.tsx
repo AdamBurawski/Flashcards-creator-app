@@ -93,12 +93,10 @@ export default function ImportFlashcardsDialog({ collectionId, onClose, onSucces
           throw new Error("Klient Supabase nie jest dostępny");
         }
 
-        // Pobierz fiszki z wybranej generacji
-        const { data, error } = await supabase
-          .from("flashcards")
-          .select("*")
-          .eq("generation_id", selectedGeneration)
-          .is("collection_id", null); // Tylko te, które nie są przypisane do kolekcji
+        // Użyj funkcji RPC zamiast bezpośredniego zapytania
+        const { data, error } = await supabase.rpc("get_available_flashcards_for_import", {
+          gen_id: parseInt(selectedGeneration),
+        });
 
         if (error) throw error;
 

@@ -23,6 +23,19 @@ export type Database = {
           extensions?: Json
         }
         Returns: Json
+      },
+      insert_generation: {
+        Args: {
+          generation_data: {
+            user_id: string
+            model: string
+            generated_count: number
+            source_text_hash: string
+            source_text_length: number
+            generation_duration: number
+          }
+        }
+        Returns: Json
       }
     }
     Enums: {
@@ -210,7 +223,22 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      insert_generation: {
+        Args: {
+          generation_data: {
+            user_id: string
+            model: string
+            generated_count: number
+            source_text_hash: string
+            source_text_length: number
+            generation_duration: number
+          }
+        }
+        Returns: {
+          success: boolean
+          id: number
+        }
+      }
     }
     Enums: {
       [_ in never]: never

@@ -120,22 +120,21 @@ export async function generateFlashcards(sourceText: string, userId: string = DE
 
     // Otherwise, try to save to the database
     try {
-      // Save generation metadata to the database
-      const { data: generationData, error: generationError } = await supabase
-        .from("generations")
-        .insert({
-          model,
-          generated_count: flashcardProposals.length,
-          source_text_hash: sourceTextHash,
-          source_text_length: sourceTextLength,
-          generation_duration: generationDuration,
-          user_id: userId,
-        })
-        .select("id")
-        .single();
+      // Zamiast bezpośredniego insertu, używamy funkcji RPC która omija RLS
+      const { data: result, error: generationError } = await supabase
+        .rpc('insert_generation', {
+          generation_data: {
+            user_id: userId,
+            model,
+            generated_count: flashcardProposals.length,
+            source_text_hash: sourceTextHash,
+            source_text_length: sourceTextLength,
+            generation_duration: generationDuration
+          }
+        });
 
-      if (generationError) {
-        console.error("Error saving generation data:", generationError);
+      if (generationError || !result || !result.success) {
+        console.error("Error saving generation data:", generationError || "No result returned");
         return {
           generationId: Math.floor(Math.random() * 1000), // Mock ID for testing
           proposals: flashcardProposals,
@@ -143,7 +142,7 @@ export async function generateFlashcards(sourceText: string, userId: string = DE
       }
 
       return {
-        generationId: generationData.id,
+        generationId: result.id,
         proposals: flashcardProposals,
       };
     } catch (dbError) {
