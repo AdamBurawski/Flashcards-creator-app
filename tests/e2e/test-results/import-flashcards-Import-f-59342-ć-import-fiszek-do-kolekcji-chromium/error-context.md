@@ -34,25 +34,25 @@ Call log:
       - /url: /collections
     - button "Wyloguj"
 - main:
-  - heading "Adamie, Witaj w flashcards-creator-app Astro Starter!" [level=1]
-  - paragraph: "Ten projekt został zbudowany w oparciu o nowoczesny stack technologiczny:"
-  - heading "Core" [level=2]
-  - list:
-    - listitem: Astro v5.5.5 - Metaframework do aplikacji webowych
-    - listitem: React v19 - Biblioteka UI do komponentów interaktywnych
-    - listitem: TypeScript - Typowanie statyczne
-  - heading "Stylowanie" [level=2]
-  - list:
-    - listitem: Tailwind CSS v4 - Utility-first CSS framework
-  - heading "Statyczna analiza kodu" [level=2]
-  - list:
-    - listitem: ESLint v9 - Lintowanie kodu
-    - listitem: Prettier - Formatowanie kodu
-    - listitem: Husky i Lint-staged - Automatyczna analiza kodu przed commitowaniem
-  - paragraph: Starter zawiera wszystko, czego potrzebujesz do rozpoczęcia tworzenia nowoczesnych aplikacji webowych!
-  - heading "Status autentykacji" [level=2]
-  - paragraph: Zalogowany
-  - button "Pokaż szczegóły"
+  - link "Flashcards Creator":
+    - /url: /
+    - heading "Flashcards Creator" [level=2]
+  - paragraph: Zaloguj się, aby uzyskać dostęp do swojego konta
+  - heading "Zaloguj się do swojego konta" [level=1]
+  - text: Adres email
+  - textbox "Adres email"
+  - paragraph: Email jest wymagany
+  - text: Hasło
+  - textbox "Hasło"
+  - paragraph: Hasło jest wymagane
+  - checkbox "Zapamiętaj mnie"
+  - text: Zapamiętaj mnie
+  - link "Zapomniałeś hasła?":
+    - /url: /auth/forgot-password
+  - button "Zaloguj się"
+  - text: Nie masz jeszcze konta?
+  - link "Zarejestruj się":
+    - /url: /auth/register?returnUrl=%2Fcollections
 ```
 
 # Test source

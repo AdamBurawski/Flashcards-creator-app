@@ -40,6 +40,110 @@ Call log:
   - button "Pokaż szczegóły"
   - heading "Witaj, a.burawski@wp.pl!" [level=2]
   - paragraph: Twoje kolekcje fiszek są wyświetlane poniżej.
+  - heading "Import 1746640378961-8919" [level=3]
+  - text: 0 fiszek
+  - paragraph: Kolekcja do testowania importu fiszek
+  - text: "Ostatnia aktualizacja: 7 maj 2025, 20:02"
+  - link "Przeglądaj":
+    - /url: /collections/39
+  - link "Ucz się":
+    - /url: /flashcards/learn/39
+  - heading "Import 1746640957661-2749" [level=3]
+  - text: 5 fiszek
+  - paragraph: Kolekcja do testowania importu fiszek
+  - text: "Ostatnia aktualizacja: 7 maj 2025, 20:02"
+  - link "Przeglądaj":
+    - /url: /collections/41
+  - link "Ucz się":
+    - /url: /flashcards/learn/41
+  - heading "Kolekcja 1746640957738-1127" [level=3]
+  - text: 0 fiszek
+  - paragraph: Opis testowej kolekcji utworzonej przez test e2e
+  - text: "Ostatnia aktualizacja: 7 maj 2025, 20:02"
+  - link "Przeglądaj":
+    - /url: /collections/42
+  - link "Ucz się":
+    - /url: /flashcards/learn/42
+  - heading "Import 1746640302151-2820" [level=3]
+  - text: 0 fiszek
+  - paragraph: Kolekcja do testowania importu fiszek
+  - text: "Ostatnia aktualizacja: 7 maj 2025, 19:53"
+  - link "Przeglądaj":
+    - /url: /collections/37
+  - link "Ucz się":
+    - /url: /flashcards/learn/37
+  - heading "Kolekcja 1746640379273-4625" [level=3]
+  - text: 0 fiszek
+  - paragraph: Opis testowej kolekcji utworzonej przez test e2e
+  - text: "Ostatnia aktualizacja: 7 maj 2025, 19:52"
+  - link "Przeglądaj":
+    - /url: /collections/40
+  - link "Ucz się":
+    - /url: /flashcards/learn/40
+  - heading "Import 1746640248500-5542" [level=3]
+  - text: 0 fiszek
+  - paragraph: Kolekcja do testowania importu fiszek
+  - text: "Ostatnia aktualizacja: 7 maj 2025, 19:51"
+  - link "Przeglądaj":
+    - /url: /collections/36
+  - link "Ucz się":
+    - /url: /flashcards/learn/36
+  - heading "Kolekcja 1746640302176-2986" [level=3]
+  - text: 0 fiszek
+  - paragraph: Opis testowej kolekcji utworzonej przez test e2e
+  - text: "Ostatnia aktualizacja: 7 maj 2025, 19:51"
+  - link "Przeglądaj":
+    - /url: /collections/38
+  - link "Ucz się":
+    - /url: /flashcards/learn/38
+  - heading "Import 1746639847707-2545" [level=3]
+  - text: 0 fiszek
+  - paragraph: Kolekcja do testowania importu fiszek
+  - text: "Ostatnia aktualizacja: 7 maj 2025, 19:50"
+  - link "Przeglądaj":
+    - /url: /collections/34
+  - link "Ucz się":
+    - /url: /flashcards/learn/34
+  - heading "Kolekcja 1746640248433-3752" [level=3]
+  - text: 0 fiszek
+  - paragraph: Opis testowej kolekcji utworzonej przez test e2e
+  - text: "Ostatnia aktualizacja: 7 maj 2025, 19:50"
+  - link "Przeglądaj":
+    - /url: /collections/35
+  - link "Ucz się":
+    - /url: /flashcards/learn/35
+  - heading "Import 1746639820089-4196" [level=3]
+  - text: 0 fiszek
+  - paragraph: Kolekcja do testowania importu fiszek
+  - text: "Ostatnia aktualizacja: 7 maj 2025, 19:44"
+  - link "Przeglądaj":
+    - /url: /collections/33
+  - link "Ucz się":
+    - /url: /flashcards/learn/33
+  - heading "Import 1746637294647-3844" [level=3]
+  - text: 0 fiszek
+  - paragraph: Kolekcja do testowania importu fiszek
+  - text: "Ostatnia aktualizacja: 7 maj 2025, 19:43"
+  - link "Przeglądaj":
+    - /url: /collections/24
+  - link "Ucz się":
+    - /url: /flashcards/learn/24
+  - heading "Kolekcja 1746639817878-1714" [level=3]
+  - text: 0 fiszek
+  - paragraph: Opis testowej kolekcji utworzonej przez test e2e
+  - text: "Ostatnia aktualizacja: 7 maj 2025, 19:43"
+  - link "Przeglądaj":
+    - /url: /collections/32
+  - link "Ucz się":
+    - /url: /flashcards/learn/32
+  - heading "Kolekcja 1746639399942-7459" [level=3]
+  - text: 0 fiszek
+  - paragraph: Opis testowej kolekcji utworzonej przez test e2e
+  - text: "Ostatnia aktualizacja: 7 maj 2025, 19:36"
+  - link "Przeglądaj":
+    - /url: /collections/31
+  - link "Ucz się":
+    - /url: /flashcards/learn/31
   - heading "Import 1746639133479-2755" [level=3]
   - text: 0 fiszek
   - paragraph: Kolekcja do testowania importu fiszek
@@ -96,14 +200,6 @@ Call log:
     - /url: /collections/22
   - link "Ucz się":
     - /url: /flashcards/learn/22
-  - heading "Import 1746637294647-3844" [level=3]
-  - text: 5 fiszek
-  - paragraph: Kolekcja do testowania importu fiszek
-  - text: "Ostatnia aktualizacja: 7 maj 2025, 19:01"
-  - link "Przeglądaj":
-    - /url: /collections/24
-  - link "Ucz się":
-    - /url: /flashcards/learn/24
   - heading "Kolekcja 1746637294544-4114" [level=3]
   - text: 0 fiszek
   - paragraph: Opis testowej kolekcji utworzonej przez test e2e
