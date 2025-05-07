@@ -77,7 +77,7 @@ export default function NewCollectionButton() {
         .from("collections")
         .insert({
           name: formData.name,
-          description: formData.description || null,
+          description: formData.description || "",
           user_id: userId,
           flashcard_count: 0,
         })
@@ -126,20 +126,37 @@ export default function NewCollectionButton() {
 
   return (
     <>
-      <Button onClick={() => setIsModalOpen(true)} className="flex items-center gap-2">
+      <Button
+        onClick={() => setIsModalOpen(true)}
+        className="flex items-center gap-2"
+        data-test-id="new-collection-button"
+      >
         <span>+</span> Nowa kolekcja
       </Button>
 
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+          data-test-id="new-collection-modal"
+        >
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
             <h3 className="text-xl font-semibold mb-4">Utwórz nową kolekcję</h3>
 
-            <form onSubmit={handleSubmit}>
-              {error && <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 rounded">{error}</div>}
+            <form onSubmit={handleSubmit} data-test-id="new-collection-form">
+              {error && (
+                <div
+                  className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 rounded"
+                  data-test-id="error-message"
+                >
+                  {error}
+                </div>
+              )}
 
               {showSuccessMessage && (
-                <div className="mb-4 p-3 bg-green-50 border border-green-200 text-green-600 rounded">
+                <div
+                  className="mb-4 p-3 bg-green-50 border border-green-200 text-green-600 rounded"
+                  data-test-id="success-message"
+                >
                   Kolekcja została utworzona pomyślnie!
                 </div>
               )}
@@ -164,6 +181,7 @@ export default function NewCollectionButton() {
                   onChange={handleChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md"
                   placeholder="np. Język hiszpański - podstawy"
+                  data-test-id="collection-name-input"
                 />
               </div>
 
@@ -179,14 +197,21 @@ export default function NewCollectionButton() {
                   className="w-full px-3 py-2 border border-gray-300 rounded-md"
                   rows={3}
                   placeholder="Opisz zawartość lub cel tej kolekcji fiszek"
+                  data-test-id="collection-description-input"
                 />
               </div>
 
               <div className="flex justify-end gap-2 mt-6">
-                <Button type="button" onClick={() => setIsModalOpen(false)} variant="outline" disabled={isSubmitting}>
+                <Button
+                  type="button"
+                  onClick={() => setIsModalOpen(false)}
+                  variant="outline"
+                  disabled={isSubmitting}
+                  data-test-id="cancel-button"
+                >
                   Anuluj
                 </Button>
-                <Button type="submit" disabled={isSubmitting}>
+                <Button type="submit" disabled={isSubmitting} data-test-id="create-collection-button">
                   {isSubmitting ? "Tworzenie..." : "Utwórz kolekcję"}
                 </Button>
               </div>
@@ -196,7 +221,12 @@ export default function NewCollectionButton() {
       )}
 
       {isImportDialogOpen && newCollectionId && (
-        <ImportFlashcardsDialog collectionId={newCollectionId} onClose={handleFinish} onSuccess={handleFinish} />
+        <ImportFlashcardsDialog
+          collectionId={newCollectionId}
+          onClose={handleFinish}
+          onSuccess={handleFinish}
+          data-test-id="import-flashcards-dialog"
+        />
       )}
     </>
   );

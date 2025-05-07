@@ -9,24 +9,33 @@ interface ImportFlashcardsDialogProps {
 }
 
 interface Generation {
-  id: string;
-  title: string;
+  id: number;
+  title?: string;
   created_at: string;
   user_id: string;
+  source_text_hash?: string;
+  source_text_length?: number;
+  model?: string;
+  generation_duration?: number;
+  generated_count?: number;
+  accepted_edited_count?: number | null;
+  accepted_unedited_count?: number | null;
+  updated_at?: string;
 }
 
 interface Flashcard {
   id: number;
   front: string;
   back: string;
-  source: string;
-  generation_id: string;
-  created_at: string;
+  source?: string;
+  generation_id?: number | string;
+  created_at?: string;
+  [key: string]: any; // Dla dodatkowych pól zwracanych przez API
 }
 
 export default function ImportFlashcardsDialog({ collectionId, onClose, onSuccess }: ImportFlashcardsDialogProps) {
   const [generations, setGenerations] = useState<Generation[]>([]);
-  const [selectedGeneration, setSelectedGeneration] = useState<string | null>(null);
+  const [selectedGeneration, setSelectedGeneration] = useState<number | null>(null);
   const [flashcards, setFlashcards] = useState<Flashcard[]>([]);
   const [selectedFlashcards, setSelectedFlashcards] = useState<number[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -95,15 +104,27 @@ export default function ImportFlashcardsDialog({ collectionId, onClose, onSucces
 
         // Użyj funkcji RPC zamiast bezpośredniego zapytania
         const { data, error } = await supabase.rpc("get_available_flashcards_for_import", {
-          gen_id: parseInt(selectedGeneration),
+          gen_id: selectedGeneration,
         });
 
         if (error) throw error;
 
         if (data) {
-          setFlashcards(data);
+          // Upewnij się, że dane z API mają wymagane pola dla typu Flashcard
+          const validatedFlashcards = data.map((item: any) => ({
+            id: item.id,
+            front: item.front,
+            back: item.back,
+            source: item.source || "",
+            generation_id: item.generation_id,
+            created_at: item.created_at,
+            // Pozostałe pola są zachowane dzięki [key: string]: any
+            ...item,
+          })) as Flashcard[];
+
+          setFlashcards(validatedFlashcards);
           // Domyślnie wybierz wszystkie fiszki
-          setSelectedFlashcards(data.map((f) => f.id));
+          setSelectedFlashcards(validatedFlashcards.map((f) => f.id));
         }
       } catch (err) {
         console.error("Błąd podczas pobierania fiszek:", err);
@@ -170,11 +191,21 @@ export default function ImportFlashcardsDialog({ collectionId, onClose, onSucces
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+      data-test-id="import-flashcards-dialog"
+    >
       <div className="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
         <h3 className="text-xl font-semibold mb-4">Importuj wygenerowane fiszki</h3>
 
-        {error && <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 rounded">{error}</div>}
+        {error && (
+          <div
+            className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 rounded"
+            data-test-id="import-error-message"
+          >
+            {error}
+          </div>
+        )}
 
         {isLoading ? (
           <div className="py-10 text-center">
@@ -192,8 +223,9 @@ export default function ImportFlashcardsDialog({ collectionId, onClose, onSucces
               <select
                 className="w-full px-3 py-2 border border-gray-300 rounded-md"
                 value={selectedGeneration || ""}
-                onChange={(e) => setSelectedGeneration(e.target.value)}
+                onChange={(e) => setSelectedGeneration(e.target.value ? parseInt(e.target.value) : null)}
                 disabled={isGenerationsLoading}
+                data-test-id="generation-select"
               >
                 {generations.map((gen) => (
                   <option key={gen.id} value={gen.id}>
@@ -213,6 +245,7 @@ export default function ImportFlashcardsDialog({ collectionId, onClose, onSucces
                     size="sm"
                     onClick={selectAllFlashcards}
                     disabled={isFlashcardsLoading || flashcards.length === 0}
+                    data-test-id="select-all-flashcards"
                   >
                     Zaznacz wszystkie
                   </Button>
@@ -222,6 +255,7 @@ export default function ImportFlashcardsDialog({ collectionId, onClose, onSucces
                     size="sm"
                     onClick={deselectAllFlashcards}
                     disabled={isFlashcardsLoading || selectedFlashcards.length === 0}
+                    data-test-id="deselect-all-flashcards"
                   >
                     Odznacz wszystkie
                   </Button>
@@ -239,13 +273,17 @@ export default function ImportFlashcardsDialog({ collectionId, onClose, onSucces
                   </p>
                 </div>
               ) : (
-                <div className="mt-3 border border-gray-200 rounded-md divide-y max-h-[50vh] overflow-y-auto">
+                <div
+                  className="mt-3 border border-gray-200 rounded-md divide-y max-h-[50vh] overflow-y-auto"
+                  data-test-id="flashcards-list"
+                >
                   {flashcards.map((flashcard) => (
                     <div
                       key={flashcard.id}
                       className={`p-3 flex items-start gap-3 ${
                         selectedFlashcards.includes(flashcard.id) ? "bg-blue-50" : ""
                       }`}
+                      data-test-id={`flashcard-item-${flashcard.id}`}
                     >
                       <input
                         type="checkbox"
@@ -253,6 +291,7 @@ export default function ImportFlashcardsDialog({ collectionId, onClose, onSucces
                         checked={selectedFlashcards.includes(flashcard.id)}
                         onChange={() => toggleFlashcard(flashcard.id)}
                         className="mt-1"
+                        data-test-id={`flashcard-checkbox-${flashcard.id}`}
                       />
                       <div>
                         <div className="font-medium">{flashcard.front}</div>
@@ -268,10 +307,20 @@ export default function ImportFlashcardsDialog({ collectionId, onClose, onSucces
             </div>
 
             <div className="flex justify-end gap-2 mt-6">
-              <Button type="button" onClick={onClose} variant="outline" disabled={isImporting}>
+              <Button
+                type="button"
+                onClick={onClose}
+                variant="outline"
+                disabled={isImporting}
+                data-test-id="close-import-dialog"
+              >
                 Anuluj
               </Button>
-              <Button onClick={importFlashcards} disabled={isImporting || selectedFlashcards.length === 0}>
+              <Button
+                onClick={importFlashcards}
+                disabled={isImporting || selectedFlashcards.length === 0}
+                data-test-id="import-flashcards-button"
+              >
                 {isImporting ? "Importowanie..." : `Importuj wybrane fiszki (${selectedFlashcards.length})`}
               </Button>
             </div>
