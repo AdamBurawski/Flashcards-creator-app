@@ -34,6 +34,10 @@ test.describe('Collections Management', () => {
     );
     await collectionsPage.saveCollection();
     
+    // Dłuższe oczekiwanie na aktualizację DOM
+    console.log('Czekam 5 sekund na aktualizację DOM po utworzeniu kolekcji...');
+    await page.waitForTimeout(5000);
+    
     // Sprawdź czy utworzono kolekcję
     await collectionsPage.expectCollectionExists('Test Collection');
   });

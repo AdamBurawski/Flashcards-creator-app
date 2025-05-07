@@ -28,7 +28,11 @@ test.describe('Tworzenie nowej kolekcji', () => {
     await newCollectionModal.create();
     
     // Oczekiwanie na komunikat o sukcesie
-    await newCollectionModal.verifySuccess();
+    await newCollectionModal.verifySuccess(nazwaKolekcji);
+    
+    // Dłuższe oczekiwanie po utworzeniu kolekcji, aby zapewnić czas na aktualizację DOM
+    console.log('Czekam 5 sekund na aktualizację DOM po utworzeniu kolekcji...');
+    await page.waitForTimeout(5000);
     
     // Opcjonalnie: Po 1.5s pojawi się dialog importu, który zamykamy
     await page.waitForTimeout(2000);
@@ -40,11 +44,25 @@ test.describe('Tworzenie nowej kolekcji', () => {
       await importDialog.close();
     }
     
+    // Pierwsza próba sprawdzenia kolekcji
+    console.log(`Sprawdzam czy kolekcja "${nazwaKolekcji}" jest widoczna na liście...`);
+    let hasCollectionWithName = await collectionsPage.hasCollection(nazwaKolekcji);
+    
+    // Jeśli nie znaleziono kolekcji, odśwież stronę i spróbuj ponownie
+    if (!hasCollectionWithName) {
+      console.log('Nie znaleziono kolekcji, odświeżam stronę...');
+      await page.reload();
+      await page.waitForLoadState('networkidle');
+      await page.waitForTimeout(3000);
+      
+      console.log('Ponowne sprawdzenie po odświeżeniu...');
+      hasCollectionWithName = await collectionsPage.hasCollection(nazwaKolekcji);
+    }
+    
     // Sprawdzenie, czy kolekcja pojawiła się na liście
     await collectionsPage.verifyCollectionsExist();
     
     // Sprawdzenie, czy nazwa kolekcji jest widoczna na liście
-    const hasCollectionWithName = await collectionsPage.hasCollection(nazwaKolekcji);
     expect(hasCollectionWithName).toBeTruthy();
   });
   

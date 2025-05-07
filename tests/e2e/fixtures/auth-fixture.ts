@@ -1,4 +1,5 @@
 import { test as base } from '@playwright/test';
+import type { Page } from '@playwright/test';
 import { CollectionsPage } from '../pages/collections-page';
 import { NewCollectionModal } from '../pages/new-collection-modal';
 import { ImportFlashcardsDialog } from '../pages/import-flashcards-dialog';
@@ -29,10 +30,18 @@ console.log('Dane autoryzacyjne (zanonimizowane):', {
   passwordLength: TEST_USER.password ? TEST_USER.password.length : 0
 });
 
+// Definiujemy typy dla naszych fixtures
+type CustomFixtures = {
+  authenticatedPage: Page;
+  collectionsPage: CollectionsPage;
+  newCollectionModal: NewCollectionModal;
+  importDialog: ImportFlashcardsDialog;
+};
+
 /**
  * Rozszerzenie bazowego testu o fixture do autoryzacji i nowe page objects
  */
-export const test = base.extend({
+export const test = base.extend<CustomFixtures>({
   // Rozszerzamy Page o automatyczne logowanie
   authenticatedPage: async ({ page }, use) => {
     try {
@@ -59,7 +68,9 @@ export const test = base.extend({
           'input[type="submit"]'
         ];
         
-        let emailInput, passwordInput, loginButton;
+        let emailInput: string | any = null;
+        let passwordInput: string | any = null;
+        let loginButton: string | any = null;
         
         // Znajdź odpowiednie selektory
         for (const selector of emailInputs) {
@@ -117,14 +128,27 @@ export const test = base.extend({
         if (emailInput && passwordInput && loginButton) {
           console.log('Wypełniam formularz logowania...');
           // Wypełnij formularz
-          await page.locator(emailInput).fill(TEST_USER.email);
-          await page.locator(passwordInput).fill(TEST_USER.password);
+          if (typeof emailInput === 'string') {
+            await page.locator(emailInput).fill(TEST_USER.email);
+          } else {
+            await emailInput.fill(TEST_USER.email);
+          }
+          
+          if (typeof passwordInput === 'string') {
+            await page.locator(passwordInput).fill(TEST_USER.password);
+          } else {
+            await passwordInput.fill(TEST_USER.password);
+          }
           
           // Zrób zrzut ekranu formularza logowania (debug)
           await page.screenshot({ path: 'login-form-filled.png' });
           
           // Kliknij przycisk logowania
-          await page.locator(loginButton).click();
+          if (typeof loginButton === 'string') {
+            await page.locator(loginButton).click();
+          } else {
+            await loginButton.click();
+          }
           
           // Czekamy na przekierowanie po logowaniu
           await wait(3000);
@@ -139,7 +163,7 @@ export const test = base.extend({
           
           // Alternatywne podejście: bezpośrednie wywołanie API logowania
           console.log('Próba logowania przez API...');
-          await page.evaluate(async (user) => {
+          await page.evaluate(async (user: typeof TEST_USER) => {
             try {
               const response = await fetch('/api/auth/login', {
                 method: 'POST',

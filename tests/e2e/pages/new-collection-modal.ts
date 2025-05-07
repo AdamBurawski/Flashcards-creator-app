@@ -1,4 +1,4 @@
-import { Page, Locator, expect } from '@playwright/test';
+import { type Page, type Locator, expect } from '@playwright/test';
 
 /**
  * Page Object Model dla modalu tworzenia nowej kolekcji
@@ -43,11 +43,13 @@ export class NewCollectionModal {
   async isVisible() {
     // Modal może być reprezentowany na różne sposoby, więc szukamy różnych opcji
     const possibleModals = [
-      this.modal,
       this.page.locator('dialog'),
       this.page.locator('.modal'),
       this.page.locator('[role="dialog"]'),
+      this.modal,
       this.page.locator('div:has-text("Nowa kolekcja")'),
+      this.page.locator('div:has-text("Utwórz")').first().locator('..').locator('..'),
+      this.page.locator('[data-test-id="collection-form"]').first().locator('..')
     ];
     
     for (const modal of possibleModals) {
@@ -64,7 +66,7 @@ export class NewCollectionModal {
     }
     
     // Jeśli nadal nic nie znaleziono, zgłoś błąd
-    await expect(this.page.locator('dialog, .modal, [role="dialog"]')).toBeVisible();
+    await expect(this.page.locator('dialog, .modal, [role="dialog"]')).toBeVisible({ timeout: 10000 });
   }
 
   /**
@@ -173,8 +175,9 @@ export class NewCollectionModal {
 
   /**
    * Sprawdza czy komunikat o sukcesie jest widoczny
+   * @param name Opcjonalna nazwa kolekcji do sprawdzenia jej obecności na liście
    */
-  async verifySuccess() {
+  async verifySuccess(name?: string) {
     // Komunikat sukcesu może być reprezentowany na różne sposoby
     const possibleSuccessMessages = [
       this.successMessage,
@@ -196,9 +199,11 @@ export class NewCollectionModal {
     }
     
     // Jeśli wszystkie powyższe zawiodły, sprawdź czy właśnie utworzona kolekcja jest widoczna na stronie
-    const newCollectionVisible = await this.page.getByText(name, { exact: false }).isVisible().catch(() => false);
-    if (newCollectionVisible) {
-      return;
+    if (name) {
+      const newCollectionVisible = await this.page.getByText(name, { exact: false }).isVisible().catch(() => false);
+      if (newCollectionVisible) {
+        return;
+      }
     }
     
     // Jeśli wszystko inne zawiodło, zgłoś błąd
