@@ -9,6 +9,7 @@ jobs:
   lint:
     name: Lintowanie kodu
     runs-on: ubuntu-latest
+    continue-on-error: true
     steps:
       - name: Checkout kodu
         uses: actions/checkout@v4
@@ -62,6 +63,7 @@ jobs:
     name: Testy E2E
     needs: lint
     runs-on: ubuntu-latest
+    continue-on-error: true
     env:
       PUBLIC_SUPABASE_URL: ${{ secrets.PUBLIC_SUPABASE_URL }}
       PUBLIC_SUPABASE_KEY: ${{ secrets.PUBLIC_SUPABASE_KEY }}

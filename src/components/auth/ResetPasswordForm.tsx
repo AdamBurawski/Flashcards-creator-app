@@ -73,14 +73,13 @@ const ResetPasswordForm = ({ token }: ResetPasswordFormProps) => {
 
     try {
       // Komunikacja z API będzie zaimplementowana później
-      console.log("Reset password form submitted", { ...formData, token });
 
       // Symulacja opóźnienia
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
       // Ustawienie stanu sukcesu
       setIsSuccess(true);
-    } catch (error) {
+    } catch {
       setFormErrors({
         general: "Wystąpił błąd podczas resetowania hasła. Spróbuj ponownie lub uzyskaj nowy link resetujący.",
       });

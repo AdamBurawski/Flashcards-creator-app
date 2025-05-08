@@ -2,10 +2,14 @@ import { useState } from "react";
 import { Button } from "../ui/button";
 import { supabase } from "../../db/supabase.client";
 
+interface Session {
+  access_token: string;
+  // Można dodać inne pola sesji, jeśli są potrzebne
+}
+
 // Synchronizuj sesję z serwerem
-const syncSessionWithServer = async (session: any) => {
+const syncSessionWithServer = async (session: Session) => {
   try {
-    console.log("Synchronizacja sesji po rejestracji...");
     const response = await fetch("/api/auth/sync-session", {
       method: "POST",
       headers: {
@@ -15,10 +19,8 @@ const syncSessionWithServer = async (session: any) => {
     });
 
     const data = await response.json();
-    console.log("Odpowiedź z synchronizacji po rejestracji:", data);
     return data.success;
   } catch (error) {
-    console.error("Błąd podczas synchronizacji sesji po rejestracji:", error);
     return false;
   }
 };
@@ -97,8 +99,6 @@ const RegisterForm = ({ returnUrl = "/" }: RegisterFormProps) => {
     setFormErrors({});
 
     try {
-      console.log("Próba rejestracji z danymi:", formData.email);
-
       // Użyj bezpośrednio Supabase do rejestracji
       const { data, error } = await supabase.auth.signUp({
         email: formData.email,
@@ -106,15 +106,10 @@ const RegisterForm = ({ returnUrl = "/" }: RegisterFormProps) => {
       });
 
       if (error) {
-        console.error("Błąd rejestracji Supabase:", error);
         throw error;
       }
 
-      console.log("Dane rejestracji:", data);
-
       if (data.user) {
-        console.log("Zarejestrowano użytkownika:", data.user);
-
         // Po rejestracji synchronizuj sesję z serwerem
         if (data.session) {
           await syncSessionWithServer(data.session);

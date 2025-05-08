@@ -8,7 +8,6 @@ const syncSessionWithServer = async () => {
   try {
     const { data } = await supabase.auth.getSession();
     if (data.session) {
-      console.log("Synchronizacja sesji z serwerem w AuthMenu...");
       const response = await fetch("/api/auth/sync-session", {
         method: "POST",
         headers: {
@@ -18,12 +17,10 @@ const syncSessionWithServer = async () => {
       });
 
       const responseData = await response.json();
-      console.log("Odpowiedź z synchronizacji w AuthMenu:", responseData);
       return responseData.success;
     }
     return false;
   } catch (error) {
-    console.error("Błąd podczas synchronizacji sesji w AuthMenu:", error);
     return false;
   }
 };

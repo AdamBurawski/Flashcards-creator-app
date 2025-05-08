@@ -69,8 +69,7 @@ export default function CollectionDetails({ collection, flashcards }: Collection
       setTimeout(() => {
         window.location.reload();
       }, 1500);
-    } catch (err) {
-      console.error("Błąd podczas aktualizacji kolekcji:", err);
+    } catch {
       setError("Nie udało się zaktualizować kolekcji.");
     } finally {
       setIsSaving(false);
@@ -167,7 +166,7 @@ export default function CollectionDetails({ collection, flashcards }: Collection
         ) : (
           <div className="space-y-4">
             {flashcards.map((flashcard) => (
-              <FlashcardItem key={flashcard.id} flashcard={flashcard} collectionId={collection.id} />
+              <FlashcardItem key={flashcard.id} flashcard={flashcard} />
             ))}
           </div>
         )}

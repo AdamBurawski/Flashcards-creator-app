@@ -10,8 +10,8 @@ const LogoutButton = () => {
     try {
       setIsLoggingOut(true);
       await logout();
-    } catch (error) {
-      console.error("Błąd podczas wylogowywania:", error);
+    } catch {
+      // Można tutaj dodać powiadomienie dla użytkownika o błędzie
     } finally {
       setIsLoggingOut(false);
     }

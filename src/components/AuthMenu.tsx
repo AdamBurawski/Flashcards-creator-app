@@ -10,11 +10,9 @@ interface AuthMenuProps {
 // Synchronizuj sesję z serwerem
 const syncSessionWithServer = async () => {
   try {
-    console.log("Synchronizacja sesji z menu...");
     const session = (await supabase.auth.getSession()).data.session;
 
     if (!session) {
-      console.log("Brak sesji do synchronizacji");
       return false;
     }
 
@@ -28,10 +26,8 @@ const syncSessionWithServer = async () => {
     });
 
     const data = await response.json();
-    console.log("Odpowiedź z synchronizacji:", data);
     return data.success;
   } catch (error) {
-    console.error("Błąd podczas synchronizacji sesji:", error);
     return false;
   }
 };

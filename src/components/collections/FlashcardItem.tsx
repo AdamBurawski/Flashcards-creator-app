@@ -14,10 +14,9 @@ interface Flashcard {
 
 interface FlashcardItemProps {
   flashcard: Flashcard;
-  collectionId: number;
 }
 
-export default function FlashcardItem({ flashcard, collectionId }: FlashcardItemProps) {
+export default function FlashcardItem({ flashcard }: FlashcardItemProps) {
   const [isFlipped, setIsFlipped] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -73,8 +72,7 @@ export default function FlashcardItem({ flashcard, collectionId }: FlashcardItem
 
       // Sukces - odśwież stronę
       window.location.reload();
-    } catch (err) {
-      console.error("Błąd podczas zapisywania fiszki:", err);
+    } catch {
       setError("Nie udało się zapisać zmian.");
     } finally {
       setIsSaving(false);
@@ -95,8 +93,7 @@ export default function FlashcardItem({ flashcard, collectionId }: FlashcardItem
 
       // Sukces - odśwież stronę
       window.location.reload();
-    } catch (err) {
-      console.error("Błąd podczas usuwania fiszki:", err);
+    } catch {
       setError("Nie udało się usunąć fiszki.");
     } finally {
       setIsDeleting(false);
@@ -109,8 +106,11 @@ export default function FlashcardItem({ flashcard, collectionId }: FlashcardItem
         {error && <div className="mb-3 p-2 bg-red-50 border border-red-200 text-red-600 rounded text-sm">{error}</div>}
 
         <div className="mb-3">
-          <label className="block text-sm font-medium text-gray-700 mb-1">Przód</label>
+          <label htmlFor={`flashcard-front-${flashcard.id}`} className="block text-sm font-medium text-gray-700 mb-1">
+            Przód
+          </label>
           <textarea
+            id={`flashcard-front-${flashcard.id}`}
             name="front"
             value={editedFlashcard.front}
             onChange={handleChange}
@@ -120,8 +120,11 @@ export default function FlashcardItem({ flashcard, collectionId }: FlashcardItem
         </div>
 
         <div className="mb-3">
-          <label className="block text-sm font-medium text-gray-700 mb-1">Tył</label>
+          <label htmlFor={`flashcard-back-${flashcard.id}`} className="block text-sm font-medium text-gray-700 mb-1">
+            Tył
+          </label>
           <textarea
+            id={`flashcard-back-${flashcard.id}`}
             name="back"
             value={editedFlashcard.back}
             onChange={handleChange}
@@ -145,8 +148,15 @@ export default function FlashcardItem({ flashcard, collectionId }: FlashcardItem
   return (
     <div className="border border-gray-200 rounded-lg hover:shadow-md transition">
       <div
+        role="button"
+        tabIndex={0}
         className={`p-4 cursor-pointer ${isFlipped ? "bg-gray-50" : "bg-white"}`}
         onClick={() => setIsFlipped(!isFlipped)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            setIsFlipped(!isFlipped);
+          }
+        }}
       >
         <div className="flex justify-between items-start">
           <div className="flex-1">

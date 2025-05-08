@@ -36,14 +36,13 @@ const ForgotPasswordForm = () => {
 
     try {
       // Komunikacja z API będzie zaimplementowana później
-      console.log("Forgot password form submitted", { email });
 
       // Symulacja opóźnienia
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
       // Ustawienie stanu potwierdzenia wysłania
       setIsSubmitted(true);
-    } catch (error) {
+    } catch {
       setFormError("Wystąpił błąd podczas wysyłania instrukcji resetowania hasła. Spróbuj ponownie później.");
     } finally {
       setIsSubmitting(false);

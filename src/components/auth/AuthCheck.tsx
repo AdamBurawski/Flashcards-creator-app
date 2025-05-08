@@ -1,14 +1,26 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { supabase } from "../../db/supabase.client";
 import { Button } from "../ui/button";
 
+interface AuthStatus {
+  isLoggedIn: boolean;
+  hasToken: boolean;
+  timestamp: string;
+  user?: {
+    id: string;
+    email: string;
+    last_sign_in_at: string;
+  };
+  error?: string;
+}
+
 export default function AuthCheck() {
-  const [status, setStatus] = useState<any>(null);
+  const [status, setStatus] = useState<AuthStatus | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [token, setToken] = useState<string | null>(null);
 
   // Funkcja do pobrania tokenu z Supabase
-  const getToken = async () => {
+  const getToken = useCallback(async () => {
     try {
       const { data } = await supabase.auth.getSession();
       if (data.session) {
@@ -17,39 +29,42 @@ export default function AuthCheck() {
       }
       return null;
     } catch (error) {
-      console.error("Błąd podczas pobierania tokenu:", error);
       return null;
     }
-  };
+  }, []);
 
   // Funkcja do sprawdzenia statusu logowania
-  const checkStatus = async () => {
+  const checkStatus = useCallback(async () => {
     setIsLoading(true);
     try {
       // Pobierz token z Supabase
-      const token = await getToken();
+      const currentToken = await getToken();
 
       // Wywołaj endpoint statusu z tokenem w nagłówku
       const response = await fetch("/api/auth/status", {
         headers: {
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          ...(currentToken ? { Authorization: `Bearer ${currentToken}` } : {}),
         },
       });
 
       const data = await response.json();
       setStatus(data);
     } catch (error) {
-      console.error("Błąd podczas sprawdzania statusu:", error);
-      setStatus({ error: "Wystąpił błąd podczas sprawdzania statusu" });
+      setStatus({
+        error: "Wystąpił błąd podczas sprawdzania statusu",
+        isLoggedIn: false,
+        hasToken: false,
+        timestamp: new Date().toISOString(),
+      });
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [getToken]);
 
   // Sprawdź status po załadowaniu strony
   useEffect(() => {
     checkStatus();
-  }, []);
+  }, [checkStatus]);
 
   return (
     <div className="p-6 max-w-lg mx-auto bg-white rounded-lg shadow-md mt-10">

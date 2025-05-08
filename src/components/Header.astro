@@ -1,6 +1,5 @@
 ---
 // Header.astro - Komponent nagłówka z obsługą stanu autentykacji
-import LogoutButton from "./auth/LogoutButton";
 import AuthMenu from "./auth/AuthMenu";
 
 // Pobierz dane użytkownika z locals (przyda się tylko dla początkowego renderowania)
@@ -39,7 +38,7 @@ const isAuthenticated = !!user;
         window.location.href = "/";
       }
     } catch (error) {
-      console.error("Błąd podczas wylogowywania:", error);
+      // Można tutaj dodać obsługę błędu, np. wyświetlenie komunikatu użytkownikowi
     }
   });
 </script>
