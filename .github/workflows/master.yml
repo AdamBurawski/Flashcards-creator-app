@@ -10,8 +10,13 @@ jobs:
     name: Test i Build
     runs-on: ubuntu-latest
     env:
+      # Zmienne dla klienta (z prefiksem PUBLIC_)
       PUBLIC_SUPABASE_URL: ${{ secrets.PUBLIC_SUPABASE_URL }}
       PUBLIC_SUPABASE_KEY: ${{ secrets.PUBLIC_SUPABASE_KEY }}
+      # Zmienne dla serwera (bez prefiksu PUBLIC_)
+      SUPABASE_URL: ${{ secrets.PUBLIC_SUPABASE_URL }}
+      SUPABASE_KEY: ${{ secrets.PUBLIC_SUPABASE_KEY }}
+      # Pozostałe zmienne
       E2E_USERNAME_ID: ${{ secrets.E2E_USERNAME_ID }}
       E2E_USERNAME: ${{ secrets.E2E_USERNAME }}
       E2E_PASSWORD: ${{ secrets.E2E_PASSWORD }}
@@ -46,6 +51,8 @@ jobs:
           cat > .env.test << EOF
           PUBLIC_SUPABASE_URL=${{ secrets.PUBLIC_SUPABASE_URL }}
           PUBLIC_SUPABASE_KEY=${{ secrets.PUBLIC_SUPABASE_KEY }}
+          SUPABASE_URL=${{ secrets.PUBLIC_SUPABASE_URL }}
+          SUPABASE_KEY=${{ secrets.PUBLIC_SUPABASE_KEY }}
           E2E_USERNAME_ID=${{ secrets.E2E_USERNAME_ID }}
           E2E_USERNAME=${{ secrets.E2E_USERNAME }}
           E2E_PASSWORD=${{ secrets.E2E_PASSWORD }}
@@ -58,6 +65,8 @@ jobs:
           echo "Sprawdzanie zmiennych środowiskowych:"
           echo "PUBLIC_SUPABASE_URL jest ustawiony: ${{ env.PUBLIC_SUPABASE_URL != '' }}"
           echo "PUBLIC_SUPABASE_KEY jest ustawiony: ${{ env.PUBLIC_SUPABASE_KEY != '' }}"
+          echo "SUPABASE_URL jest ustawiony: ${{ env.SUPABASE_URL != '' }}"
+          echo "SUPABASE_KEY jest ustawiony: ${{ env.SUPABASE_KEY != '' }}"
 
           # Uruchom testy e2e z bezpośrednim przekazaniem zmiennych
           npm run test:e2e || echo "Testy e2e nie powiodły się, ale kontynuujemy"
