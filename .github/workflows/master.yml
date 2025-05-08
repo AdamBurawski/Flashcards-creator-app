@@ -41,13 +41,13 @@ jobs:
       - name: Uruchomienie testów jednostkowych
         run: npm run test
 
-      # - name: Przygotuj plik .env.test
-      #   run: |
-      #     echo "PUBLIC_SUPABASE_URL=${{ secrets.PUBLIC_SUPABASE_URL }}" > .env.test
-      #     echo "PUBLIC_SUPABASE_KEY=${{ secrets.PUBLIC_SUPABASE_KEY }}" >> .env.test
-      #     echo "E2E_USERNAME_ID=${{ secrets.E2E_USERNAME_ID }}" >> .env.test
-      #     echo "E2E_USERNAME=${{ secrets.E2E_USERNAME }}" >> .env.test
-      #     echo "E2E_PASSWORD=${{ secrets.E2E_PASSWORD }}" >> .env.test
+      - name: Przygotuj plik .env.test
+        run: |
+          echo "PUBLIC_SUPABASE_URL=${{ secrets.PUBLIC_SUPABASE_URL }}" > .env.test
+          echo "PUBLIC_SUPABASE_KEY=${{ secrets.PUBLIC_SUPABASE_KEY }}" >> .env.test
+          echo "E2E_USERNAME_ID=${{ secrets.E2E_USERNAME_ID }}" >> .env.test
+          echo "E2E_USERNAME=${{ secrets.E2E_USERNAME }}" >> .env.test
+          echo "E2E_PASSWORD=${{ secrets.E2E_PASSWORD }}" >> .env.test
 
       - name: Uruchomienie testów e2e
         run: npm run test:e2e
