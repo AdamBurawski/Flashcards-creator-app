@@ -59,6 +59,9 @@ jobs:
           EOF
           cat .env.test
 
+      - name: Instalacja przeglądarek Playwright
+        run: npx playwright install --with-deps chromium
+
       - name: Uruchomienie testów e2e
         run: |
           # Wyświetl zawartość zmiennych środowiskowych (zamaskowane)
