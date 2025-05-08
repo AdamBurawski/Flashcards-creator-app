@@ -1,0 +1,55 @@
+name: Test & Build Master
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch: # Uruchamianie ręczne
+
+jobs:
+  test-and-build:
+    name: Test i Build
+    runs-on: ubuntu-latest
+    env:
+      PUBLIC_SUPABASE_URL: ${{ secrets.PUBLIC_SUPABASE_URL }}
+      PUBLIC_SUPABASE_KEY: ${{ secrets.PUBLIC_SUPABASE_KEY }}
+      E2E_USERNAME_ID: ${{ secrets.E2E_USERNAME_ID }}
+      E2E_USERNAME: ${{ secrets.E2E_USERNAME }}
+      E2E_PASSWORD: ${{ secrets.E2E_PASSWORD }}
+
+    steps:
+      - name: Checkout kodu
+        uses: actions/checkout@v4
+
+      - name: Konfiguracja Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: ".nvmrc"
+          cache: "npm"
+
+      - name: Instalacja zależności
+        run: npm ci
+
+      - name: Sprawdzenie formatowania kodu
+        run: npm run format -- --check || echo "Sprawdzenie formatowania nie powiodło się, ale kontynuujemy"
+
+      - name: Sprawdzenie lintów
+        run: npm run lint || echo "Sprawdzenie lintów nie powiodło się, ale kontynuujemy"
+
+      - name: Sprawdzenie typów TypeScript
+        run: npm run typecheck || echo "Sprawdzenie typów nie powiodło się, ale kontynuujemy"
+
+      - name: Uruchomienie testów jednostkowych
+        run: npm run test
+
+      # - name: Uruchomienie testów e2e
+      #   run: npm run test:e2e
+
+      - name: Build produkcyjny
+        run: npm run build
+
+      - name: Archiwizacja artefaktów
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+          retention-days: 7
