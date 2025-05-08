@@ -31,7 +31,7 @@ export default defineConfig({
   webServer: {
     command: 'npm run dev -- --env-file .env.test',
     url: 'http://localhost:3000',
-    reuseExistingServer: !process.env.CI,
+    reuseExistingServer: true, // !process.env.CI skomentowane
     env: {
       ...process.env, // Przekazuje wszystkie zmienne środowiskowe
       ASTRO_ENV: 'test', // Możesz dodać dodatkowe zmienne
