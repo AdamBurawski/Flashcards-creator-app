@@ -41,8 +41,8 @@ jobs:
       - name: Uruchomienie testów jednostkowych
         run: npm run test
 
-      # - name: Uruchomienie testów e2e
-      #   run: npm run test:e2e
+      - name: Uruchomienie testów e2e
+        run: npm run test:e2e
 
       - name: Build produkcyjny
         run: npm run build
