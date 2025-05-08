@@ -29,14 +29,14 @@ jobs:
       - name: Instalacja zależności
         run: npm ci
 
-      # - name: Sprawdzenie formatowania kodu
-      #   run: npm run format -- --check || echo "Sprawdzenie formatowania nie powiodło się, ale kontynuujemy"
+      - name: Sprawdzenie formatowania kodu
+        run: npm run format -- --check || echo "Sprawdzenie formatowania nie powiodło się, ale kontynuujemy"
 
-      # - name: Sprawdzenie lintów
-      #   run: npm run lint || echo "Sprawdzenie lintów nie powiodło się, ale kontynuujemy"
+      - name: Sprawdzenie lintów
+        run: npm run lint || echo "Sprawdzenie lintów nie powiodło się, ale kontynuujemy"
 
-      # - name: Sprawdzenie typów TypeScript
-      #   run: npm run typecheck || echo "Sprawdzenie typów nie powiodło się, ale kontynuujemy"
+      - name: Sprawdzenie typów TypeScript
+        run: npm run typecheck || echo "Sprawdzenie typów nie powiodło się, ale kontynuujemy"
 
       - name: Uruchomienie testów jednostkowych
         run: npm run test
