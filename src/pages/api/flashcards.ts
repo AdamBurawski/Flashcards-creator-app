@@ -2,7 +2,7 @@ import type { APIRoute } from "astro";
 import { z } from "zod";
 import { createFlashcards, validateGenerationExists } from "../../lib/flashcard.service";
 import type { FlashcardsCreateCommand, FlashcardDto, Source } from "../../types";
-import { DEFAULT_USER_ID, supabaseClient } from "../../db/supabase.client";
+import { DEFAULT_USER_ID } from "../../db/supabase.client";
 import { ErrorSource, logError } from "../../lib/error-logger.service";
 
 export const prerender = false;
@@ -47,7 +47,7 @@ const flashcardsCreateCommandSchema = z.object({
  * @param request The incoming request object
  * @returns The authenticated user ID or null if authentication fails
  */
-async function authenticateUser(request: Request): Promise<string | null> {
+async function authenticateUser(request: Request, locals: any): Promise<string | null> {
   // Get the authorization header
   const authHeader = request.headers.get("authorization");
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -61,8 +61,19 @@ async function authenticateUser(request: Request): Promise<string | null> {
   }
 
   try {
-    // Verify the token using Supabase
-    const supabase = supabaseClient;
+    // Verify the token using Supabase from locals
+    const supabase = locals.supabase;
+    
+    if (!supabase) {
+      await logError({
+        source: ErrorSource.AUTHENTICATION,
+        error_code: "SUPABASE_NOT_AVAILABLE",
+        error_message: "Supabase client not available in authentication",
+        metadata: { token_provided: !!token },
+      });
+      return null;
+    }
+    
     const {
       data: { user },
       error,
@@ -108,7 +119,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
     } 
     // Jeśli nie, spróbuj uwierzytelnić za pomocą nagłówka autoryzacji
     else if (import.meta.env.MODE === "production") {
-      const authUserId = await authenticateUser(request);
+      const authUserId = await authenticateUser(request, locals);
 
       if (!authUserId) {
         return new Response(JSON.stringify({ error: "Unauthorized" }), {

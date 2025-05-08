@@ -1,4 +1,4 @@
-import { supabaseClient } from "../db/supabase.client";
+import { supabase } from "../db/supabase.client";
 
 export enum ErrorSource {
   FLASHCARD_CREATE = "flashcard_create",
@@ -6,6 +6,7 @@ export enum ErrorSource {
   AUTHENTICATION = "authentication",
   DATABASE = "database",
   VALIDATION = "validation",
+  SERVER_ERROR = "server_error",
 }
 
 export interface ErrorLogEntry {
