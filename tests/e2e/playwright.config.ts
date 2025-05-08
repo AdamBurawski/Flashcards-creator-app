@@ -1,4 +1,4 @@
-import { PlaywrightTestConfig, devices } from '@playwright/test';
+import { type PlaywrightTestConfig, devices } from '@playwright/test';
 
 /**
  * Konfiguracja testów e2e dla Playwright
@@ -54,7 +54,7 @@ const config: PlaywrightTestConfig = {
       use: { 
         ...devices['Desktop Chrome'],
         // Użyj zewnętrznych narzędzi deweloperskich
-        devtools: true
+        launchOptions: { devtools: true }
       },
     }
   ],
