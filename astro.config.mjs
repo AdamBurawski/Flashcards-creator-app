@@ -4,7 +4,7 @@ import { defineConfig } from "astro/config";
 import react from "@astrojs/react";
 import sitemap from "@astrojs/sitemap";
 import tailwindcss from "@tailwindcss/vite";
-import netlify from "@astrojs/netlify";
+import netlify from "@astrojs/netlify/functions";
 
 // https://astro.build/config
 export default defineConfig({
@@ -22,9 +22,6 @@ export default defineConfig({
       "process.env.SUPABASE_KEY": JSON.stringify(process.env.PUBLIC_SUPABASE_KEY),
     },
   },
-  adapter: netlify({
-    edgeMiddleware: false,
-    cacheOnDemandPages: false,
-  }),
+  adapter: netlify({}),
   experimental: { session: true },
 });
