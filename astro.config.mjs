@@ -8,6 +8,7 @@ import netlify from "@astrojs/netlify";
 
 // https://astro.build/config
 export default defineConfig({
+  site: "https://flashcards-creator.netlify.app",
   output: "server",
   integrations: [react(), sitemap()],
   server: { port: 3000 },
@@ -24,7 +25,6 @@ export default defineConfig({
   adapter: netlify({
     edgeMiddleware: false,
     cacheOnDemandPages: false,
-    includeFiles: ["./node_modules/@supabase/supabase-js/**/*"],
   }),
   experimental: { session: true },
 });
