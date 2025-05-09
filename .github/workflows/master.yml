@@ -1,4 +1,4 @@
-name: Test & Build Master
+name: Test, Build & Deploy na Netlify
 
 on:
   push:
@@ -76,6 +76,11 @@ jobs:
 
       - name: Build produkcyjny
         run: npm run build
+        env:
+          PUBLIC_SUPABASE_URL: ${{ secrets.PUBLIC_SUPABASE_URL }}
+          PUBLIC_SUPABASE_KEY: ${{ secrets.PUBLIC_SUPABASE_KEY }}
+          SUPABASE_URL: ${{ secrets.PUBLIC_SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.PUBLIC_SUPABASE_KEY }}
 
       - name: Archiwizacja artefaktów
         uses: actions/upload-artifact@v4
@@ -83,3 +88,32 @@ jobs:
           name: dist
           path: dist/
           retention-days: 7
+
+  deploy:
+    name: Wdrożenie na Netlify
+    needs: test-and-build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout kodu
+        uses: actions/checkout@v4
+
+      - name: Pobierz build
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist
+
+      - name: Wdrożenie na Netlify
+        uses: nwtgck/actions-netlify@v3.0
+        with:
+          publish-dir: './dist'
+          production-branch: master
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          deploy-message: "Wdrożenie z GitHub Actions"
+          enable-pull-request-comment: false
+          enable-commit-comment: true
+          overwrites-pull-request-comment: true
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+        timeout-minutes: 1
