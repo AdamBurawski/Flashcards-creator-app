@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
-    "prebuild": "rm -rf dist netlify ssr",
+    "prebuild": "rm -rf dist",
     "preview": "astro preview",
     "astro": "astro",
     "lint": "eslint .",
@@ -25,7 +25,7 @@
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:codegen": "playwright codegen http://localhost:4321",
     "dev:e2e": "astro dev --mode test",
-    "netlify:build": "npm run prebuild && NODE_ENV=production ASTRO_ADAPTER_MODE=netlify astro build"
+    "netlify:build": "npm run prebuild && NODE_ENV=production NETLIFY_NEXT_PLUGIN_SKIP=true astro build"
   },
   "dependencies": {
     "@astrojs/netlify": "^6.3.2",
