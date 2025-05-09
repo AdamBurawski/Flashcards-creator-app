@@ -16,9 +16,14 @@ export default defineConfig({
     ssr: {
       noExternal: ["@supabase/supabase-js"],
     },
+    define: {
+      "process.env.SUPABASE_URL": JSON.stringify(process.env.PUBLIC_SUPABASE_URL),
+      "process.env.SUPABASE_KEY": JSON.stringify(process.env.PUBLIC_SUPABASE_KEY),
+    },
   },
   adapter: netlify({
     edgeMiddleware: false,
+    cacheOnDemandPages: false,
     includeFiles: ["./node_modules/@supabase/supabase-js/**/*"],
   }),
   experimental: { session: true },
