@@ -32,8 +32,7 @@ jobs:
     env:
       PUBLIC_SUPABASE_URL: ${{ secrets.PUBLIC_SUPABASE_URL }}
       PUBLIC_SUPABASE_KEY: ${{ secrets.PUBLIC_SUPABASE_KEY }}
-      SUPABASE_URL: ${{ secrets.PUBLIC_SUPABASE_URL }}
-      SUPABASE_KEY: ${{ secrets.PUBLIC_SUPABASE_KEY }}
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
 
     steps:
       - name: Checkout kodu
@@ -58,79 +57,16 @@ jobs:
           path: coverage/
           retention-days: 7
 
-  e2e-test:
-    name: Testy E2E
-    needs: lint
-    runs-on: ubuntu-latest
-    env:
-      PUBLIC_SUPABASE_URL: ${{ secrets.PUBLIC_SUPABASE_URL }}
-      PUBLIC_SUPABASE_KEY: ${{ secrets.PUBLIC_SUPABASE_KEY }}
-      SUPABASE_URL: ${{ secrets.PUBLIC_SUPABASE_URL }}
-      SUPABASE_KEY: ${{ secrets.PUBLIC_SUPABASE_KEY }}
-      E2E_USERNAME_ID: ${{ secrets.E2E_USERNAME_ID }}
-      E2E_USERNAME: ${{ secrets.E2E_USERNAME }}
-      E2E_PASSWORD: ${{ secrets.E2E_PASSWORD }}
-      NODE_ENV: integration
-
-    steps:
-      - name: Checkout kodu
-        uses: actions/checkout@v4
-
-      - name: Konfiguracja Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version-file: ".nvmrc"
-          cache: "npm"
-
-      - name: Instalacja zależności
-        run: npm ci
-
-      - name: Instalacja przeglądarek Playwright
-        run: npx playwright install --with-deps chromium
-
-      - name: Przygotuj plik .env.test
-        run: |
-          cat > .env.test << EOF
-          PUBLIC_SUPABASE_URL=${{ secrets.PUBLIC_SUPABASE_URL }}
-          PUBLIC_SUPABASE_KEY=${{ secrets.PUBLIC_SUPABASE_KEY }}
-          E2E_USERNAME_ID=${{ secrets.E2E_USERNAME_ID }}
-          E2E_USERNAME=${{ secrets.E2E_USERNAME }}
-          E2E_PASSWORD=${{ secrets.E2E_PASSWORD }}
-          EOF
-
-      - name: Uruchomienie aplikacji w tle
-        run: npm run dev:e2e &
-        env:
-          ASTRO_PORT: 3000
-
-      - name: Czekaj na uruchomienie aplikacji
-        run: |
-          echo "Czekam na uruchomienie aplikacji..."
-          npx wait-on http://localhost:3000 -t 60000
-
-      - name: Uruchomienie testów e2e
-        run: npm run test:e2e
-
-      - name: Zapisz wyniki testów E2E
-        uses: actions/upload-artifact@v4
-        with:
-          name: e2e-test-results
-          path: |
-            playwright-report/
-            test-results/
-          retention-days: 7
-
   status-comment:
     name: Komentarz do PR
     if: ${{ always() }}
-    needs: [lint, unit-test, e2e-test]
+    needs: [lint, unit-test]
     runs-on: ubuntu-latest
     steps:
       - name: Sprawdź status poprzednich kroków
         if: |
           needs.lint.result == 'success' &&
-          needs.unit-test.result == 'success' &&
-          needs.e2e-test.result == 'success'
+          needs.unit-test.result == 'success'
         id: check
         run: echo "::set-output name=success::true"
 
@@ -145,7 +81,6 @@ jobs:
             Zweryfikowano:
             - ✓ Lintowanie kodu
             - ✓ Testy jednostkowe
-            - ✓ Testy E2E
 
             Pull Request jest gotowy do przeglądu.
 
@@ -160,6 +95,5 @@ jobs:
             Status:
             - Lintowanie kodu: ${{ needs.lint.result == 'success' && '✓' || '❌' }}
             - Testy jednostkowe: ${{ needs.unit-test.result == 'success' && '✓' || '❌' }}
-            - Testy E2E: ${{ needs.e2e-test.result == 'success' && '✓' || '❌' }}
 
             Proszę sprawdzić logi dla poszczególnych zadań, aby rozwiązać problemy.

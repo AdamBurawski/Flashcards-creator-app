@@ -15,7 +15,7 @@ export default defineConfig({
     plugins: [tailwindcss()],
   },
   adapter: netlify({
-    edgeMiddleware: true,
+    edgeMiddleware: false,
   }),
   experimental: { session: true },
 });

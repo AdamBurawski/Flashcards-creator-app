@@ -17,9 +17,15 @@ W ustawieniach repozytorium GitHub należy zdefiniować następujące sekrety:
 - `PUBLIC_SUPABASE_KEY` - publiczny klucz do bazy Supabase
 - `NETLIFY_AUTH_TOKEN` - token autoryzacyjny do Netlify
 - `NETLIFY_SITE_ID` - ID projektu Netlify
-- `E2E_USERNAME_ID` - ID użytkownika do testów E2E (tylko do PR workflow)
-- `E2E_USERNAME` - nazwa użytkownika do testów E2E (tylko do PR workflow)
-- `E2E_PASSWORD` - hasło użytkownika do testów E2E (tylko do PR workflow)
+- `OPENROUTER_API_KEY` - klucz API do OpenRouter.ai (używany do AI)
+
+## Zmienne środowiskowe w Netlify
+
+W Netlify należy skonfigurować następujące zmienne środowiskowe:
+
+- `PUBLIC_SUPABASE_URL` - publiczny URL do bazy Supabase
+- `PUBLIC_SUPABASE_KEY` - publiczny klucz do bazy Supabase
+- `OPENROUTER_API_KEY` - klucz API do OpenRouter.ai
 
 ## Workflow Master (deploy)
 
@@ -28,7 +34,7 @@ Workflow `master.yml` składa się z dwóch głównych jobów:
 1. **Test i Build** - sprawdza formatowanie, linty, testy jednostkowe oraz buduje aplikację
 2. **Wdrożenie na Netlify** - wdraża zbudowaną aplikację na Netlify
 
-Używamy najnowszej wersji akcji `nwtgck/actions-netlify@v3.0` do wdrożenia na Netlify.
+Używamy akcji `nwtgck/actions-netlify@v3.0` do wdrożenia na Netlify.
 
 ## Best Practices
 
@@ -37,14 +43,23 @@ Używamy najnowszej wersji akcji `nwtgck/actions-netlify@v3.0` do wdrożenia na 
 - Dla jobów korzystających ze zmiennych środowiskowych definiujemy je na poziomie joba
 - Używamy tylko głównych wersji (v3, v4) dla zewnętrznych Actions, aby uniknąć niespodziewanych zmian
 - Zapisujemy artefakty budowania z `retention-days: 7`
+- Przekazujemy zmienne środowiskowe zarówno do procesu budowania jak i do wdrażania
 
 ## Rozwiązywanie problemów
 
 Jeśli deployment nie powiedzie się, sprawdź:
 
 1. Czy sekrety `NETLIFY_AUTH_TOKEN` i `NETLIFY_SITE_ID` są poprawnie skonfigurowane
-2. Status budowania w GitHub Actions
-3. Logi wdrożenia w Netlify
+2. Czy wszystkie wymagane zmienne środowiskowe są ustawione w GitHub Secrets
+3. Czy wszystkie wymagane zmienne środowiskowe są ustawione w Netlify
+4. Status budowania w GitHub Actions
+5. Logi wdrożenia w Netlify
+
+### Typowe błędy:
+
+- `Command failed with exit code 1: npm run build` - najprawdopodobniej brakuje zmiennych środowiskowych
+- Brak dostępu do Supabase - sprawdź klucze `PUBLIC_SUPABASE_URL` i `PUBLIC_SUPABASE_KEY`
+- Problemy z Netlify - sprawdź `NETLIFY_AUTH_TOKEN` i `NETLIFY_SITE_ID`
 
 ## Aktualizacja workflow
 
