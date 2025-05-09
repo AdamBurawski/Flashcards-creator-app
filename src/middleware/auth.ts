@@ -6,11 +6,32 @@ import type { Database } from "../db/database.types";
 // W rzeczywistej implementacji będzie to wykorzystywać Supabase
 export const authMiddleware: MiddlewareHandler = async ({ locals, request, cookies }, next) => {
   // Inicjalizacja klienta Supabase za każdym razem dla żądania
-  const supabaseUrl = import.meta.env.SUPABASE_URL;
-  const supabaseKey = import.meta.env.SUPABASE_KEY;
+  // Próbujemy pobrać URL i klucz z różnych możliwych źródeł
+  const supabaseUrl = 
+    import.meta.env.PUBLIC_SUPABASE_URL || 
+    import.meta.env.SUPABASE_URL || 
+    process.env.PUBLIC_SUPABASE_URL || 
+    process.env.SUPABASE_URL;
+  
+  const supabaseKey = 
+    import.meta.env.PUBLIC_SUPABASE_KEY || 
+    import.meta.env.SUPABASE_KEY || 
+    process.env.PUBLIC_SUPABASE_KEY || 
+    process.env.SUPABASE_KEY;
 
+  // Sprawdzamy, czy mamy wymagane klucze Supabase
   if (!supabaseUrl || !supabaseKey) {
     console.warn("Brak kluczy Supabase w zmiennych środowiskowych - middleware używa pustych wartości");
+    console.log("Dostępne zmienne środowiskowe:", Object.keys(process.env).filter(key => !key.includes('_SECRET')));
+    
+    // W przypadku braku kluczy, kontynuujemy bez Supabase
+    // Ustawiamy puste wartości w locals i przechodzimy dalej
+    locals.supabase = null;
+    locals.user = null;
+    locals.session = null;
+    
+    // Kontynuacja przetwarzania bez Supabase
+    return await next();
   }
 
   // Pobierz token autoryzacyjny z nagłówka (jeśli istnieje)
@@ -50,7 +71,7 @@ export const authMiddleware: MiddlewareHandler = async ({ locals, request, cooki
   }
 
   // Stwórz klienta Supabase
-  const supabaseClient = createClient<Database>(supabaseUrl || '', supabaseKey || '', {
+  const supabaseClient = createClient<Database>(supabaseUrl, supabaseKey, {
     auth: {
       autoRefreshToken: true,
       persistSession: true,
