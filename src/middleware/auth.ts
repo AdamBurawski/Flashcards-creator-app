@@ -24,13 +24,17 @@ export const authMiddleware: MiddlewareHandler = async ({ locals, request, cooki
     console.warn("Brak kluczy Supabase w zmiennych środowiskowych - middleware używa pustych wartości");
     console.log("Dostępne zmienne środowiskowe:", Object.keys(process.env).filter(key => !key.includes('_SECRET')));
     
-    // W przypadku braku kluczy, kontynuujemy bez Supabase
-    // Ustawiamy puste wartości w locals i przechodzimy dalej
-    locals.supabase = null;
+    // W przypadku braku kluczy, tworzymy zastępczy klient z pustymi wartościami
+    // zamiast przypisywać null, co mogłoby powodować błędy TypeScript
+    const dummyClient = createClient<Database>(
+      'https://placeholder-supabase-url.supabase.co', 
+      'placeholder-supabase-key'
+    );
+    locals.supabase = dummyClient;
     locals.user = null;
     locals.session = null;
     
-    // Kontynuacja przetwarzania bez Supabase
+    // Kontynuacja przetwarzania bez prawdziwego Supabase
     return await next();
   }
 

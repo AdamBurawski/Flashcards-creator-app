@@ -7,18 +7,13 @@
   NODE_VERSION = "22.14.0"
   NODE_OPTIONS = "--max_old_space_size=4096"
   NPM_FLAGS = "--legacy-peer-deps"
-  # Włączamy tryb debugowania Node.js
   NODE_DEBUG = "module,http,net"
-  # Zmienne środowiskowe zostaną ustawione w panelu Netlify
-  # Nie definiujemy ich tutaj, ponieważ są to wrażliwe dane
+  DEBUG = "true"
 
 [functions]
   node_bundler = "esbuild"
-  # Zwiększamy limit czasu dla funkcji, aby obsłużyć dłuższe operacje
   included_files = ["dist/**"]
   external_node_modules = ["@supabase/supabase-js"]
-  # Poziom debugowania dla funkcji Netlify
-  debug = true
 
 [dev]
   command = "npm run dev"
