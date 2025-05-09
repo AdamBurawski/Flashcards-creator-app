@@ -2,10 +2,10 @@
   command = "npm run netlify:build"
   publish = "dist"
   functions = "netlify/functions"
-  environment = { NODE_VERSION = "22.14.0", NODE_OPTIONS = "--max_old_space_size=4096" }
 
-# Te zmienne muszą być ustawione w ustawieniach projektu Netlify
 [build.environment]
+  NODE_VERSION = "22.14.0"
+  NODE_OPTIONS = "--max_old_space_size=4096"
   PUBLIC_SUPABASE_URL = ""
   PUBLIC_SUPABASE_KEY = ""
   OPENROUTER_API_KEY = ""
@@ -13,8 +13,6 @@
 
 [functions]
   node_bundler = "esbuild"
-  included_files = ["dist/**"]
-  external_node_modules = ["@supabase/supabase-js"]
 
 [dev]
   command = "npm run dev"
