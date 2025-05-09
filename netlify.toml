@@ -1,18 +1,20 @@
 [build]
   command = "npm run netlify:build"
   publish = "dist"
-  functions = "ssr"
+  functions = "netlify/functions"
 
 [build.environment]
   NODE_VERSION = "22.14.0"
   NODE_OPTIONS = "--max_old_space_size=4096"
-  PUBLIC_SUPABASE_URL = ""
-  PUBLIC_SUPABASE_KEY = ""
-  OPENROUTER_API_KEY = ""
   NPM_FLAGS = "--legacy-peer-deps"
+  # Zmienne środowiskowe zostaną ustawione w panelu Netlify
+  # Nie definiujemy ich tutaj, ponieważ są to wrażliwe dane
 
 [functions]
   node_bundler = "esbuild"
+  # Zwiększamy limit czasu dla funkcji, aby obsłużyć dłuższe operacje
+  included_files = ["dist/**"]
+  external_node_modules = ["@supabase/supabase-js"]
 
 [dev]
   command = "npm run dev"
