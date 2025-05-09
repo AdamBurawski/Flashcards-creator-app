@@ -13,9 +13,13 @@ export default defineConfig({
   server: { port: 3000 },
   vite: {
     plugins: [tailwindcss()],
+    ssr: {
+      noExternal: ["@supabase/supabase-js"],
+    },
   },
   adapter: netlify({
     edgeMiddleware: false,
+    includeFiles: ["./node_modules/@supabase/supabase-js/**/*"],
   }),
   experimental: { session: true },
 });
