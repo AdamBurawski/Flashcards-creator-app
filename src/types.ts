@@ -123,3 +123,12 @@ export type GenerationErrorLogDto = Pick<
   GenerationErrorLog,
   "id" | "error_code" | "error_message" | "model" | "source_text_hash" | "source_text_length" | "created_at" | "user_id"
 >;
+
+export interface Collection {
+  id: number;
+  name: string;
+  description: string;
+  created_at: string;
+  updated_at: string;
+  flashcard_count: number;
+}

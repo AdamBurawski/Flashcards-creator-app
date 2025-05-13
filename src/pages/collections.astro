@@ -3,6 +3,7 @@ import Layout from "../layouts/Layout.astro";
 import AuthStatus from "../components/AuthStatus";
 import NewCollectionButton from "../components/collections/NewCollectionButton";
 import CollectionsList from "../components/collections/CollectionsList";
+import type { Collection } from "../types";
 
 // Sprawdzenie użytkownika (powinno być obsłużone przez middleware)
 const { user, supabase } = Astro.locals;
@@ -13,7 +14,7 @@ if (!user) {
 }
 
 // Pobierz kolekcje użytkownika
-let collections = [];
+let collections: Collection[] = [];
 if (supabase) {
   try {
     const { data, error } = await supabase
