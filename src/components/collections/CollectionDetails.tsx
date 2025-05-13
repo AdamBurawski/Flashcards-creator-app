@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "../ui/button";
 import { formatDate } from "../../lib/date-helpers";
 import FlashcardItem from "./FlashcardItem";
@@ -37,6 +37,11 @@ export default function CollectionDetails({ collection, flashcards }: Collection
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
+  const [formattedCreatedAtDate, setFormattedCreatedAtDate] = useState(collection.created_at);
+
+  useEffect(() => {
+    setFormattedCreatedAtDate(formatDate(collection.created_at));
+  }, [collection.created_at]);
 
   // Obsługa edycji kolekcji
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -94,7 +99,7 @@ export default function CollectionDetails({ collection, flashcards }: Collection
               </Button>
             </div>
             {collection.description && <p className="text-gray-600 mt-2">{collection.description}</p>}
-            <div className="mt-4 text-sm text-gray-500">Utworzono: {formatDate(collection.created_at)}</div>
+            <div className="mt-4 text-sm text-gray-500">Utworzono: {formattedCreatedAtDate}</div>
           </>
         ) : (
           <div className="space-y-4">
