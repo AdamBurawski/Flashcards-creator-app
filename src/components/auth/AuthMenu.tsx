@@ -33,27 +33,18 @@ interface AuthMenuProps {
 }
 
 export default function AuthMenu({ initialIsAuthenticated = false }: AuthMenuProps) {
-  // Stan początkowy bazujący na przekazanej wartości z serwera
   const [mounted, setMounted] = useState(false);
   const { user, isLoading } = useAuth();
 
-  // Po zamontowaniu komponentu używaj danych z hooka useAuth
   useEffect(() => {
     setMounted(true);
+  }, []);
 
-    // Synchronizuj sesję z serwerem przy załadowaniu komponentu
-    // if (initialIsAuthenticated || user) {
-    //   syncSessionWithServer();
-    // }
-  }, [initialIsAuthenticated, user]);
-
-  // Dopóki komponent nie jest zamontowany, używaj stanu z serwera
-  const isAuthenticated = mounted ? !!user : initialIsAuthenticated;
-
-  // Wyświetl pusty div podczas ładowania, aby zapobiec "przeskakiwaniu" interfejsu
-  if (mounted && isLoading) {
+  if (!mounted || isLoading) {
     return <div className="h-10"></div>;
   }
+
+  const isAuthenticated = !!user;
 
   return (
     <>
