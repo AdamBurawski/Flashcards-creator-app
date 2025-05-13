@@ -14,7 +14,13 @@ const supabaseKey = process.env.PUBLIC_SUPABASE_KEY || process.env.SUPABASE_KEY 
 export default defineConfig({
   site: "https://flashcards-creator.netlify.app",
   output: "server",
-  integrations: [react(), sitemap()],
+  integrations: [
+    react({
+      include: ["**/*.tsx"],
+      experimentalReactChildren: false, // Wyłączamy eksperymentalne funkcje
+    }),
+    sitemap(),
+  ],
   server: { port: 3000 },
   vite: {
     plugins: [tailwindcss()],

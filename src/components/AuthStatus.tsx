@@ -11,6 +11,40 @@ export default function AuthStatus() {
     setShowDetails(!showDetails);
   };
 
+  // Przygotuj zawartość szczegółów z góry, zamiast warunkowo renderować
+  let detailsContent = <p>Ładowanie danych...</p>;
+
+  if (!isLoading) {
+    if (user) {
+      detailsContent = (
+        <div>
+          <p>
+            <strong>ID użytkownika:</strong> {user.id}
+          </p>
+          <p>
+            <strong>Email:</strong> {user.email}
+          </p>
+          <p>
+            <strong>Data ostatniego logowania:</strong> {new Date(user.last_sign_in_at || "").toLocaleString()}
+          </p>
+          <p className="text-sm text-green-600 mt-2">✓ Sesja aktywna</p>
+        </div>
+      );
+    } else {
+      detailsContent = (
+        <div>
+          <p>Brak aktywnej sesji.</p>
+          <p>
+            <a href="/auth/login" className="text-blue-600 hover:underline">
+              Przejdź do strony logowania
+            </a>
+          </p>
+          {error && <p className="text-red-500 mt-2">Błąd: {error}</p>}
+        </div>
+      );
+    }
+  }
+
   return (
     <div className="mt-8 p-4 border rounded-lg bg-gray-50 max-w-lg mx-auto">
       <h2 className="text-lg font-semibold mb-4">Status autentykacji</h2>
@@ -28,36 +62,7 @@ export default function AuthStatus() {
         {showDetails ? "Ukryj szczegóły" : "Pokaż szczegóły"}
       </Button>
 
-      {showDetails && (
-        <div className="p-3 bg-white border rounded text-sm">
-          {isLoading ? (
-            <p>Ładowanie danych...</p>
-          ) : user ? (
-            <div>
-              <p>
-                <strong>ID użytkownika:</strong> {user.id}
-              </p>
-              <p>
-                <strong>Email:</strong> {user.email}
-              </p>
-              <p>
-                <strong>Data ostatniego logowania:</strong> {new Date(user.last_sign_in_at || "").toLocaleString()}
-              </p>
-              <p className="text-sm text-green-600 mt-2">✓ Sesja aktywna</p>
-            </div>
-          ) : (
-            <div>
-              <p>Brak aktywnej sesji.</p>
-              <p>
-                <a href="/auth/login" className="text-blue-600 hover:underline">
-                  Przejdź do strony logowania
-                </a>
-              </p>
-              {error && <p className="text-red-500 mt-2">Błąd: {error}</p>}
-            </div>
-          )}
-        </div>
-      )}
+      {showDetails && <div className="p-3 bg-white border rounded text-sm">{detailsContent}</div>}
     </div>
   );
 }

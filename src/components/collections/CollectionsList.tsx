@@ -16,8 +16,11 @@ interface CollectionsListProps {
 }
 
 export default function CollectionsList({ collections }: CollectionsListProps) {
+  // Zabezpieczamy się przed null i undefined
+  const safeCollections = Array.isArray(collections) ? collections : [];
+
   // Jeśli nie ma żadnych kolekcji
-  if (!collections || collections.length === 0) {
+  if (safeCollections.length === 0) {
     return (
       <div className="p-6 border border-gray-200 rounded-lg text-center">
         <h3 className="text-lg font-medium mb-2">Brak kolekcji</h3>
@@ -31,7 +34,7 @@ export default function CollectionsList({ collections }: CollectionsListProps) {
   // Gdy są kolekcje, wyświetl je
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      {collections.map((collection) => (
+      {safeCollections.map((collection) => (
         <div key={collection.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition">
           <div className="flex justify-between items-start">
             <h3 className="text-lg font-medium">{collection.name}</h3>

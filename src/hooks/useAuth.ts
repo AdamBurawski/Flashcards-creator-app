@@ -37,17 +37,13 @@ const syncSessionWithServer = async (session: any) => {
   if (!isBrowser) return false;
 
   try {
-    // console.log("Synchronizacja sesji z serwerem...");
-    
     if (!session) {
-      // console.log("Brak sesji do synchronizacji");
       return false;
     }
     
     // Zapisz token do użycia w przyszłych żądaniach
     if (session.access_token) {
       authToken = session.access_token;
-      // console.log("Ustawiono token autoryzacyjny dla przyszłych żądań");
     }
     
     const response = await fetch("/api/auth/sync-session", {
@@ -60,10 +56,8 @@ const syncSessionWithServer = async (session: any) => {
     });
 
     const data = await response.json();
-    // console.log("Odpowiedź z synchronizacji:", data);
     return data.success;
   } catch (error) {
-    // console.error("Błąd podczas synchronizacji sesji:", error);
     return false;
   }
 };
@@ -74,79 +68,44 @@ export function useAuth(): AuthContext {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    // Skip if not in browser
+  // Funkcja do sprawdzenia sesji - zdefiniowana poza useEffect
+  const checkSession = async () => {
     if (!isBrowser) {
       setIsLoading(false);
       return;
     }
+    
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase.auth.getSession();
+      
+      if (error) {
+        throw error;
+      }
 
-    // Sprawdź bieżącą sesję przy montowaniu komponentu
-    const checkSession = async () => {
-      setIsLoading(true);
-      try {
-        // console.log("Sprawdzanie sesji...");
-        const { data, error } = await supabase.auth.getSession();
+      if (data.session) {
+        // Synchronizuj sesję z serwerem
+        await syncSessionWithServer(data.session);
         
-        if (error) {
-          throw error;
+        const { data: userData, error: userError } = await supabase.auth.getUser();
+        
+        if (userError) {
+          throw userError;
         }
-
-        // console.log("Dane sesji:", data);
-        if (data.session) {
-          // Synchronizuj sesję z serwerem
-          await syncSessionWithServer(data.session);
-          
-          const { data: userData, error: userError } = await supabase.auth.getUser();
-          
-          if (userError) {
-            throw userError;
-          }
-          
-          setUser(userData.user);
-          // console.log("Zalogowano użytkownika:", userData.user);
-        } else {
-          setUser(null);
-          // console.log("Brak zalogowanego użytkownika");
-        }
-      } catch (e) {
-        // console.error("Błąd podczas sprawdzania sesji:", e);
-        setError(e instanceof Error ? e.message : "Wystąpił nieznany błąd");
+        
+        setUser(userData.user);
+      } else {
         setUser(null);
-      } finally {
-        setIsLoading(false);
       }
-    };
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Wystąpił nieznany błąd");
+      setUser(null);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-    // Nasłuchuj zmian w stanie autentykacji
-    const { data: authListener } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        // console.log("Zmiana stanu autentykacji:", event, session);
-        if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
-          if (session) {
-            // Synchronizuj sesję z serwerem przy zalogowaniu lub odświeżeniu tokenu
-            await syncSessionWithServer(session);
-            setUser(session.user);
-          }
-        } else if (event === "SIGNED_OUT") {
-          // Wyczyść token przy wylogowaniu
-          authToken = null;
-          setUser(null);
-        }
-        setIsLoading(false);
-      }
-    );
-
-    // Sprawdź sesję od razu
-    checkSession();
-
-    // Sprzątanie po odmontowaniu
-    return () => {
-      authListener?.subscription.unsubscribe();
-    };
-  }, []);
-
-  // Funkcja do wylogowania
+  // Funkcja do wylogowania - zdefiniowana poza useEffect
   const logout = async () => {
     if (!isBrowser) return;
     
@@ -162,12 +121,47 @@ export function useAuth(): AuthContext {
       // Przekierowanie na stronę główną po wylogowaniu
       window.location.href = "/";
     } catch (e) {
-      // console.error("Błąd podczas wylogowywania:", e);
       setError(e instanceof Error ? e.message : "Wystąpił błąd podczas wylogowywania");
     } finally {
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    // Skip if not in browser
+    if (!isBrowser) {
+      setIsLoading(false);
+      return;
+    }
+
+    // Sprawdź bieżącą sesję przy montowaniu komponentu
+    checkSession();
+
+    // Nasłuchuj zmian w stanie autentykacji
+    const { data: authListener } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
+          if (session) {
+            // Synchronizuj sesję z serwerem przy zalogowaniu lub odświeżeniu tokenu
+            await syncSessionWithServer(session);
+            setUser(session.user);
+          }
+        } else if (event === "SIGNED_OUT") {
+          // Wyczyść token przy wylogowaniu
+          authToken = null;
+          setUser(null);
+        }
+        setIsLoading(false);
+      }
+    );
+
+    // Sprzątanie po odmontowaniu
+    return () => {
+      if (authListener && authListener.subscription) {
+        authListener.subscription.unsubscribe();
+      }
+    };
+  }, []);
 
   return { user, isLoading, error, logout };
 } 
