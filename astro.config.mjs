@@ -33,6 +33,21 @@ export default defineConfig({
       "process.env.SUPABASE_URL": JSON.stringify(supabaseUrl),
       "process.env.SUPABASE_KEY": JSON.stringify(supabaseKey),
     },
+    build: {
+      minify: true,
+      sourcemap: true, // Dodajemy sourcemaps dla lepszego debugowania
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            "react-vendor": ["react", "react-dom"],
+          },
+        },
+      },
+      chunkSizeWarningLimit: 1000, // Zwiększamy limit rozmiaru chunków
+    },
+    optimizeDeps: {
+      include: ["react", "react-dom"], // Jawnie włączamy React do optymalizacji
+    },
   },
   adapter: netlify({
     edgeMiddleware: false, // Wyłączenie edge middleware, aby używać standardowych funkcji Node.js

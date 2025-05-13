@@ -1,0 +1,11 @@
+# Wyłącz cache dla plików JavaScript
+/*.js
+  Cache-Control: public, max-age=0, must-revalidate
+
+# Cache zasoby statyczne, ale nie pliki JavaScript
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# Specjalne ustawienia dla strony z kolekcjami
+/collections
+  Cache-Control: no-cache, no-store, must-revalidate 

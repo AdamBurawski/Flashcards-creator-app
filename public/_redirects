@@ -1,0 +1,6 @@
+# Wyłącz cache dla plików JavaScript
+/*.js
+  Cache-Control: public, max-age=0, must-revalidate
+
+# Standardowe przekierowanie dla klienckiego routingu SPA
+/*    /index.html   200 

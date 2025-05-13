@@ -4,7 +4,7 @@
   "version": "0.0.1",
   "scripts": {
     "dev": "astro dev",
-    "build": "astro build",
+    "build": "NODE_ENV=production astro build",
     "prebuild": "rm -rf dist",
     "preview": "astro preview",
     "astro": "astro",
@@ -25,7 +25,7 @@
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:codegen": "playwright codegen http://localhost:4321",
     "dev:e2e": "astro dev --mode test",
-    "netlify:build": "npm run prebuild && NETLIFY_USE_FILE_FUNCTIONS=true SUPABASE_URL=${SUPABASE_URL:-''} SUPABASE_KEY=${SUPABASE_KEY:-''} PUBLIC_SUPABASE_URL=${PUBLIC_SUPABASE_URL:-''} PUBLIC_SUPABASE_KEY=${PUBLIC_SUPABASE_KEY:-''} NODE_ENV=production astro build"
+    "netlify:build": "npm run prebuild && NETLIFY_USE_FILE_FUNCTIONS=true NODE_ENV=production REACT_DEBUG_TOOLS=true SUPABASE_URL=${SUPABASE_URL:-''} SUPABASE_KEY=${SUPABASE_KEY:-''} PUBLIC_SUPABASE_URL=${PUBLIC_SUPABASE_URL:-''} PUBLIC_SUPABASE_KEY=${PUBLIC_SUPABASE_KEY:-''} astro build"
   },
   "dependencies": {
     "@astrojs/netlify": "^6.3.2",
