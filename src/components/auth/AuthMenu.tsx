@@ -42,9 +42,9 @@ export default function AuthMenu({ initialIsAuthenticated = false }: AuthMenuPro
     setMounted(true);
 
     // Synchronizuj sesję z serwerem przy załadowaniu komponentu
-    if (initialIsAuthenticated || user) {
-      syncSessionWithServer();
-    }
+    // if (initialIsAuthenticated || user) {
+    //   syncSessionWithServer();
+    // }
   }, [initialIsAuthenticated, user]);
 
   // Dopóki komponent nie jest zamontowany, używaj stanu z serwera
