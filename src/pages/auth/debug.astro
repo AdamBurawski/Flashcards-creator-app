@@ -7,11 +7,11 @@ import Layout from "../../layouts/Layout.astro";
 const { user, token, session } = Astro.locals;
 
 // Logowanie informacji diagnostycznych
-console.log("[DEBUG] Informacje o użytkowniku w auth/debug:", {
-  user: user ? "Istnieje" : "Brak",
-  token: token ? "Istnieje" : "Brak",
-  session: session ? "Istnieje" : "Brak",
-});
+// console.log("[DEBUG] Informacje o użytkowniku w auth/debug:", {
+//   user: user ? "Istnieje" : "Brak",
+//   token: token ? "Istnieje" : "Brak",
+//   session: session ? "Istnieje" : "Brak",
+// });
 
 // Cookie sprawdzenie
 const sbCookie = Astro.cookies.get("supabase-auth-token")?.value;
@@ -98,4 +98,3 @@ const sbCookie = Astro.cookies.get("supabase-auth-token")?.value;
     </div>
   </div>
 </Layout>
-

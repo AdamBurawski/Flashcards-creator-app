@@ -5,7 +5,7 @@ import { supabase } from "../../db/supabase.client";
 // Synchronizuj sesję z serwerem
 const syncSessionWithServer = async (session: any) => {
   try {
-    console.log("Synchronizacja sesji po zalogowaniu...");
+    // console.log("Synchronizacja sesji po zalogowaniu...");
     const response = await fetch("/api/auth/sync-session", {
       method: "POST",
       headers: {
@@ -16,10 +16,10 @@ const syncSessionWithServer = async (session: any) => {
     });
 
     const data = await response.json();
-    console.log("Odpowiedź z synchronizacji po zalogowaniu:", data);
+    // console.log("Odpowiedź z synchronizacji po zalogowaniu:", data);
     return data.success;
   } catch (error) {
-    console.error("Błąd podczas synchronizacji sesji po zalogowaniu:", error);
+    // console.error("Błąd podczas synchronizacji sesji po zalogowaniu:", error);
     return false;
   }
 };
@@ -80,7 +80,7 @@ const LoginForm = ({ returnUrl = "/" }: LoginFormProps) => {
     setFormErrors({});
 
     try {
-      console.log("Próba logowania z danymi:", formData.email);
+      // console.log("Próba logowania z danymi:", formData.email);
 
       // Użyj bezpośrednio Supabase do logowania
       const { data, error } = await supabase.auth.signInWithPassword({
@@ -89,14 +89,14 @@ const LoginForm = ({ returnUrl = "/" }: LoginFormProps) => {
       });
 
       if (error) {
-        console.error("Błąd logowania Supabase:", error);
+        // console.error("Błąd logowania Supabase:", error);
         throw error;
       }
 
-      console.log("Dane logowania:", data);
+      // console.log("Dane logowania:", data);
 
       if (data.session) {
-        console.log("Zalogowano użytkownika:", data.user);
+        // console.log("Zalogowano użytkownika:", data.user);
 
         // Po zalogowaniu synchronizuj sesję z serwerem
         await syncSessionWithServer(data.session);
@@ -112,7 +112,7 @@ const LoginForm = ({ returnUrl = "/" }: LoginFormProps) => {
         });
       }
     } catch (error) {
-      console.error("Błąd podczas logowania:", error);
+      // console.error("Błąd podczas logowania:", error);
       setFormErrors({
         general:
           error instanceof Error

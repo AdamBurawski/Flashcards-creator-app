@@ -21,8 +21,8 @@ export const authMiddleware: MiddlewareHandler = async ({ locals, request, cooki
 
   // Sprawdzamy, czy mamy wymagane klucze Supabase
   if (!supabaseUrl || !supabaseKey) {
-    console.warn("Brak kluczy Supabase w zmiennych środowiskowych - middleware używa pustych wartości");
-    console.log("Dostępne zmienne środowiskowe:", Object.keys(process.env).filter(key => !key.includes('_SECRET')));
+    // console.warn("Brak kluczy Supabase w zmiennych środowiskowych - middleware używa pustych wartości");
+    // console.log("Dostępne zmienne środowiskowe:", Object.keys(process.env).filter(key => !key.includes('_SECRET')));
     
     // W przypadku braku kluczy, tworzymy zastępczy klient z pustymi wartościami
     // zamiast przypisywać null, co mogłoby powodować błędy TypeScript
@@ -43,30 +43,30 @@ export const authMiddleware: MiddlewareHandler = async ({ locals, request, cooki
   let accessToken = null;
   if (authHeader && authHeader.startsWith("Bearer ")) {
     accessToken = authHeader.split(" ")[1];
-    console.log("Znaleziono token autoryzacyjny w nagłówku!");
+    // console.log("Znaleziono token autoryzacyjny w nagłówku!");
     // Zapisz token w locals do późniejszego użycia
     locals.token = accessToken;
   }
 
   // Pobierz wszystkie ciasteczka z żądania dla lepszego debugowania
   const allCookies = request.headers.get("cookie") || "";
-  console.log("Wszystkie ciasteczka w żądaniu:", allCookies);
+  // console.log("Wszystkie ciasteczka w żądaniu:", allCookies);
 
   // Pobierz konkretne ciasteczka Supabase, które są kluczowe dla autentykacji
   const sbAuthCookie = cookies.get("sb-auth-token")?.value || null;
   const sbAccessToken = cookies.get("sb-access-token")?.value || null;
   const sbRefreshToken = cookies.get("sb-refresh-token")?.value || null;
   
-  console.log("Ciasteczka Supabase:", {
-    "sb-auth-token": sbAuthCookie ? "Istnieje" : "Brak",
-    "sb-access-token": sbAccessToken ? "Istnieje" : "Brak", 
-    "sb-refresh-token": sbRefreshToken ? "Istnieje" : "Brak"
-  });
+  // console.log("Ciasteczka Supabase:", {
+  //   "sb-auth-token": sbAuthCookie ? "Istnieje" : "Brak",
+  //   "sb-access-token": sbAccessToken ? "Istnieje" : "Brak", 
+  //   "sb-refresh-token": sbRefreshToken ? "Istnieje" : "Brak"
+  // });
 
   // Cookie sprawdzenie
   const supabaseCookie = cookies.get("supabase-auth-token")?.value;
   if (supabaseCookie) {
-    console.log("Znaleziono ciasteczko supabase-auth-token!");
+    // console.log("Znaleziono ciasteczko supabase-auth-token!");
     // Używamy go jako token jeśli nie ma tokenu w nagłówku
     if (!accessToken) {
       accessToken = supabaseCookie;
@@ -97,17 +97,17 @@ export const authMiddleware: MiddlewareHandler = async ({ locals, request, cooki
   try {
     // Sprawdź sesję tylko wtedy, gdy mamy jakiś token
     if (accessToken || sbAccessToken) {
-      console.log("Próbuję uwierzytelnić użytkownika z tokenem");
+      // console.log("Próbuję uwierzytelnić użytkownika z tokenem");
       
       // 1. Jeśli mamy token z nagłówka lub z ciasteczka, ustaw go bezpośrednio
       if (accessToken) {
         const { data: { user }, error } = await supabaseClient.auth.getUser(accessToken);
         if (!error && user) {
-          console.log("Uwierzytelniono użytkownika z tokenu:", user.email);
+          // console.log("Uwierzytelniono użytkownika z tokenu:", user.email);
           locals.user = user;
           return await next();
         } else if (error) {
-          console.error("Błąd podczas uwierzytelniania z tokenem:", error.message);
+          // console.error("Błąd podczas uwierzytelniania z tokenem:", error.message);
         }
       }
 
@@ -115,20 +115,20 @@ export const authMiddleware: MiddlewareHandler = async ({ locals, request, cooki
       const { data: { session }, error } = await supabaseClient.auth.getSession();
       
       // Logowanie dla debugowania
-      console.log("Session status in middleware:", session ? "Active" : "No session");
+      // console.log("Session status in middleware:", session ? "Active" : "No session");
       if (session) {
-        console.log("User email:", session.user.email);
+        // console.log("User email:", session.user.email);
         locals.session = session;
         locals.user = session.user;
         locals.token = session.access_token; // Zapisz token w locals
       } else {
-        console.log("Brak aktywnej sesji");
+        // console.log("Brak aktywnej sesji");
       }
     } else {
-      console.log("Brak tokenu lub ciasteczka sesji - użytkownik niezalogowany");
+      // console.log("Brak tokenu lub ciasteczka sesji - użytkownik niezalogowany");
     }
   } catch (error) {
-    console.error("Błąd podczas uwierzytelniania:", error);
+    // console.error("Błąd podczas uwierzytelniania:", error);
   }
 
   // Kontynuacja przetwarzania

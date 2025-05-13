@@ -37,17 +37,17 @@ const syncSessionWithServer = async (session: any) => {
   if (!isBrowser) return false;
 
   try {
-    console.log("Synchronizacja sesji z serwerem...");
+    // console.log("Synchronizacja sesji z serwerem...");
     
     if (!session) {
-      console.log("Brak sesji do synchronizacji");
+      // console.log("Brak sesji do synchronizacji");
       return false;
     }
     
     // Zapisz token do użycia w przyszłych żądaniach
     if (session.access_token) {
       authToken = session.access_token;
-      console.log("Ustawiono token autoryzacyjny dla przyszłych żądań");
+      // console.log("Ustawiono token autoryzacyjny dla przyszłych żądań");
     }
     
     const response = await fetch("/api/auth/sync-session", {
@@ -60,10 +60,10 @@ const syncSessionWithServer = async (session: any) => {
     });
 
     const data = await response.json();
-    console.log("Odpowiedź z synchronizacji:", data);
+    // console.log("Odpowiedź z synchronizacji:", data);
     return data.success;
   } catch (error) {
-    console.error("Błąd podczas synchronizacji sesji:", error);
+    // console.error("Błąd podczas synchronizacji sesji:", error);
     return false;
   }
 };
@@ -85,14 +85,14 @@ export function useAuth(): AuthContext {
     const checkSession = async () => {
       setIsLoading(true);
       try {
-        console.log("Sprawdzanie sesji...");
+        // console.log("Sprawdzanie sesji...");
         const { data, error } = await supabase.auth.getSession();
         
         if (error) {
           throw error;
         }
 
-        console.log("Dane sesji:", data);
+        // console.log("Dane sesji:", data);
         if (data.session) {
           // Synchronizuj sesję z serwerem
           await syncSessionWithServer(data.session);
@@ -104,13 +104,13 @@ export function useAuth(): AuthContext {
           }
           
           setUser(userData.user);
-          console.log("Zalogowano użytkownika:", userData.user);
+          // console.log("Zalogowano użytkownika:", userData.user);
         } else {
           setUser(null);
-          console.log("Brak zalogowanego użytkownika");
+          // console.log("Brak zalogowanego użytkownika");
         }
       } catch (e) {
-        console.error("Błąd podczas sprawdzania sesji:", e);
+        // console.error("Błąd podczas sprawdzania sesji:", e);
         setError(e instanceof Error ? e.message : "Wystąpił nieznany błąd");
         setUser(null);
       } finally {
@@ -121,7 +121,7 @@ export function useAuth(): AuthContext {
     // Nasłuchuj zmian w stanie autentykacji
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log("Zmiana stanu autentykacji:", event, session);
+        // console.log("Zmiana stanu autentykacji:", event, session);
         if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
           if (session) {
             // Synchronizuj sesję z serwerem przy zalogowaniu lub odświeżeniu tokenu
@@ -162,7 +162,7 @@ export function useAuth(): AuthContext {
       // Przekierowanie na stronę główną po wylogowaniu
       window.location.href = "/";
     } catch (e) {
-      console.error("Błąd podczas wylogowywania:", e);
+      // console.error("Błąd podczas wylogowywania:", e);
       setError(e instanceof Error ? e.message : "Wystąpił błąd podczas wylogowywania");
     } finally {
       setIsLoading(false);

@@ -17,7 +17,7 @@ export default function AuthCheck() {
       }
       return null;
     } catch (error) {
-      console.error("Błąd podczas pobierania tokenu:", error);
+      // console.error("Błąd podczas pobierania tokenu:", error);
       return null;
     }
   };
@@ -39,7 +39,7 @@ export default function AuthCheck() {
       const data = await response.json();
       setStatus(data);
     } catch (error) {
-      console.error("Błąd podczas sprawdzania statusu:", error);
+      // console.error("Błąd podczas sprawdzania statusu:", error);
       setStatus({ error: "Wystąpił błąd podczas sprawdzania statusu" });
     } finally {
       setIsLoading(false);

@@ -5,7 +5,7 @@ import { supabase } from "../../db/supabase.client";
 // Synchronizuj sesję z serwerem
 const syncSessionWithServer = async (session: any) => {
   try {
-    console.log("Synchronizacja sesji po rejestracji...");
+    // console.log("Synchronizacja sesji po rejestracji...");
     const response = await fetch("/api/auth/sync-session", {
       method: "POST",
       headers: {
@@ -15,10 +15,10 @@ const syncSessionWithServer = async (session: any) => {
     });
 
     const data = await response.json();
-    console.log("Odpowiedź z synchronizacji po rejestracji:", data);
+    // console.log("Odpowiedź z synchronizacji po rejestracji:", data);
     return data.success;
   } catch (error) {
-    console.error("Błąd podczas synchronizacji sesji po rejestracji:", error);
+    // console.error("Błąd podczas synchronizacji sesji po rejestracji:", error);
     return false;
   }
 };
@@ -97,7 +97,7 @@ const RegisterForm = ({ returnUrl = "/" }: RegisterFormProps) => {
     setFormErrors({});
 
     try {
-      console.log("Próba rejestracji z danymi:", formData.email);
+      // console.log("Próba rejestracji z danymi:", formData.email);
 
       // Użyj bezpośrednio Supabase do rejestracji
       const { data, error } = await supabase.auth.signUp({
@@ -106,14 +106,14 @@ const RegisterForm = ({ returnUrl = "/" }: RegisterFormProps) => {
       });
 
       if (error) {
-        console.error("Błąd rejestracji Supabase:", error);
+        // console.error("Błąd rejestracji Supabase:", error);
         throw error;
       }
 
-      console.log("Dane rejestracji:", data);
+      // console.log("Dane rejestracji:", data);
 
       if (data.user) {
-        console.log("Zarejestrowano użytkownika:", data.user);
+        // console.log("Zarejestrowano użytkownika:", data.user);
 
         // Po rejestracji synchronizuj sesję z serwerem
         if (data.session) {
@@ -131,7 +131,7 @@ const RegisterForm = ({ returnUrl = "/" }: RegisterFormProps) => {
         });
       }
     } catch (error) {
-      console.error("Błąd podczas rejestracji:", error);
+      // console.error("Błąd podczas rejestracji:", error);
       setFormErrors({
         general:
           error instanceof Error ? error.message : "Wystąpił błąd podczas rejestracji. Spróbuj ponownie później.",

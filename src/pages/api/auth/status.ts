@@ -13,10 +13,10 @@ export const GET: APIRoute = async ({ locals, request }) => {
   // Sprawdź, czy użytkownik jest zalogowany
   const isLoggedIn = !!locals.user;
   
-  console.log("[AUTH STATUS] Checking auth status...");
-  console.log("[AUTH STATUS] User from locals:", locals.user?.email || "none");
-  console.log("[AUTH STATUS] Token from header:", tokenFromHeader ? "exists" : "none");
-  console.log("[AUTH STATUS] Session exists:", !!locals.session);
+  // console.log("[AUTH STATUS] Checking auth status...");
+  // console.log("[AUTH STATUS] User from locals:", locals.user?.email || "none");
+  // console.log("[AUTH STATUS] Token from header:", tokenFromHeader ? "exists" : "none");
+  // console.log("[AUTH STATUS] Session exists:", !!locals.session);
   
   return new Response(
     JSON.stringify({

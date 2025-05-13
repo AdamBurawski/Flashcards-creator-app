@@ -7,7 +7,7 @@ export const POST: APIRoute = async ({ request, locals, cookies }) => {
     // Pobierz dane sesji z body żądania
     const { session } = await request.json();
     
-    console.log("Otrzymano dane sesji do synchronizacji:", !!session);
+    // console.log("Otrzymano dane sesji do synchronizacji:", !!session);
     
     if (session && locals.supabase) {
       // Ustaw cookie z tokenem dla SSR
@@ -31,7 +31,7 @@ export const POST: APIRoute = async ({ request, locals, cookies }) => {
       });
       
       if (error) {
-        console.error("Błąd podczas synchronizacji sesji:", error);
+        // console.error("Błąd podczas synchronizacji sesji:", error);
         return new Response(
           JSON.stringify({
             success: false,
@@ -51,7 +51,7 @@ export const POST: APIRoute = async ({ request, locals, cookies }) => {
       locals.session = data.session;
       locals.user = data.session?.user ?? null;
       
-      console.log("Sesja zsynchronizowana pomyślnie, użytkownik:", data.session?.user?.email);
+      // console.log("Sesja zsynchronizowana pomyślnie, użytkownik:", data.session?.user?.email);
       
       return new Response(
         JSON.stringify({
@@ -84,7 +84,7 @@ export const POST: APIRoute = async ({ request, locals, cookies }) => {
       }
     );
   } catch (error) {
-    console.error("Błąd podczas przetwarzania synchronizacji sesji:", error);
+    // console.error("Błąd podczas przetwarzania synchronizacji sesji:", error);
     return new Response(
       JSON.stringify({
         success: false,
