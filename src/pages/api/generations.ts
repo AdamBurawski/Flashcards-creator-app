@@ -46,6 +46,82 @@ export const POST: APIRoute = async ({ request, locals }) => {
 
     const { source_text } = validationResult.data;
 
+    // >>> MODERATION START <<<
+    try {
+      // Construct the full URL for the moderation endpoint
+      // This assumes the moderation endpoint is hosted on the same domain and port
+      const moderationUrl = new URL("/api/moderate", request.url);
+
+      console.log(`[Generations API] Wysyłanie tekstu do moderacji na adres: ${moderationUrl.toString()}`);
+      
+      const moderationResponse = await fetch(moderationUrl.toString(), {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ input: source_text }),
+      });
+
+      if (!moderationResponse.ok) {
+        // Try to parse the error response from moderation endpoint
+        let moderationErrorBody = { error: "Nieznany błąd podczas moderacji" };
+        try {
+          moderationErrorBody = await moderationResponse.json();
+        } catch (e) {
+          console.error("[Generations API] Nie udało się sparsować odpowiedzi błędu z endpointu moderacji:", e);
+        }
+        console.error(
+          `[Generations API] Błąd endpointu moderacji: ${moderationResponse.status}`,
+          moderationErrorBody
+        );
+        return new Response(
+          JSON.stringify({
+            error: "Wystąpił błąd podczas analizy treści.",
+            details: moderationErrorBody.error,
+          }),
+          {
+            status: moderationResponse.status, // Propagate status from moderation
+            headers: { "Content-Type": "application/json" },
+          }
+        );
+      }
+
+      const moderationResult = await moderationResponse.json();
+      console.log("[Generations API] Wynik moderacji:", moderationResult);
+
+      if (moderationResult.flagged) {
+        console.warn(
+          `[Generations API] Tekst został oflagowany przez moderację. Próba generacji odrzucona. User ID: ${userId}`
+        );
+        return new Response(
+          JSON.stringify({
+            error:
+              "Dostarczony tekst narusza zasady użytkowania i nie może zostać przetworzony.",
+          }),
+          {
+            status: 400, // Bad Request, as the content is unacceptable
+            headers: { "Content-Type": "application/json" },
+          }
+        );
+      }
+      console.log("[Generations API] Tekst przeszedł moderację pomyślnie.");
+    } catch (error) {
+      console.error(
+        "[Generations API] Wystąpił nieoczekiwany błąd podczas komunikacji z endpointem moderacji:",
+        error
+      );
+      return new Response(
+        JSON.stringify({
+          error: "Wystąpił wewnętrzny błąd podczas próby moderacji treści.",
+        }),
+        {
+          status: 500, // Internal Server Error
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+    }
+    // >>> MODERATION END <<<
+
     // 2. Call generation service to generate flashcards with the user's ID
     try {
       const result = await generateFlashcards(source_text, userId);

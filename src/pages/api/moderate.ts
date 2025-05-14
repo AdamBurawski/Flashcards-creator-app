@@ -2,11 +2,12 @@ import type { APIRoute } from 'astro';
 
 export const POST: APIRoute = async ({ request }) => {
   // Używamy nazwy zmiennej środowiskowej podanej przez użytkownika
-  const apiKey = import.meta.env.OPENROUTER_API_KEY;
+  const apiKey = import.meta.env.OPENAI_API_KEY;
 
   if (!apiKey) {
+    console.error("[Moderation API] Klucz API (OPENAI_API_KEY) nie jest skonfigurowany.");
     return new Response(
-      JSON.stringify({ error: "Klucz API (OPENROUTER_API_KEY) nie jest skonfigurowany." }),
+      JSON.stringify({ error: "Klucz API (OPENAI_API_KEY) nie jest skonfigurowany." }),
       { status: 500, headers: { "Content-Type": "application/json" } }
     );
   }

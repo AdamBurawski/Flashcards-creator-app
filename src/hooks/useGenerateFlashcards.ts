@@ -72,7 +72,16 @@ export function useGenerateFlashcards() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || "Wystąpił błąd podczas generowania fiszek.");
+        // Sprawdzamy, czy to błąd moderacji (status 400 i specyficzny komunikat)
+        if (response.status === 400 && 
+            errorData.error === "Dostarczony tekst narusza zasady użytkowania i nie może zostać przetworzony.") {
+          throw new Error("Twój tekst nie przeszedł automatycznej moderacji treści. Upewnij się, że nie zawiera on niedozwolonych zwrotów i spróbuj ponownie.");
+        } else if (response.status === 400 && errorData.error === "Invalid request data" && errorData.details?.source_text?._errors?.length > 0) {
+          // Błąd walidacji Zod dla source_text
+          throw new Error(errorData.details.source_text._errors[0]);
+        }
+        // Inne błędy serwera
+        throw new Error(errorData.error || errorData.message || "Wystąpił błąd podczas generowania fiszek.");
       }
 
       const data: GenerationCreateResponseDto = await response.json();
