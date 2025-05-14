@@ -1,0 +1,40 @@
+---
+export const prerender = false;
+
+import Layout from "../../../layouts/Layout.astro";
+import LearningSession from "../../../components/learning/LearningSession";
+
+// Pobieramy ID kolekcji z parametru URL
+const { id } = Astro.params;
+const collectionId = parseInt(id || "", 10);
+
+// Sprawdzamy czy ID jest prawidłowe
+if (isNaN(collectionId)) {
+  return Astro.redirect("/collections");
+}
+
+// Sprawdzamy czy użytkownik jest zalogowany (middleware powinno to obsłużyć)
+const { user } = Astro.locals;
+if (!user) {
+  return Astro.redirect(`/auth/login?returnUrl=/learn/collection/${id}`);
+}
+---
+
+<Layout title="Nauka fiszek | Flashcards Creator">
+  <div class="w-full h-screen overflow-hidden">
+    <!-- Przekazujemy ID kolekcji do komponentu -->
+    <LearningSession collectionId={collectionId} client:load />
+  </div>
+</Layout>
+
+<!-- Usuwamy nagłówek i stopkę na stronie nauki -->
+<style is:global>
+  header,
+  footer {
+    display: none;
+  }
+  body {
+    overflow: hidden;
+  }
+</style>
+

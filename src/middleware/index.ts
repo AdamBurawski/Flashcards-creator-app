@@ -1,8 +1,14 @@
 import { defineMiddleware } from 'astro:middleware';
 import { authMiddleware } from './auth';
 
-// Ścieżki, które wymagają uwierzytelnienia
-const PROTECTED_ROUTES = ['/collections', '/collections/'];
+// Lista chronionych tras
+const protectedRoutes = [
+  "/collections", 
+  "/collections/create", 
+  "/collections/edit", 
+  "/collections/delete",
+  "/learn/collection"
+];
 
 // Główne middleware aplikacji
 export const onRequest = defineMiddleware(async (context, next) => {
@@ -11,7 +17,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
     // Po przetworzeniu middleware autentykacji, sprawdź chronione ścieżki
     const { pathname } = new URL(context.request.url);
     
-    if (PROTECTED_ROUTES.includes(pathname)) {
+    if (protectedRoutes.includes(pathname)) {
       // Sprawdź, czy użytkownik jest zalogowany
       if (!context.locals.user) {
         // Przekieruj do strony logowania jeśli użytkownik nie jest zalogowany

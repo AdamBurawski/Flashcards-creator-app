@@ -156,7 +156,7 @@ export default function CollectionDetails({ collection, flashcards }: Collection
             </Button>
             {flashcards.length > 0 && (
               <Button variant="outline" asChild>
-                <a href={`/flashcards/learn/${collection.id}`}>Rozpocznij naukę</a>
+                <a href={`/learn/collection/${collection.id}`}>Rozpocznij naukę</a>
               </Button>
             )}
           </div>

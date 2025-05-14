@@ -44,7 +44,7 @@ function CollectionCard({ collection }: { collection: Collection }) {
         </Button>
 
         <Button variant="outline" size="sm" asChild>
-          <a href={`/flashcards/learn/${collection.id}`}>Ucz się</a>
+          <a href={`/learn/collection/${collection.id}`}>Ucz się</a>
         </Button>
       </div>
     </div>
