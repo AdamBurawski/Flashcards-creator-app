@@ -94,16 +94,12 @@ const FlashcardCard: React.FC<FlashcardCardProps> = ({ front, back, showAnswer, 
         </div>
       </div>
 
-      {/* Debugowanie - wyświetla informacje o stanie karty */}
-      {process.env.NODE_ENV === "development" && (
-        <div className="mt-2 text-xs text-gray-500">
-          <p>
-            Debug: showAnswer={String(showAnswer)}, isCorrect={String(isCorrect)}, isFlipped={String(isFlipped)}
-          </p>
-          <p>Front: {front ? `"${front}"` : "pusty"}</p>
-          <p>Back: {back ? `"${back}"` : "pusty"}</p>
-        </div>
-      )}
+      {/* Debugowanie - wyświetla tylko w trybie development i tylko w konsoli */}
+      {process.env.NODE_ENV === "development" &&
+        console.log(
+          `FlashcardCard Debug: showAnswer=${showAnswer}, isCorrect=${isCorrect}, isFlipped=${isFlipped}, 
+          Front: "${front}", Back: "${back}"`
+        )}
     </div>
   );
 };
