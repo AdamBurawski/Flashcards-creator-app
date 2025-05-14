@@ -97,10 +97,13 @@ const SpeechRecognition: React.FC<SpeechRecognitionProps> = ({ onTranscriptionCo
       const recorder = new MediaRecorder(stream, recorderOptions);
       setMediaRecorder(recorder);
 
+      // Tablica do przechowywania fragmentów audio dla danej sesji nagrywania
+      let sessionChunks: Blob[] = [];
+
       // Konfiguracja handler'ów zdarzeń
       recorder.ondataavailable = (event) => {
         if (event.data.size > 0) {
-          setAudioChunks((currentChunks) => [...currentChunks, event.data]);
+          sessionChunks.push(event.data);
         }
       };
 
@@ -117,7 +120,7 @@ const SpeechRecognition: React.FC<SpeechRecognitionProps> = ({ onTranscriptionCo
 
         // Pobierz typ MIME nagrania
         const actualMimeType = recorder.mimeType || "audio/webm";
-        const audioBlob = new Blob(audioChunks, { type: actualMimeType });
+        const audioBlob = new Blob(sessionChunks, { type: actualMimeType });
 
         // Użyj wybranego wcześniej rozszerzenia lub określ je na podstawie typu MIME
         if (!fileExtension) {
@@ -140,6 +143,8 @@ const SpeechRecognition: React.FC<SpeechRecognitionProps> = ({ onTranscriptionCo
           setError(err instanceof Error ? err.message : "Wystąpił błąd podczas transkrypcji.");
         } finally {
           setIsProcessing(false);
+          // Wyczyść sesję nagrywania
+          sessionChunks = [];
         }
       };
 

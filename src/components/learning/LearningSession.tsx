@@ -262,7 +262,7 @@ const LearningSession: React.FC<LearningSessionProps> = ({ collectionId }) => {
             Fiszka {currentFlashcardIndex + 1} z {flashcards.length}
           </span>
           <span className="text-gray-700 font-medium">
-            Wynik: {sessionScore.correct} / {currentFlashcardIndex}
+            Wynik: {sessionScore.correct} / {flashcards.length}
           </span>
         </div>
         <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
