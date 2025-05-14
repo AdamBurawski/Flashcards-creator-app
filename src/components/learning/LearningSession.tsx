@@ -43,6 +43,8 @@ const LearningSession: React.FC<LearningSessionProps> = ({ collectionId }) => {
   const [isEvaluating, setIsEvaluating] = useState(false);
   const [backgroundColor, setBackgroundColor] = useState("#f0f9ff"); // Domyślny jasnoniebieski
   const [useSpeechRecognition, setUseSpeechRecognition] = useState(false);
+  const [sessionStartTime, setSessionStartTime] = useState<number | null>(null);
+  const [sessionDuration, setSessionDuration] = useState<number>(0);
 
   // Zmiana losowego koloru tła
   const changeBackgroundColor = useCallback(() => {
@@ -79,6 +81,9 @@ const LearningSession: React.FC<LearningSessionProps> = ({ collectionId }) => {
         // Ustawienie początkowego koloru tła bezpośrednio
         const initialColor = backgroundColors[Math.floor(Math.random() * backgroundColors.length)];
         setBackgroundColor(initialColor);
+
+        // Ustawienie czasu rozpoczęcia sesji
+        setSessionStartTime(Date.now());
       } catch (err) {
         setError(err instanceof Error ? err.message : "Wystąpił nieznany błąd.");
       } finally {
@@ -143,6 +148,13 @@ const LearningSession: React.FC<LearningSessionProps> = ({ collectionId }) => {
       setShowAnswer(false);
       setEvaluationResult(null);
       changeBackgroundColor();
+    } else {
+      // Ostatnia fiszka - zakończenie sesji
+      if (sessionStartTime) {
+        const duration = Math.floor((Date.now() - sessionStartTime) / 1000); // w sekundach
+        setSessionDuration(duration);
+      }
+      setCurrentFlashcardIndex((prev) => prev + 1);
     }
   };
 
@@ -174,6 +186,13 @@ const LearningSession: React.FC<LearningSessionProps> = ({ collectionId }) => {
   // Przełączanie między wpisywaniem a nagrywaniem
   const toggleInputMethod = () => {
     setUseSpeechRecognition(!useSpeechRecognition);
+  };
+
+  // Funkcja formatująca czas w formacie MM:SS
+  const formatTime = (seconds: number): string => {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes}:${remainingSeconds < 10 ? "0" : ""}${remainingSeconds}`;
   };
 
   // Gdy dane się ładują
@@ -216,7 +235,7 @@ const LearningSession: React.FC<LearningSessionProps> = ({ collectionId }) => {
         <div className="bg-white rounded-3xl shadow-lg p-8 max-w-md w-full">
           <h2 className="text-2xl font-bold text-center mb-6">Sesja zakończona!</h2>
 
-          <div className="text-center mb-8">
+          <div className="text-center mb-6">
             <p className="text-xl mb-2">
               Twój wynik: <span className="font-bold">{sessionScore.correct}</span> / {sessionScore.total}
             </p>
@@ -225,6 +244,42 @@ const LearningSession: React.FC<LearningSessionProps> = ({ collectionId }) => {
                 ? "Świetnie! Wszystkie odpowiedzi poprawne!"
                 : `${Math.round((sessionScore.correct / sessionScore.total) * 100)}% poprawnych odpowiedzi.`}
             </p>
+          </div>
+
+          {/* Tabela podsumowania */}
+          <div className="bg-gray-50 border border-gray-200 rounded-lg mb-6 overflow-hidden">
+            <table className="w-full">
+              <thead className="bg-gray-100">
+                <tr>
+                  <th className="py-3 px-4 text-left text-sm font-medium text-gray-700">Kategoria</th>
+                  <th className="py-3 px-4 text-right text-sm font-medium text-gray-700">Wynik</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                <tr>
+                  <td className="py-3 px-4 text-sm text-gray-700">Fiszki poprawne</td>
+                  <td className="py-3 px-4 text-right text-sm font-medium text-green-600">{sessionScore.correct}</td>
+                </tr>
+                <tr>
+                  <td className="py-3 px-4 text-sm text-gray-700">Fiszki błędne</td>
+                  <td className="py-3 px-4 text-right text-sm font-medium text-red-600">
+                    {sessionScore.total - sessionScore.correct}
+                  </td>
+                </tr>
+                <tr>
+                  <td className="py-3 px-4 text-sm text-gray-700">Skuteczność</td>
+                  <td className="py-3 px-4 text-right text-sm font-medium text-blue-600">
+                    {Math.round((sessionScore.correct / sessionScore.total) * 100)}%
+                  </td>
+                </tr>
+                <tr>
+                  <td className="py-3 px-4 text-sm text-gray-700">Całkowity czas</td>
+                  <td className="py-3 px-4 text-right text-sm font-medium text-gray-700">
+                    {formatTime(sessionDuration)}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
 
           <div className="flex flex-col sm:flex-row gap-4">
