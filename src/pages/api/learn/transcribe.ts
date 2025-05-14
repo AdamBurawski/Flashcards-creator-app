@@ -88,7 +88,59 @@ export const POST: APIRoute = async ({ request, locals }) => {
       );
     }
 
-    // 6. Wywołanie API Whisper przez nasz serwis
+    // Logowanie informacji o pliku dla celów diagnostycznych
+    console.log(`[DEBUG] Otrzymano plik audio: ${audioFile.name}, typu: ${audioFile.type}, rozmiaru: ${audioFile.size} bajtów`);
+
+    // 6. Upewnij się, że plik ma poprawne rozszerzenie
+    const validExtensions = ['flac', 'm4a', 'mp3', 'mp4', 'mpeg', 'mpga', 'oga', 'ogg', 'wav', 'webm'];
+    
+    // Pobierz rozszerzenie z nazwy pliku
+    const fileExt = audioFile.name.split('.').pop()?.toLowerCase() || '';
+
+    // Sprawdź, czy rozszerzenie jest wspierane, jeśli nie - zmień nazwę pliku
+    if (!validExtensions.includes(fileExt)) {
+      // Określ nowy typ MIME na podstawie faktycznego typu pliku
+      let newExtension = 'mp3'; // domyślne rozszerzenie
+      
+      if (audioFile.type.includes('webm')) newExtension = 'webm';
+      else if (audioFile.type.includes('mp4')) newExtension = 'mp4';
+      else if (audioFile.type.includes('ogg')) newExtension = 'ogg';
+      else if (audioFile.type.includes('wav')) newExtension = 'wav';
+      
+      console.log(`[DEBUG] Nieprawidłowe rozszerzenie pliku: ${fileExt}, zmieniam na: ${newExtension}`);
+      
+      // Konwersja pliku z poprawnym rozszerzeniem/typem MIME
+      const audioData = await audioFile.arrayBuffer();
+      const correctAudioFile = new File(
+        [audioData], 
+        `recording.${newExtension}`, 
+        { type: `audio/${newExtension}` }
+      );
+      
+      // 7. Wywołanie API Whisper przez nasz serwis z poprawionym plikiem
+      const { transcript, error } = await transcribeAudio(correctAudioFile);
+      
+      if (error) {
+        return new Response(
+          JSON.stringify({ error }),
+          {
+            status: 500,
+            headers: { "Content-Type": "application/json" }
+          }
+        );
+      }
+      
+      // 8. Zwróć transkrypcję
+      return new Response(
+        JSON.stringify({ transcript }),
+        {
+          status: 200,
+          headers: { "Content-Type": "application/json" }
+        }
+      );
+    }
+    
+    // 7. Wywołanie API Whisper przez nasz serwis (używając oryginalnego pliku, jeśli jego rozszerzenie jest ok)
     const { transcript, error } = await transcribeAudio(audioFile);
     
     if (error) {
@@ -101,7 +153,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
       );
     }
     
-    // 7. Zwróć transkrypcję
+    // 8. Zwróć transkrypcję
     return new Response(
       JSON.stringify({ transcript }),
       {

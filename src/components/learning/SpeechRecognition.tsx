@@ -11,6 +11,9 @@ const SpeechRecognition: React.FC<SpeechRecognitionProps> = ({ onTranscriptionCo
   const [error, setError] = useState<string | null>(null);
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
   const [audioChunks, setAudioChunks] = useState<Blob[]>([]);
+  const [selectedFormat, setSelectedFormat] = useState<string>("");
+  const [recordingDuration, setRecordingDuration] = useState(0);
+  const [recordingTimer, setRecordingTimer] = useState<number | null>(null);
 
   // Sprawdzenie, czy przeglądarka obsługuje API nagrywania
   const isBrowserSupported = useCallback(() => {
@@ -23,6 +26,8 @@ const SpeechRecognition: React.FC<SpeechRecognitionProps> = ({ onTranscriptionCo
       // Reset stanu
       setError(null);
       setAudioChunks([]);
+      setSelectedFormat("");
+      setRecordingDuration(0);
 
       // Sprawdź wsparcie przeglądarki
       if (!isBrowserSupported()) {
@@ -30,10 +35,66 @@ const SpeechRecognition: React.FC<SpeechRecognitionProps> = ({ onTranscriptionCo
       }
 
       // Poproś o dostęp do mikrofonu
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          channelCount: 1, // Mono (jedna ścieżka)
+          sampleRate: 44100, // Standardowa częstotliwość próbkowania
+        },
+      });
 
-      // Utwórz MediaRecorder
-      const recorder = new MediaRecorder(stream);
+      // Wspierane formaty przez Whisper API (w kolejności preferencji)
+      const whisperSupportedFormats = ["mp3", "mp4", "mpeg", "mpga", "wav", "webm"];
+
+      // Mapowanie rozszerzeń na typy MIME
+      const mimeMap: Record<string, string> = {
+        mp3: "audio/mpeg",
+        mp4: "audio/mp4",
+        mpeg: "audio/mpeg",
+        mpga: "audio/mpeg",
+        wav: "audio/wav",
+        webm: "audio/webm",
+        ogg: "audio/ogg",
+      };
+
+      // Lista preferowanych formatów dla MediaRecorder
+      let selectedMimeType = "";
+      let fileExtension = "";
+
+      // Sprawdź dostępne formaty w kolejności preferencji
+      for (const ext of whisperSupportedFormats) {
+        const mimeType = mimeMap[ext];
+        if (mimeType && MediaRecorder.isTypeSupported(mimeType)) {
+          selectedMimeType = mimeType;
+          fileExtension = ext;
+          break;
+        }
+      }
+
+      // Jeśli nie znaleziono wspieranego formatu, spróbuj z dodatkowymi opcjami kodeka
+      if (!selectedMimeType) {
+        // Kolejna próba z webm + kodeki
+        for (const codec of ["opus", "vorbis"]) {
+          const mimeWithCodec = `audio/webm;codecs=${codec}`;
+          if (MediaRecorder.isTypeSupported(mimeWithCodec)) {
+            selectedMimeType = mimeWithCodec;
+            fileExtension = "webm";
+            break;
+          }
+        }
+      }
+
+      // Jeśli nadal nie mamy formatu, użyj domyślnego
+      if (!selectedMimeType) {
+        console.warn("Nie znaleziono wspieranego formatu audio. Używam domyślnego formatu.");
+        fileExtension = "webm"; // Domyślne rozszerzenie
+      } else {
+        console.log(`Używam formatu nagrywania: ${selectedMimeType} (rozszerzenie: ${fileExtension})`);
+        setSelectedFormat(fileExtension);
+      }
+
+      // Konfiguracja nagrywania
+      const recorderOptions = selectedMimeType ? { mimeType: selectedMimeType } : {};
+      const recorder = new MediaRecorder(stream, recorderOptions);
       setMediaRecorder(recorder);
 
       // Konfiguracja handler'ów zdarzeń
@@ -48,14 +109,33 @@ const SpeechRecognition: React.FC<SpeechRecognitionProps> = ({ onTranscriptionCo
         // Zatrzymaj wszystkie ścieżki dźwiękowe
         stream.getTracks().forEach((track) => track.stop());
 
-        // Przygotuj blob z nagranym audio
-        const audioBlob = new Blob(audioChunks, { type: "audio/webm" });
+        // Zatrzymaj timer nagrywania
+        if (recordingTimer) {
+          clearInterval(recordingTimer);
+          setRecordingTimer(null);
+        }
+
+        // Pobierz typ MIME nagrania
+        const actualMimeType = recorder.mimeType || "audio/webm";
+        const audioBlob = new Blob(audioChunks, { type: actualMimeType });
+
+        // Użyj wybranego wcześniej rozszerzenia lub określ je na podstawie typu MIME
+        if (!fileExtension) {
+          if (actualMimeType.includes("mp3") || actualMimeType.includes("mpeg")) fileExtension = "mp3";
+          else if (actualMimeType.includes("mp4")) fileExtension = "mp4";
+          else if (actualMimeType.includes("ogg")) fileExtension = "ogg";
+          else if (actualMimeType.includes("wav")) fileExtension = "wav";
+          else fileExtension = "webm"; // Domyślne rozszerzenie
+        }
 
         try {
           setIsProcessing(true);
 
-          // Wysłanie nagrania do transkrypcji przez API (np. Whisper)
-          await sendAudioForTranscription(audioBlob);
+          console.log(
+            `Wysyłam nagranie w formacie: ${actualMimeType}, z rozszerzeniem: ${fileExtension}, rozmiar: ${audioBlob.size} bajtów, czas: ${recordingDuration}s`
+          );
+
+          await sendAudioForTranscription(audioBlob, `recording.${fileExtension}`);
         } catch (err) {
           setError(err instanceof Error ? err.message : "Wystąpił błąd podczas transkrypcji.");
         } finally {
@@ -63,14 +143,20 @@ const SpeechRecognition: React.FC<SpeechRecognitionProps> = ({ onTranscriptionCo
         }
       };
 
-      // Rozpocznij nagrywanie
-      recorder.start();
+      // Rozpocznij nagrywanie z odpowiednim interwałem próbkowania
+      recorder.start(1000); // Co 1 sekundę zbieramy fragmenty nagrania
       setIsRecording(true);
+
+      // Uruchom timer nagrywania
+      const timer = window.setInterval(() => {
+        setRecordingDuration((prev) => prev + 1);
+      }, 1000);
+      setRecordingTimer(timer);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Wystąpił nieznany błąd podczas inicjalizacji nagrywania.");
       console.error("Błąd nagrywania:", err);
     }
-  }, [audioChunks, isBrowserSupported]);
+  }, [audioChunks, isBrowserSupported, recordingTimer]);
 
   // Zatrzymaj nagrywanie
   const stopRecording = useCallback(() => {
@@ -78,13 +164,24 @@ const SpeechRecognition: React.FC<SpeechRecognitionProps> = ({ onTranscriptionCo
       mediaRecorder.stop();
       setIsRecording(false);
     }
-  }, [mediaRecorder]);
+
+    // Zatrzymaj timer nagrywania
+    if (recordingTimer) {
+      clearInterval(recordingTimer);
+      setRecordingTimer(null);
+    }
+  }, [mediaRecorder, recordingTimer]);
 
   // Wysłanie audio do transkrypcji
-  const sendAudioForTranscription = async (audioBlob: Blob) => {
+  const sendAudioForTranscription = async (audioBlob: Blob, fileName: string) => {
+    // Sprawdź, czy plik ma jakąkolwiek zawartość (minimum 10 bajtów)
+    if (audioBlob.size < 10) {
+      throw new Error("Nagranie nie zawiera dźwięku. Spróbuj ponownie.");
+    }
+
     // Utworzenie obiektu FormData z nagraniem
     const formData = new FormData();
-    formData.append("audio", audioBlob);
+    formData.append("audio", audioBlob, fileName);
 
     // Wysłanie nagrania do API
     try {
@@ -94,7 +191,8 @@ const SpeechRecognition: React.FC<SpeechRecognitionProps> = ({ onTranscriptionCo
       });
 
       if (!response.ok) {
-        throw new Error("Błąd podczas transkrypcji nagrania.");
+        const errorData = await response.json().catch(() => ({ error: "Nieznany błąd" }));
+        throw new Error(errorData?.error || "Błąd podczas transkrypcji nagrania.");
       }
 
       const data = await response.json();
@@ -133,8 +231,11 @@ const SpeechRecognition: React.FC<SpeechRecognitionProps> = ({ onTranscriptionCo
       if (mediaRecorder && mediaRecorder.state !== "inactive") {
         mediaRecorder.stop();
       }
+      if (recordingTimer) {
+        clearInterval(recordingTimer);
+      }
     };
-  }, [mediaRecorder]);
+  }, [mediaRecorder, recordingTimer]);
 
   if (!isEnabled) {
     return null;
@@ -165,7 +266,7 @@ const SpeechRecognition: React.FC<SpeechRecognitionProps> = ({ onTranscriptionCo
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
             </span>
-            Zatrzymaj nagrywanie
+            Zatrzymaj nagrywanie {recordingDuration > 0 ? `(${recordingDuration}s)` : ""}
           </>
         ) : (
           <>

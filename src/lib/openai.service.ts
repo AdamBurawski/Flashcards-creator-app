@@ -32,6 +32,18 @@ export async function transcribeAudio(audioFile: File): Promise<{
       return { error: "Usługa transkrypcji jest niedostępna. Brak klucza API." };
     }
 
+    // Sprawdź, czy format pliku jest obsługiwany przez API Whisper
+    const validExtensions = ['flac', 'm4a', 'mp3', 'mp4', 'mpeg', 'mpga', 'oga', 'ogg', 'wav', 'webm'];
+    const fileExt = audioFile.name.split('.').pop()?.toLowerCase() || '';
+    
+    if (!validExtensions.includes(fileExt)) {
+      console.error(`Nieprawidłowy format pliku: ${fileExt}. Nazwa pliku: ${audioFile.name}, typ MIME: ${audioFile.type}`);
+      return { error: `Format pliku ${fileExt} nie jest obsługiwany. Obsługiwane formaty: flac, m4a, mp3, mp4, mpeg, mpga, oga, ogg, wav, webm.` };
+    }
+
+    // Logowanie diagnostyczne
+    console.log(`[OpenAI Service] Wysyłam plik audio do transkrypcji: ${audioFile.name}, typu: ${audioFile.type}, rozmiaru: ${audioFile.size} bajtów`);
+
     // Przygotuj dane formularza dla API Whisper
     const formData = new FormData();
     formData.append("file", audioFile);
@@ -52,11 +64,18 @@ export async function transcribeAudio(audioFile: File): Promise<{
       const errorData = await response.json().catch(() => null);
       const errorMessage = errorData?.error?.message || `HTTP error ${response.status}`;
       
+      console.error(`[OpenAI Service] Błąd API Whisper: ${errorMessage}`, errorData);
+      
       await logError({
         source: ErrorSource.EXTERNAL_API,
         error_code: "WHISPER_API_ERROR",
         error_message: errorMessage,
-        metadata: { status: response.status },
+        metadata: { 
+          status: response.status,
+          file_name: audioFile.name,
+          file_type: audioFile.type,
+          file_size: audioFile.size,
+        },
       });
       
       return { error: "Nie udało się transkrybować audio. Spróbuj ponownie." };
@@ -65,15 +84,24 @@ export async function transcribeAudio(audioFile: File): Promise<{
     // Parsuj odpowiedź
     const data = await response.json();
     
+    console.log(`[OpenAI Service] Transkrypcja zakończona powodzeniem`);
+    
     return { transcript: data.text };
   } catch (error) {
     // Obsługa błędów
     const errorMessage = error instanceof Error ? error.message : String(error);
     
+    console.error(`[OpenAI Service] Nieoczekiwany błąd: ${errorMessage}`);
+    
     await logError({
       source: ErrorSource.EXTERNAL_API,
       error_code: "WHISPER_UNEXPECTED_ERROR",
       error_message: errorMessage,
+      metadata: {
+        file_name: audioFile.name,
+        file_type: audioFile.type,
+        file_size: audioFile.size,
+      },
     });
     
     return { error: "Wystąpił nieoczekiwany błąd podczas transkrypcji." };

@@ -163,7 +163,12 @@ const LearningSession: React.FC<LearningSessionProps> = ({ collectionId }) => {
 
   // Obsługa transkrypcji mowy
   const handleTranscriptionComplete = (transcript: string) => {
+    console.log("Otrzymano transkrypcję:", transcript); // Debugowanie
     setUserAnswer(transcript);
+    // Dodaj komunikat, że transkrypcja została zakończona
+    if (transcript) {
+      setError(null); // Wyczyść stare błędy
+    }
   };
 
   // Przełączanie między wpisywaniem a nagrywaniem
@@ -334,6 +339,26 @@ const LearningSession: React.FC<LearningSessionProps> = ({ collectionId }) => {
 
             {/* Komponent transkrypcji mowy */}
             <SpeechRecognition onTranscriptionComplete={handleTranscriptionComplete} isEnabled={useSpeechRecognition} />
+
+            {/* Nowa implementacja wyświetlania transkrypcji */}
+            {useSpeechRecognition && (
+              <div className="mb-4">
+                {userAnswer ? (
+                  <>
+                    <label className="block text-gray-700 font-medium mb-2">Transkrypcja:</label>
+                    <div className="w-full px-4 py-3 border border-gray-300 bg-gray-50 rounded-lg text-gray-700 mb-2">
+                      {userAnswer}
+                    </div>
+                    <p className="text-sm text-gray-500 mb-4">
+                      Jeśli transkrypcja nie jest dokładna, możesz nagrać ponownie lub przełączyć się na wpisywanie
+                      ręczne.
+                    </p>
+                  </>
+                ) : (
+                  <p className="text-sm text-gray-500 mb-4">Po nagraniu, transkrypcja pojawi się tutaj.</p>
+                )}
+              </div>
+            )}
 
             {/* Input tekstowy (widoczny, gdy nie używamy nagrywania) */}
             {!useSpeechRecognition && (
