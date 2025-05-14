@@ -118,3 +118,24 @@
     @apply bg-background text-foreground;
   }
 }
+.relative.w-full.mx-auto.min-h-screen.bg-gradient-to-br.from-indigo-900.via-purple-900.to-blue-900.p-4.sm\:p-8.text-white {
+  background: black;
+}
+.w-full.p-4.bg-white.shadow-sm {
+  background: black;
+}
+a {
+  color: white;
+}
+.px-4.py-2.rounded.bg-gray-200.text-gray-800.hover\:bg-gray-300 {
+  background: green;
+}
+.mt-8.p-4.border.rounded-lg.bg-gray-50.max-w-lg.mx-auto {
+  /* background: black; */
+}
+ .mt-4.flex.justify-between {
+  a {
+    background: black;
+  }
+ 
+}
