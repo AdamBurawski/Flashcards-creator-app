@@ -16,6 +16,7 @@ export const POST: APIRoute = async ({ request }) => {
     const data = await request.json();
     input = data.input;
     if (typeof input !== 'string' || input.trim() === '') {
+      console.error('Błąd walidacji: Pole "input" jest wymagane i musi być niepustym ciągiem znaków.', { receivedInput: input });
       return new Response(
         JSON.stringify({ error: 'Nieprawidłowe dane wejściowe. Pole "input" jest wymagane i musi być niepustym ciągiem znaków.' }),
         { status: 400, headers: { "Content-Type": "application/json" } }
@@ -29,6 +30,8 @@ export const POST: APIRoute = async ({ request }) => {
   }
 
   try {
+    console.log('[Moderation API] Otrzymano tekst do moderacji:', input);
+
     // Standardowy endpoint OpenAI Moderation API
     const moderationApiUrl = 'https://api.openai.com/v1/moderations';
 
@@ -60,8 +63,12 @@ export const POST: APIRoute = async ({ request }) => {
 
     const moderationResult = await response.json();
 
+    console.log('[Moderation API] Surowa odpowiedź z OpenAI:', JSON.stringify(moderationResult, null, 2));
+
     // Zgodnie z dokumentacją OpenAI, interesuje nas pole `results[0].flagged`
     const isFlagged = moderationResult.results?.[0]?.flagged === true;
+
+    console.log('[Moderation API] Wynik moderacji - oflagowane:', isFlagged);
 
     return new Response(
       JSON.stringify({
