@@ -9,7 +9,8 @@ export enum ErrorSource {
   SERVER_ERROR = "server_error",
   API = "API",
   AI_SERVICE = "AI_SERVICE",
-  EXTERNAL_API = "EXTERNAL_API"
+  EXTERNAL_API = "EXTERNAL_API",
+  APPLICATION = "application"
 }
 
 export interface ErrorLogEntry {

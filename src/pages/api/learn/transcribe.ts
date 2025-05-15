@@ -2,7 +2,7 @@ import type { APIRoute } from "astro";
 import { z } from "zod";
 import { DEFAULT_USER_ID } from "../../../db/supabase.client";
 import { ErrorSource, logError } from "../../../lib/error-logger.service";
-import { transcribeAudio } from "../../../lib/openai.service";
+import { transcribeAudio, getUserTokenStatus, updateUserTokenUsage } from "../../../lib/openai.service";
 
 export const prerender = false;
 
@@ -76,7 +76,35 @@ export const POST: APIRoute = async ({ request, locals }) => {
       );
     }
 
-    // 5. Sprawdzenie rozmiaru pliku (max 25MB dla Whisper API)
+    // 5. Sprawdzenie limitu tokenów AI użytkownika
+    // UWAGA: getUserTokenStatus jest teraz wywoływane wewnątrz transcribeAudio i evaluateAnswer
+    // więc bezpośrednie wywołanie tutaj może nie być już potrzebne, jeśli cała logika limitów jest tam.
+    // Na razie zostawiam, ale jeśli transcribeAudio samo w sobie obsługuje ten przypadek, można to usunąć.
+    const { tokens_left, error: tokenError, status: tokenStatus } = await getUserTokenStatus(userId, locals.supabase);
+
+    if (tokenError) {
+      await logError({
+        source: ErrorSource.API,
+        error_code: "TOKEN_STATUS_ERROR",
+        error_message: tokenError,
+        user_id: userId
+      });
+      return new Response(
+        JSON.stringify({ error: "Nie udało się pobrać statusu tokenów AI." }),
+        { status: tokenStatus || 500, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    const TOKENS_PER_TRANSCRIPTION_DEFAULT = 1000; // Przyjmujemy stałą wartość za transkrypcję
+
+    if (tokens_left < TOKENS_PER_TRANSCRIPTION_DEFAULT) {
+      return new Response(
+        JSON.stringify({ error: "Przekroczono miesięczny limit wykorzystania tokenów AI dla transkrypcji." }),
+        { status: 429, headers: { "Content-Type": "application/json" } }
+      );
+    }
+    
+    // 6. Sprawdzenie rozmiaru pliku (max 25MB dla Whisper API)
     const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25MB
     if (audioFile.size > MAX_FILE_SIZE) {
       return new Response(
@@ -91,7 +119,10 @@ export const POST: APIRoute = async ({ request, locals }) => {
     // Logowanie informacji o pliku dla celów diagnostycznych
     console.log(`[DEBUG] Otrzymano plik audio: ${audioFile.name}, typu: ${audioFile.type}, rozmiaru: ${audioFile.size} bajtów`);
 
-    // 6. Upewnij się, że plik ma poprawne rozszerzenie
+    // Ustalenie liczby tokenów do zużycia (na razie stała wartość)
+    const tokensToConsume = TOKENS_PER_TRANSCRIPTION_DEFAULT;
+
+    // 7. Upewnij się, że plik ma poprawne rozszerzenie
     const validExtensions = ['flac', 'm4a', 'mp3', 'mp4', 'mpeg', 'mpga', 'oga', 'ogg', 'wav', 'webm'];
     
     // Pobierz rozszerzenie z nazwy pliku
@@ -117,20 +148,26 @@ export const POST: APIRoute = async ({ request, locals }) => {
         { type: `audio/${newExtension}` }
       );
       
-      // 7. Wywołanie API Whisper przez nasz serwis z poprawionym plikiem
-      const { transcript, error } = await transcribeAudio(correctAudioFile);
+      // 8. Wywołanie API Whisper przez nasz serwis z poprawionym plikiem
+      const { transcript, error, errorCode } = await transcribeAudio(correctAudioFile, userId, locals.supabase);
       
       if (error) {
+        let statusCode = 500;
+        if (errorCode === "TOKEN_LIMIT_EXCEEDED") statusCode = 429;
         return new Response(
           JSON.stringify({ error }),
           {
-            status: 500,
+            status: statusCode,
             headers: { "Content-Type": "application/json" }
           }
         );
       }
       
-      // 8. Zwróć transkrypcję
+      // 9. Zaktualizuj zużycie tokenów - to jest teraz robione wewnątrz transcribeAudio
+      // const { error: updateError } = await updateUserTokenUsage(userId, tokensToConsume, locals.supabase);
+      // if (updateError) { ... }
+      
+      // 10. Zwróć transkrypcję
       return new Response(
         JSON.stringify({ transcript }),
         {
@@ -140,20 +177,26 @@ export const POST: APIRoute = async ({ request, locals }) => {
       );
     }
     
-    // 7. Wywołanie API Whisper przez nasz serwis (używając oryginalnego pliku, jeśli jego rozszerzenie jest ok)
-    const { transcript, error } = await transcribeAudio(audioFile);
+    // 8. Wywołanie API Whisper przez nasz serwis (używając oryginalnego pliku, jeśli jego rozszerzenie jest ok)
+    const { transcript, error, errorCode } = await transcribeAudio(audioFile, userId, locals.supabase);
     
     if (error) {
+      let statusCode = 500;
+      if (errorCode === "TOKEN_LIMIT_EXCEEDED") statusCode = 429;
       return new Response(
         JSON.stringify({ error }),
         {
-          status: 500,
+          status: statusCode,
           headers: { "Content-Type": "application/json" }
         }
       );
     }
     
-    // 8. Zwróć transkrypcję
+    // 9. Zaktualizuj zużycie tokenów - to jest teraz robione wewnątrz transcribeAudio
+    // const { error: updateError } = await updateUserTokenUsage(userId, tokensToConsume, locals.supabase);
+    // if (updateError) { ... }
+
+    // 10. Zwróć transkrypcję
     return new Response(
       JSON.stringify({ transcript }),
       {

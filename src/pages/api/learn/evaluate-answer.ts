@@ -2,7 +2,7 @@ import type { APIRoute } from "astro";
 import { z } from "zod";
 import { DEFAULT_USER_ID } from "../../../db/supabase.client";
 import { ErrorSource, logError } from "../../../lib/error-logger.service";
-import { evaluateAnswer } from "../../../lib/openai.service";
+import { evaluateAnswer, getUserTokenStatus, updateUserTokenUsage } from "../../../lib/openai.service";
 
 export const prerender = false;
 
@@ -84,7 +84,32 @@ export const POST: APIRoute = async ({ request, locals }) => {
 
     const { questionText, expectedAnswerText, userAnswerText } = validationResult.data;
 
-    // 3. Sprawdzenie flagi trybu bypass dla testów
+    // 3. Sprawdzenie limitu tokenów AI użytkownika
+    const { tokens_left, error: tokenError, status: tokenStatus } = await getUserTokenStatus(userId, locals.supabase);
+
+    if (tokenError) {
+      await logError({
+        source: ErrorSource.API,
+        error_code: "TOKEN_STATUS_ERROR",
+        error_message: tokenError,
+        user_id: userId
+      });
+      return new Response(
+        JSON.stringify({ error: "Nie udało się pobrać statusu tokenów AI." }),
+        { status: tokenStatus || 500, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    const TOKENS_PER_EVALUATION_DEFAULT = 200; // Przyjmujemy stałą wartość za ewaluację
+
+    if (tokens_left < TOKENS_PER_EVALUATION_DEFAULT) {
+      return new Response(
+        JSON.stringify({ error: "Przekroczono miesięczny limit wykorzystania tokenów AI dla oceny odpowiedzi." }),
+        { status: 429, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    // 4. Sprawdzenie flagi trybu bypass dla testów
     const bypassEnv = import.meta.env.BYPASS_DATABASE;
     const isBypassMode = bypassEnv === "true" || bypassEnv === true;
 
@@ -120,20 +145,25 @@ export const POST: APIRoute = async ({ request, locals }) => {
       );
     }
 
-    // 4. Wywołanie serwisu do oceny odpowiedzi przez LLM
-    const result = await evaluateAnswer(questionText, expectedAnswerText, userAnswerText);
+    // Ustalenie liczby tokenów do zużycia
+    const tokensToConsume = TOKENS_PER_EVALUATION_DEFAULT;
+
+    // 5. Wywołanie serwisu do oceny odpowiedzi przez LLM
+    const result = await evaluateAnswer(userId, questionText, expectedAnswerText, userAnswerText, locals.supabase);
     
     if (result.error) {
+      let statusCode = 500;
+      if (result.errorCode === "TOKEN_LIMIT_EXCEEDED") statusCode = 429;
       return new Response(
         JSON.stringify({ error: result.error }),
         {
-          status: 500,
+          status: statusCode,
           headers: { "Content-Type": "application/json" }
         }
       );
     }
 
-    // 5. Zwróć wynik oceny
+    // 7. Zwróć wynik oceny
     return new Response(
       JSON.stringify({
         isCorrect: result.isCorrect,
