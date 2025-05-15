@@ -43,7 +43,7 @@ function CollectionCard({ collection }: { collection: Collection }) {
           <a href={`/collections/${collection.id}`}>Przeglądaj</a>
         </Button>
 
-        <Button variant="outline" size="sm" asChild>
+        <Button style={{ backgroundColor: "purple" }} variant="outline" size="sm" asChild>
           <a href={`/learn/collection/${collection.id}`}>Sprawdź się</a>
         </Button>
       </div>

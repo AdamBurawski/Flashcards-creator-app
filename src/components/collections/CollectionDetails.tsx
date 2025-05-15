@@ -155,7 +155,7 @@ export default function CollectionDetails({ collection, flashcards }: Collection
               Importuj wygenerowane fiszki
             </Button>
             {flashcards.length > 0 && (
-              <Button variant="outline" asChild>
+              <Button style={{ backgroundColor: "purple" }} variant="outline" asChild>
                 <a href={`/learn/collection/${collection.id}`}>Rozpocznij naukę</a>
               </Button>
             )}
