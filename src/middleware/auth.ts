@@ -1,6 +1,6 @@
 import type { MiddlewareHandler } from "astro";
 import { createClient } from "@supabase/supabase-js";
-import type { Database } from "../db/database.types";
+import type { Database } from "../db/supabase.types";
 
 // Middleware do obsługi autentykacji
 // W rzeczywistej implementacji będzie to wykorzystywać Supabase

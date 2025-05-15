@@ -1,7 +1,7 @@
 /// <reference types="astro/client" />
 
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Database } from "./db/database.types";
+import type { Database } from "./db/supabase.types";
 import type { UserMetadata, Session as SupabaseSession, User as SupabaseUser } from "@supabase/supabase-js";
 
 // Typy dla użytkownika i sesji

@@ -1,5 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
-import type { Database } from "./database.types";
+import type { Database } from "./supabase.types";
 
 // Utworzenie klienta Supabase po stronie klienta
 // Próbujemy pobrać URL i klucz z różnych możliwych źródeł

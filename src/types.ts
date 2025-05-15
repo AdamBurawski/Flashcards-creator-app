@@ -1,5 +1,5 @@
 // src/types.ts
-import type { Database } from "./db/database.types";
+import type { Database } from "./db/supabase.types";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 
 // ------------------------------------------------------------------------------------------------

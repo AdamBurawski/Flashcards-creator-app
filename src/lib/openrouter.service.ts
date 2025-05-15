@@ -72,6 +72,14 @@ interface ApiResponse {
 }
 
 /**
+ * Interfejs dla wyniku zwracanego przez sendChatMessage
+ */
+export interface ChatCompletionResult<T> {
+  response: T;
+  usage: ApiResponse['usage'];
+}
+
+/**
  * Interfejs dla opcji inicjalizacyjnych serwisu
  */
 interface OpenRouterServiceOptions {
@@ -189,16 +197,16 @@ export class OpenRouterService {
         index: z.number(),
         message: z.object({
           role: z.string(),
-          content: z.string()
+          content: z.string(),
         }),
-        finish_reason: z.string()
+        finish_reason: z.string(),
       })
     ).min(1),
     usage: z.object({
       prompt_tokens: z.number(),
       completion_tokens: z.number(),
-      total_tokens: z.number()
-    })
+      total_tokens: z.number(),
+    }),
   });
 
   /**
@@ -288,15 +296,18 @@ export class OpenRouterService {
    * Zwraca historię komunikatów
    */
   public getHistory(): ChatMessage[] {
-    return [...this.messageHistory];
+    return this.messageHistory;
   }
 
   /**
-   * Wysyła komunikat czatu do API i zwraca odpowiedź
+   * Wysyła komunikat do API i zwraca przetworzoną odpowiedź wraz z danymi o zużyciu tokenów.
+   * @template T - Oczekiwany typ sparsowanej odpowiedzi (content)
+   * @param userMessage - Komunikat od użytkownika (opcjonalny, jeśli ustawiono wcześniej)
+   * @returns Obiekt zawierający sparsowaną odpowiedź i zużycie tokenów
    */
-  public async sendChatMessage<T>(userMessage?: string): Promise<T> {
+  public async sendChatMessage<T>(userMessage?: string): Promise<ChatCompletionResult<T>> {
     if (userMessage) {
-      this.setUserMessage(userMessage);
+      this.currentUserMessage = userMessage;
     }
     
     if (!this.currentUserMessage) {
@@ -310,71 +321,47 @@ export class OpenRouterService {
       this.addMessageToHistory('user', this.currentUserMessage);
 
       const requestPayload = this.buildRequestPayload();
-      this.logger.info(`Wysyłanie żądania do API dla modelu: ${requestPayload.model}`);
+      this.logger.debug('Wysyłanie żądania do API z ładunkiem:', this.maskSensitiveDataInPayload(requestPayload));
       
-      const response = await this.executeRequest(requestPayload);
-      this.logger.info(`Otrzymano odpowiedź z API, identyfikator: ${response.id || 'unknown'}`);
+      const apiResponse = await this.executeRequest(requestPayload);
+      this.logger.debug('Otrzymano odpowiedź z API:', apiResponse);
       
-      // Walidacja odpowiedzi przez schemat Zod
-      let validatedResponse;
+      if (!apiResponse.choices || apiResponse.choices.length === 0 || !apiResponse.choices[0].message) {
+        this.logger.error('Nieprawidłowa struktura odpowiedzi API: brak choices lub message');
+        throw new NoResponseError('Nieprawidłowa struktura odpowiedzi API');
+      }
+
+      const assistantMessage = apiResponse.choices[0].message.content;
+      this.addMessageToHistory('assistant', assistantMessage);
+
+      let parsedContent: T;
       try {
-        validatedResponse = this.apiResponseSchema.parse(response);
-      } catch (zodError) {
-        console.error(`[OPENROUTER-SERVICE] Zod validation error:`, zodError);
+        // Zakładamy, że jeśli typ generyczny T nie jest prostym stringiem,
+        // to oczekiwany jest JSON. AIService używa T = {flashcards: ...}
+        // i jego prompt systemowy instruuje model do zwracania JSON.
+        // Dlatego zawsze próbujemy parsować odpowiedź.
+        this.logger.debug(`Próba parsowania odpowiedzi jako JSON. Treść (max 200 znaków): "${assistantMessage.substring(0,200)}"`);
+        parsedContent = JSON.parse(assistantMessage) as T;
+        this.logger.debug('Pomyślnie sparsowano zawartość odpowiedzi jako JSON.');
+      } catch (error) {
+        this.logger.error(`Błąd podczas parsowania odpowiedzi JSON. Otrzymana treść (max 200 znaków): "${assistantMessage.substring(0,200)}"`, error);
         
-        if (response.choices && response.choices.length > 0 && response.choices[0].message) {
-          console.log(`[OPENROUTER-SERVICE] Response doesn't match schema but has message content, using it anyway`);
-          validatedResponse = response;
+        let detail = 'Sprawdzenie, czy model zwrócił poprawny JSON.';
+        // Sprawdzenie, czy currentResponseFormat było ustawione, może dać dodatkowy kontekst
+        if (this.currentResponseFormat && this.currentResponseFormat.name === 'json_object') {
+            detail += ' Tryb json_object był włączony.';
+        } else if (this.currentResponseFormat) {
+            detail += ` Tryb response_format był ustawiony (name: ${this.currentResponseFormat.name}), ale nie jako 'json_object'.`;
         } else {
-          throw new ResponseProcessingError(`Nieprawidłowa struktura odpowiedzi: ${zodError instanceof Error ? zodError.message : String(zodError)}`);
+            detail += ' Żaden konkretny response_format nie był ustawiony (poleganie na prompcie).';
         }
+        throw new ResponseProcessingError(`Błąd podczas przetwarzania odpowiedzi JSON z API. ${detail} Otrzymana treść (max 100 znaków): "${assistantMessage.substring(0,100)}"`);
       }
-      
-      const content = validatedResponse.choices[0]?.message.content;
-      if (!content) {
-        const error = new NoResponseError('Brak odpowiedzi od API');
-        this.logger.error(error.message);
-        throw error;
-      }
-      
-      // Dodaj odpowiedź do historii
-      this.addMessageToHistory('assistant', content);
-      
-      // Próba parsowania odpowiedzi jako JSON
-      try {
-        console.log(`[OPENROUTER-SERVICE] Trying to parse response content as JSON:`, content.substring(0, 100));
-        const parsedContent = JSON.parse(content) as T;
-        this.logger.debug('Pomyślnie sparsowano odpowiedź JSON');
-        return parsedContent;
-      } catch (parseError) {
-        // Jeśli nie używamy response_format, to możemy otrzymać zwykły tekst
-        if (!this.currentResponseFormat) {
-          console.log(`[OPENROUTER-SERVICE] Not using response_format, returning content as-is`);
-          return content as unknown as T;
-        }
-        
-        // Próba wyodrębnienia JSON z tekstu (w przypadku modeli które dodają dodatkowy tekst)
-        try {
-          console.log(`[OPENROUTER-SERVICE] Trying to extract JSON from response text`);
-          const jsonMatch = content.match(/```(?:json)?(.*?)```/s) || content.match(/{.*}/s);
-          
-          if (jsonMatch) {
-            const jsonContent = jsonMatch[1] ? jsonMatch[1].trim() : jsonMatch[0].trim();
-            console.log(`[OPENROUTER-SERVICE] Extracted JSON:`, jsonContent.substring(0, 100));
-            const extractedJson = JSON.parse(jsonContent) as T;
-            this.logger.debug('Pomyślnie wyodrębniono i sparsowano JSON z odpowiedzi');
-            return extractedJson;
-          }
-        } catch (extractError) {
-          console.error(`[OPENROUTER-SERVICE] Error extracting JSON:`, extractError);
-        }
-        
-        const error = new ResponseProcessingError(
-          `Błąd parsowania JSON: ${parseError instanceof Error ? parseError.message : String(parseError)}`
-        );
-        this.logger.error(error.message);
-        throw error;
-      }
+
+      return {
+        response: parsedContent,
+        usage: apiResponse.usage,
+      };
     } catch (error) {
       if (error instanceof z.ZodError) {
         const responseError = new ResponseProcessingError(`Nieprawidłowa struktura odpowiedzi: ${error.message}`);

@@ -1,5 +1,5 @@
 import type { FlashcardProposalDto } from "../types";
-import { OpenRouterService } from "./openrouter.service";
+import { OpenRouterService, type ChatCompletionResult } from "./openrouter.service";
 
 /**
  * Error class for AI service errors
@@ -68,9 +68,9 @@ export class AIService {
   /**
    * Generate flashcards from source text using an AI model
    * @param sourceText The input text to generate flashcards from
-   * @returns Promise resolving to an array of flashcard proposals
+   * @returns Promise resolving to an array of flashcard proposals and tokens used
    */
-  async generateFlashcards(sourceText: string): Promise<FlashcardProposalDto[]> {
+  async generateFlashcards(sourceText: string): Promise<{ proposals: FlashcardProposalDto[], tokensUsed: number }> {
     try {
       console.log(`[AI-SERVICE] Generating flashcards from text (${sourceText.length} chars)`);
       
@@ -83,9 +83,9 @@ export class AIService {
       const aiRequestPromise = this.callAIService(sourceText);
 
       // Race the two promises - whichever resolves/rejects first wins
-      const result = await Promise.race([aiRequestPromise, timeoutPromise]);
-      console.log(`[AI-SERVICE] Successfully generated ${result.length} flashcards`);
-      return result;
+      const { proposals, tokensUsed } = await Promise.race([aiRequestPromise, timeoutPromise]);
+      console.log(`[AI-SERVICE] Successfully generated ${proposals.length} flashcards, tokens used: ${tokensUsed}`);
+      return { proposals, tokensUsed };
     } catch (error: any) {
       console.error(`[AI-SERVICE] Error generating flashcards:`, error);
       
@@ -104,26 +104,32 @@ export class AIService {
   /**
    * Makes the actual API call to the AI service
    * @param sourceText The input text to generate flashcards from
-   * @returns Promise resolving to an array of flashcard proposals
+   * @returns Promise resolving to an array of flashcard proposals and tokens used
    */
-  private async callAIService(sourceText: string): Promise<FlashcardProposalDto[]> {
+  private async callAIService(sourceText: string): Promise<{ proposals: FlashcardProposalDto[], tokensUsed: number }> {
     try {
       console.log(`[AI-SERVICE] Calling OpenRouter service with text input`);
       
-      // Wywołanie OpenRouterService dla podanego tekstu źródłowego
       const prompt = `Wygeneruj fiszki na podstawie poniższego tekstu:\n\n${sourceText}`;
       console.log(`[AI-SERVICE] Using prompt: ${prompt.substring(0, 50)}...`);
       
-      const response = await this.openRouterService.sendChatMessage<{ flashcards: { front: string, back: string }[] }>(prompt);
+      // Oczekujemy teraz ChatCompletionResult z OpenRouterService
+      const { response: openRouterResponse, usage } = await this.openRouterService.sendChatMessage<{ flashcards: { front: string, back: string }[] }>(prompt);
       
-      console.log(`[AI-SERVICE] Received response from OpenRouter:`, response);
+      console.log(`[AI-SERVICE] Received response from OpenRouter:`, openRouterResponse);
+      console.log(`[AI-SERVICE] Tokens used (from OpenRouter):`, usage);
 
       // Mapowanie odpowiedzi na format FlashcardProposalDto
-      return response.flashcards.map(flashcard => ({
+      const proposals = openRouterResponse.flashcards.map(flashcard => ({
         front: flashcard.front,
         back: flashcard.back,
         source: "ai-full" as const,
       }));
+
+      return {
+        proposals,
+        tokensUsed: usage.total_tokens
+      };
     } catch (error) {
       console.error(`[AI-SERVICE] Error calling OpenRouter API:`, error);
       throw new AIServiceError(

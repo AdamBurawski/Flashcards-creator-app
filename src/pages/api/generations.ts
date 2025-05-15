@@ -3,6 +3,10 @@ import { z } from "zod";
 import { generateFlashcards } from "../../lib/generation.service";
 import type { GenerateFlashcardsCommand, GenerationCreateResponseDto } from "../../types";
 import { DEFAULT_USER_ID } from "../../db/supabase.client";
+import type { Database } from "../../db/supabase.types";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { getUserTokenStatus, updateUserTokenUsage } from "../../lib/openai.service";
+import { ErrorSource, logError } from "../../lib/error-logger.service";
 
 export const prerender = false;
 
@@ -46,6 +50,49 @@ export const POST: APIRoute = async ({ request, locals }) => {
 
     const { source_text } = validationResult.data;
 
+    // Szacunkowy MAKSYMALNY koszt tokenów dla tej operacji (dla wstępnego sprawdzenia)
+    const ESTIMATED_MAX_TOKENS_PER_GENERATION = 5000;
+
+    try {
+      // Rzutowanie locals.supabase na poprawny typ, jeśli jest to konieczne
+      // Jednak idealnie, typ locals.supabase powinien być już poprawny z middleware Astro.
+      const supabaseTypedClient = locals.supabase as SupabaseClient<Database>;
+
+      const tokenStatus = await getUserTokenStatus(userId, supabaseTypedClient);
+      
+      // Sprawdzamy, czy sama funkcja getUserTokenStatus nie zwróciła jakiegoś wewnętrznego problemu
+      // (chociaż w obecnej implementacji loguje błędy i zwraca status z zerowym limitem)
+      // Dla pewności, można by dodać pole `error?: string` do UserTokenStatus
+
+      const { canUse, remainingTokens } = tokenStatus.canUseTokens(ESTIMATED_MAX_TOKENS_PER_GENERATION);
+
+      console.log(`[Generations API] Token status for user ${userId}: Limit=${tokenStatus.limit}, Usage=${tokenStatus.usage}, Left=${remainingTokens}, CanUse=${canUse} (estimated max cost: ${ESTIMATED_MAX_TOKENS_PER_GENERATION})`);
+
+      if (!canUse) {
+        console.warn(
+          `[Generations API] Użytkownik ${userId} przekroczył limit tokenów dla generacji (szacunkowy). Potrzebne (max): ${ESTIMATED_MAX_TOKENS_PER_GENERATION}, Dostępne: ${remainingTokens}`
+        );
+        return new Response(
+          JSON.stringify({
+            error: "Przekroczono miesięczny limit generowania fiszek przy użyciu AI.",
+            details: `Szacunkowo potrzebne tokeny: ${ESTIMATED_MAX_TOKENS_PER_GENERATION}, Dostępne: ${remainingTokens}. Limit odnawia się pierwszego dnia miesiąca.`,
+          }),
+          { status: 429, headers: { "Content-Type": "application/json" } }
+        );
+      }
+    } catch (e) {
+        await logError({
+          source: ErrorSource.API,
+          error_code: "TOKEN_CHECK_UNEXPECTED_ERROR_GENERATIONS",
+          error_message: `Nieoczekiwany błąd podczas sprawdzania tokenów dla ${userId}: ${e instanceof Error ? e.message : String(e)}`,
+          user_id: userId,
+        });
+        return new Response(
+          JSON.stringify({ error: "Wystąpił nieoczekiwany błąd systemu." }),
+          { status: 500, headers: { "Content-Type": "application/json" } }
+        );
+    }
+    
     // >>> MODERATION START <<<
     try {
       // Construct the full URL for the moderation endpoint
@@ -123,13 +170,33 @@ export const POST: APIRoute = async ({ request, locals }) => {
     // >>> MODERATION END <<<
 
     // 2. Call generation service to generate flashcards with the user's ID
+    let generationServiceResult;
     try {
-      const result = await generateFlashcards(source_text, userId);
+      // Wywołanie serwisu generacji, który teraz zwraca również tokensUsed
+      generationServiceResult = await generateFlashcards(source_text, userId);
+      const actualTokensUsed = generationServiceResult.tokensUsed;
+
+      console.log(`[Generations API] Rzeczywiste zużycie tokenów przez LLM: ${actualTokensUsed}`);
+
+      // Po pomyślnym wygenerowaniu, zaktualizuj zużycie tokenów o RZECZYWISTĄ wartość
+      try {
+        const supabaseTypedClient = locals.supabase as SupabaseClient<Database>;
+        await updateUserTokenUsage(userId, actualTokensUsed, supabaseTypedClient);
+        console.log(`[Generations API] Zaktualizowano zużycie tokenów dla ${userId} o ${actualTokensUsed} po generacji fiszek.`);
+      } catch (updateError) {
+        await logError({
+            source: ErrorSource.API,
+            error_code: "TOKEN_UPDATE_ERROR_GENERATIONS",
+            error_message: `Nie udało się zaktualizować rzeczywistego zużycia tokenów dla ${userId} po generacji: ${updateError instanceof Error ? updateError.message : String(updateError)}`,
+            user_id: userId,
+            metadata: { tokensConsumed: actualTokensUsed }
+        });
+      }
 
       const response: GenerationCreateResponseDto = {
-        generation_id: result.generationId,
-        flashcards_proposals: result.proposals,
-        generated_count: result.proposals.length,
+        generation_id: generationServiceResult.generationId,
+        flashcards_proposals: generationServiceResult.proposals,
+        generated_count: generationServiceResult.proposals.length,
       };
 
       return new Response(JSON.stringify(response), {
