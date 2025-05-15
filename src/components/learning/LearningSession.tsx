@@ -19,16 +19,13 @@ interface LearningSessionProps {
   collectionId: number;
 }
 
-// Losowe kolory tła dla sesji nauki (pastelowe) - zdefiniowane poza komponentem
-const backgroundColors = [
-  "#f0f9ff", // jasnoniebieski
-  "#f0fdf4", // jasnozielony
-  "#fdf4ff", // jasnofioletowy
-  "#fff7ed", // jasnopomarańczowy
-  "#fef2f2", // jasnoczerwony
-  "#f8fafc", // jasnoszary
-  "#fffbeb", // jasnożółty
-];
+// Funkcja do generowania losowego koloru pastelowego
+const generateRandomPastelColor = () => {
+  const h = Math.floor(Math.random() * 360); // Odcień 0-359
+  const s = Math.floor(Math.random() * 20) + 70; // Nasycenie 70-90% (pastelowe)
+  const l = Math.floor(Math.random() * 10) + 82; // Jasność 85-95% (jasne pastelowe)
+  return `hsl(${h}, ${s}%, ${l}%)`;
+};
 
 const LearningSession: React.FC<LearningSessionProps> = ({ collectionId }) => {
   // Stan komponentu
@@ -41,18 +38,17 @@ const LearningSession: React.FC<LearningSessionProps> = ({ collectionId }) => {
   const [showAnswer, setShowAnswer] = useState(false);
   const [evaluationResult, setEvaluationResult] = useState<boolean | null>(null);
   const [isEvaluating, setIsEvaluating] = useState(false);
-  const [backgroundColor, setBackgroundColor] = useState("#f0f9ff"); // Domyślny jasnoniebieski
+  const [backgroundColor, setBackgroundColor] = useState(generateRandomPastelColor()); // Użyj funkcji do inicjalizacji
   const [useSpeechRecognition, setUseSpeechRecognition] = useState(false);
   const [sessionStartTime, setSessionStartTime] = useState<number | null>(null);
   const [sessionDuration, setSessionDuration] = useState<number>(0);
 
   // Zmiana losowego koloru tła
   const changeBackgroundColor = useCallback(() => {
-    const currentColor = backgroundColor;
     let newColor;
     do {
-      newColor = backgroundColors[Math.floor(Math.random() * backgroundColors.length)];
-    } while (newColor === currentColor);
+      newColor = generateRandomPastelColor();
+    } while (newColor === backgroundColor); // Upewnij się, że nowy kolor jest inny
     setBackgroundColor(newColor);
   }, [backgroundColor]);
 
@@ -78,9 +74,8 @@ const LearningSession: React.FC<LearningSessionProps> = ({ collectionId }) => {
 
         setFlashcards(data.flashcards);
         setSessionScore({ correct: 0, total: data.flashcards.length });
-        // Ustawienie początkowego koloru tła bezpośrednio
-        const initialColor = backgroundColors[Math.floor(Math.random() * backgroundColors.length)];
-        setBackgroundColor(initialColor);
+        // Ustawienie początkowego koloru tła - już ustawione przy inicjalizacji stanu
+        // setBackgroundColor(generateRandomPastelColor());
 
         // Ustawienie czasu rozpoczęcia sesji
         setSessionStartTime(Date.now());
@@ -94,8 +89,15 @@ const LearningSession: React.FC<LearningSessionProps> = ({ collectionId }) => {
     if (collectionId) {
       // Dodatkowe zabezpieczenie
       fetchFlashcards();
+      // Zmiana koloru tła przy pierwszym ładowaniu, jeśli chcemy inny niż inicjalny
+      // Można to usunąć, jeśli inicjalny jest wystarczająco losowy
+      changeBackgroundColor();
     }
-  }, [collectionId]); // Usunięto changeBackgroundColor z zależności
+    // Zależności: collectionId. changeBackgroundColor zostanie wywołany, jeśli się zmieni,
+    // ale chcemy go wywołać raz na początku, niezależnie od jego stabilności referencyjnej.
+    // Jednakże, jeśli changeBackgroundColor jest stabilne (dzięki useCallback), to można dodać.
+    // Dla bezpieczeństwa i prostoty, zostawiam tylko collectionId, a kolor inicjalny jest już ustawiony.
+  }, [collectionId]);
 
   // Obsługa przesłania odpowiedzi
   const handleSubmitAnswer = async () => {
