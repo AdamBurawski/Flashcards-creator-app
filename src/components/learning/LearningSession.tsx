@@ -23,7 +23,7 @@ interface LearningSessionProps {
 const generateRandomPastelColor = () => {
   const h = Math.floor(Math.random() * 360); // Odcień 0-359
   const s = Math.floor(Math.random() * 20) + 70; // Nasycenie 70-90% (pastelowe)
-  const l = Math.floor(Math.random() * 10) + 82; // Jasność 85-95% (jasne pastelowe)
+  const l = Math.floor(Math.random() * 10) + 85; // Jasność 85-95% (jasne pastelowe)
   return `hsl(${h}, ${s}%, ${l}%)`;
 };
 
