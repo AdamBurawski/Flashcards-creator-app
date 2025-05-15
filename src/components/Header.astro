@@ -14,7 +14,13 @@ const isAuthenticated = !!user;
 
     <nav class="flex gap-4 items-center">
       <a href="/" class="text-gray-700 hover:text-gray-900">Strona główna</a>
-      <a href="/generate" class="text-gray-700 hover:text-gray-900">Generowanie</a>
+      {
+        isAuthenticated && (
+          <a href="/generate" class="text-gray-700 hover:text-gray-900">
+            Generowanie
+          </a>
+        )
+      }
 
       <!-- Używamy komponentu React do obsługi stanu logowania -->
       <AuthMenu client:load initialIsAuthenticated={isAuthenticated} />
