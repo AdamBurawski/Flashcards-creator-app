@@ -6,4 +6,7 @@ import AuthStatus from "../components/AuthStatus";
 
 <Layout>
   <Welcome />
+  <div style="background-color: black; padding: 10px 40px 0px; color: white">
+    <p>version {(await import("../../package.json")).version}</p>
+  </div>
 </Layout>
