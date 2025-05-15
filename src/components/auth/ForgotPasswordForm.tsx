@@ -36,7 +36,7 @@ const ForgotPasswordForm = () => {
 
     try {
       // Komunikacja z API będzie zaimplementowana później
-      console.log("Forgot password form submitted", { email });
+      // console.log("Forgot password form submitted", { email });
 
       // Symulacja opóźnienia
       await new Promise((resolve) => setTimeout(resolve, 1000));

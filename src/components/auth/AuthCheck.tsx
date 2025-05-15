@@ -61,12 +61,12 @@ export default function AuthCheck() {
         </Button>
       </div>
 
-      {token && (
+      {/* {token && (
         <div className="mb-4">
           <h2 className="text-lg font-semibold mb-2">Token autoryzacyjny:</h2>
           <div className="bg-gray-100 p-2 rounded overflow-auto max-h-20 text-xs">{token}</div>
         </div>
-      )}
+      )} */}
 
       {status && (
         <div>

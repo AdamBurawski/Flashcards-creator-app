@@ -18,9 +18,9 @@ export default function AuthStatus() {
     if (user) {
       detailsContent = (
         <div>
-          <p>
+          {/* <p>
             <strong>ID użytkownika:</strong> {user.id}
-          </p>
+          </p> */}
           <p>
             <strong>Email:</strong> {user.email}
           </p>

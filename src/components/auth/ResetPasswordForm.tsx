@@ -73,7 +73,7 @@ const ResetPasswordForm = ({ token }: ResetPasswordFormProps) => {
 
     try {
       // Komunikacja z API będzie zaimplementowana później
-      console.log("Reset password form submitted", { ...formData, token });
+      // console.log("Reset password form submitted", { ...formData, token });
 
       // Symulacja opóźnienia
       await new Promise((resolve) => setTimeout(resolve, 1000));
