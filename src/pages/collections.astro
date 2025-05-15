@@ -45,14 +45,12 @@ if (supabase) {
     <div class="bg-white shadow rounded-lg p-6">
       <h2 class="text-xl font-semibold mb-4">Witaj, {user.email}!</h2>
       <p class="mb-4">Twoje kolekcje fiszek są wyświetlane poniżej.</p>
-
-      <!-- Lista kolekcji -->
-      <CollectionsList collections={collections} client:load />
-
-      <div class="mt-8">
+      <div class="mt-8" style="margin-bottom: 40px">
         <h3 class="text-lg font-medium mb-3">Utwórz nową kolekcję</h3>
         <NewCollectionButton client:load />
       </div>
+      <!-- Lista kolekcji -->
+      <CollectionsList collections={collections} client:load />
     </div>
   </div>
 </Layout>
