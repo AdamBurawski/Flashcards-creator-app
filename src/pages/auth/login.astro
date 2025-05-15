@@ -1,5 +1,3 @@
-export const prerender = false;
-
 ---
 import AuthLayout from "../../layouts/AuthLayout.astro";
 import LoginForm from "../../components/auth/LoginForm";
@@ -20,6 +18,7 @@ const returnUrl = Astro.url.searchParams.get("returnUrl") || "/";
   <div slot="footer">
     Nie masz jeszcze konta?
     <a
+      style={{ color: "#155dfc" }}
       href={`/auth/register?returnUrl=${encodeURIComponent(returnUrl)}`}
       class="font-medium text-primary hover:text-primary-dark"
     >
