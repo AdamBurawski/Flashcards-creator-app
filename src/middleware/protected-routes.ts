@@ -5,12 +5,12 @@ const protectedRoutes = [
   "/collections", 
   "/collections/create", 
   "/collections/edit", 
-  "/collections/delete"
+  "/collections/delete",
+  "/generate"
 ];
 
 // Trasy, które mogą być używane zarówno przez zalogowanych jak i niezalogowanych użytkowników
 const hybridRoutes = [
-  "/generate", 
   "/flashcards"
 ];
 

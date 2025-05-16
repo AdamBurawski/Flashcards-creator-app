@@ -1,5 +1,4 @@
 import { defineMiddleware } from 'astro:middleware';
-import { authMiddleware } from './auth';
 
 // Lista chronionych tras
 const protectedRoutes = [
@@ -12,23 +11,21 @@ const protectedRoutes = [
 ];
 
 // Główne middleware aplikacji
-export const onRequest = defineMiddleware(async (context, next) => {
-  // Najpierw uruchom authMiddleware
-  let response = await authMiddleware(context, async () => {
-    // Po przetworzeniu middleware autentykacji, sprawdź chronione ścieżki
-    const { pathname } = new URL(context.request.url);
-    
-    if (protectedRoutes.includes(pathname)) {
-      // Sprawdź, czy użytkownik jest zalogowany
-      if (!context.locals.user) {
-        // Przekieruj do strony logowania jeśli użytkownik nie jest zalogowany
-        return context.redirect(`/auth/login?returnUrl=${encodeURIComponent(pathname)}`);
-      }
-    }
-    
-    // Kontynuacja przetwarzania
-    return await next();
-  });
-
-  return response;
+export const onRequest = defineMiddleware(async ({ locals, request, redirect }, next) => {
+  // Sprawdź, czy ścieżka jest chroniona
+  const url = new URL(request.url);
+  const { pathname } = url;
+  
+  // Sprawdź dokładne dopasowanie lub dopasowanie ścieżki z parametrami
+  const isProtected = protectedRoutes.some(route => 
+    pathname === route || pathname.startsWith(`${route}/`)
+  );
+  
+  // Jeśli jest chroniona i użytkownik nie jest zalogowany, przekieruj
+  if (isProtected && !locals.user) {
+    return redirect(`/auth/login?returnUrl=${encodeURIComponent(pathname)}`);
+  }
+  
+  // Kontynuuj normalne przetwarzanie
+  return await next();
 }); 

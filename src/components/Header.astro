@@ -21,6 +21,13 @@ const isAuthenticated = !!user;
           </a>
         )
       }
+      {
+        isAuthenticated && (
+          <a href="/collections" class="text-gray-700 hover:text-gray-900">
+            Kolekcje
+          </a>
+        )
+      }
 
       <!-- Używamy komponentu React do obsługi stanu logowania -->
       <AuthMenu client:load initialIsAuthenticated={isAuthenticated} />
