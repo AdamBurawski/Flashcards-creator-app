@@ -6,6 +6,7 @@ import FlashcardList from "./FlashcardList";
 import ErrorNotification from "./ErrorNotification";
 import SuccessNotification from "./SuccessNotification";
 import BulkSaveButton from "./BulkSaveButton";
+import NewCollectionDialog from "./collections/NewCollectionDialog";
 import { useGenerateFlashcards } from "../hooks/useGenerateFlashcards";
 import type {
   GenerateFlashcardsCommand,
@@ -27,6 +28,10 @@ export interface FlashcardProposalViewModel {
 const FlashcardGenerationView = () => {
   // Stan dla tekstu wejściowego
   const [sourceText, setSourceText] = useState<string>("");
+  // Stan do kontrolowania widoczności modalu tworzenia kolekcji
+  const [isNewCollectionDialogOpen, setIsNewCollectionDialogOpen] = useState(false);
+  // Stan do przechowywania zapisanych fiszek do późniejszego importu
+  const [savedFlashcardsData, setSavedFlashcardsData] = useState<FlashcardsCreateCommand | null>(null);
 
   // Hook obsługujący generowanie i zarządzanie fiszkami
   const {
@@ -57,7 +62,21 @@ const FlashcardGenerationView = () => {
 
   // Obsługa zapisywania fiszek
   const handleSaveFlashcards = async (command: FlashcardsCreateCommand) => {
-    await saveFlashcards(command);
+    // Zapisz dane fiszek przed zapisem, aby można je było później zaimportować do nowej kolekcji
+    setSavedFlashcardsData(command);
+
+    const success = await saveFlashcards(command);
+
+    if (success) {
+      // Po udanym zapisie wyświetl dialog tworzenia kolekcji
+      setIsNewCollectionDialogOpen(true);
+    }
+  };
+
+  // Obsługa zamknięcia dialogu tworzenia kolekcji
+  const handleCloseCollectionDialog = () => {
+    setIsNewCollectionDialogOpen(false);
+    setSavedFlashcardsData(null);
   };
 
   return (
@@ -92,6 +111,11 @@ const FlashcardGenerationView = () => {
             isLoading={isSaving}
           />
         </>
+      )}
+
+      {/* Dialog tworzenia nowej kolekcji */}
+      {isNewCollectionDialogOpen && (
+        <NewCollectionDialog onClose={handleCloseCollectionDialog} savedFlashcardsData={savedFlashcardsData} />
       )}
     </div>
   );

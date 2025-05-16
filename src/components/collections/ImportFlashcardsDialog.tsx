@@ -1,11 +1,13 @@
 import { useState, useEffect } from "react";
 import { Button } from "../ui/button";
 import { supabase } from "../../db/supabase.client";
+import type { FlashcardsCreateCommand } from "../../types";
 
 interface ImportFlashcardsDialogProps {
   collectionId: number;
   onClose: () => void;
   onSuccess: () => void;
+  flashcardsData?: FlashcardsCreateCommand | null;
 }
 
 interface Generation {
@@ -33,7 +35,12 @@ interface Flashcard {
   [key: string]: any; // Dla dodatkowych pól zwracanych przez API
 }
 
-export default function ImportFlashcardsDialog({ collectionId, onClose, onSuccess }: ImportFlashcardsDialogProps) {
+export default function ImportFlashcardsDialog({
+  collectionId,
+  onClose,
+  onSuccess,
+  flashcardsData,
+}: ImportFlashcardsDialogProps) {
   const [generations, setGenerations] = useState<Generation[]>([]);
   const [selectedGeneration, setSelectedGeneration] = useState<number | null>(null);
   const [flashcards, setFlashcards] = useState<Flashcard[]>([]);
@@ -137,6 +144,13 @@ export default function ImportFlashcardsDialog({ collectionId, onClose, onSucces
     fetchFlashcards();
   }, [selectedGeneration]);
 
+  // Jeśli mamy przekazane dane fiszek, importujemy je od razu
+  useEffect(() => {
+    if (flashcardsData && flashcardsData.flashcards.length > 0) {
+      directImportFlashcards();
+    }
+  }, []);
+
   // Obsługa zaznaczania/odznaczania fiszek
   const toggleFlashcard = (id: number) => {
     setSelectedFlashcards((prev) => {
@@ -180,6 +194,51 @@ export default function ImportFlashcardsDialog({ collectionId, onClose, onSucces
         .in("id", selectedFlashcards);
 
       if (error) throw error;
+
+      onSuccess();
+    } catch (err) {
+      console.error("Błąd podczas importowania fiszek:", err);
+      setError(err instanceof Error ? err.message : "Nie udało się zaimportować fiszek");
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
+  // Funkcja do bezpośredniego importu fiszek
+  const directImportFlashcards = async () => {
+    if (!flashcardsData || flashcardsData.flashcards.length === 0) {
+      return;
+    }
+
+    setIsImporting(true);
+    setError(null);
+
+    try {
+      if (!supabase) {
+        throw new Error("Klient Supabase nie jest dostępny");
+      }
+
+      // Pobierz sesję użytkownika
+      const { data: session, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError) throw sessionError;
+      if (!session?.session?.user) throw new Error("Musisz być zalogowany, aby importować fiszki");
+
+      const userId = session.session.user.id;
+
+      // Przygotuj dane fiszek do zapisania w kolekcji
+      const flashcardsToInsert = flashcardsData.flashcards.map((flashcard) => ({
+        ...flashcard,
+        collection_id: collectionId,
+        user_id: userId,
+      }));
+
+      // Zapisz fiszki
+      const { error } = await supabase.from("flashcards").insert(flashcardsToInsert);
+
+      if (error) throw error;
+
+      // Aktualizuj licznik fiszek w kolekcji
+      await supabase.rpc("update_collection_flashcard_count", { collection_id: collectionId });
 
       onSuccess();
     } catch (err) {
