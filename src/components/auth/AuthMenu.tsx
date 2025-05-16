@@ -50,9 +50,6 @@ export default function AuthMenu({ initialIsAuthenticated = false }: AuthMenuPro
     <>
       {isAuthenticated ? (
         <div className="flex items-center gap-2">
-          <a href="/collections" className="text-gray-700 hover:text-gray-900">
-            Kolekcje
-          </a>
           <LogoutButton />
         </div>
       ) : (
