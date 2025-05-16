@@ -6,7 +6,7 @@ import FlashcardList from "./FlashcardList";
 import ErrorNotification from "./ErrorNotification";
 import SuccessNotification from "./SuccessNotification";
 import BulkSaveButton from "./BulkSaveButton";
-import NewCollectionDialog from "./collections/NewCollectionDialog";
+import NewCollectionDialog from "../components/collections/NewCollectionDialog";
 import { useGenerateFlashcards } from "../hooks/useGenerateFlashcards";
 import type {
   GenerateFlashcardsCommand,
