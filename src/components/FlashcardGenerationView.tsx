@@ -62,15 +62,10 @@ const FlashcardGenerationView = () => {
 
   // Obsługa zapisywania fiszek
   const handleSaveFlashcards = async (command: FlashcardsCreateCommand) => {
-    // Zapisz dane fiszek przed zapisem, aby można je było później zaimportować do nowej kolekcji
     setSavedFlashcardsData(command);
 
-    const success = await saveFlashcards(command);
-
-    if (success) {
-      // Po udanym zapisie wyświetl dialog tworzenia kolekcji
-      setIsNewCollectionDialogOpen(true);
-    }
+    // Otwórz dialog bez zapisywania - zapisz dopiero po utworzeniu kolekcji
+    setIsNewCollectionDialogOpen(true);
   };
 
   // Obsługa zamknięcia dialogu tworzenia kolekcji
