@@ -34,6 +34,8 @@ export default function CollectionDetails({ collection, flashcards }: Collection
   const [isEditing, setIsEditing] = useState(false);
   const [editedCollection, setEditedCollection] = useState({ ...collection });
   const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
@@ -82,6 +84,35 @@ export default function CollectionDetails({ collection, flashcards }: Collection
     }
   };
 
+  // Obsługa usuwania kolekcji
+  const handleDeleteCollection = async () => {
+    setIsDeleting(true);
+    setError(null);
+
+    try {
+      // Najpierw usuwamy powiązane fiszki
+      const { error: flashcardsError } = await supabase.from("flashcards").delete().eq("collection_id", collection.id);
+
+      if (flashcardsError) throw flashcardsError;
+
+      // Następnie usuwamy samą kolekcję
+      const { error: collectionError } = await supabase.from("collections").delete().eq("id", collection.id);
+
+      if (collectionError) throw collectionError;
+
+      setSuccess("Kolekcja została pomyślnie usunięta.");
+
+      // Przekieruj użytkownika na stronę główną kolekcji po usunięciu
+      setTimeout(() => {
+        window.location.href = "/collections";
+      }, 1500);
+    } catch (err) {
+      console.error("Błąd podczas usuwania kolekcji:", err);
+      setError("Nie udało się usunąć kolekcji. Spróbuj ponownie później.");
+      setIsDeleting(false);
+    }
+  };
+
   return (
     <div>
       {success && <div className="mb-4 p-3 bg-green-50 border border-green-200 text-green-600 rounded">{success}</div>}
@@ -94,9 +125,19 @@ export default function CollectionDetails({ collection, flashcards }: Collection
           <>
             <div className="flex justify-between items-start">
               <h1 className="text-2xl font-bold">{collection.name}</h1>
-              <Button onClick={() => setIsEditing(true)} variant="outline" size="sm">
-                Edytuj
-              </Button>
+              <div className="flex gap-2">
+                <Button onClick={() => setIsEditing(true)} variant="outline" size="sm">
+                  Edytuj
+                </Button>
+                <Button
+                  onClick={() => setShowDeleteConfirmation(true)}
+                  variant="outline"
+                  size="sm"
+                  className="bg-red-50 text-red-600 hover:bg-red-100 border-red-200"
+                >
+                  Usuń kolekcję
+                </Button>
+              </div>
             </div>
             {collection.description && <p className="text-gray-600 mt-2">{collection.description}</p>}
             <div className="mt-4 text-sm text-gray-500">Utworzono: {formattedCreatedAtDate}</div>
@@ -192,6 +233,43 @@ export default function CollectionDetails({ collection, flashcards }: Collection
             }, 1500);
           }}
         />
+      )}
+
+      {/* Dialog potwierdzenia usunięcia kolekcji */}
+      {showDeleteConfirmation && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+          data-test-id="delete-collection-modal"
+        >
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <h3 className="text-xl font-semibold mb-4 text-red-600">Usunąć kolekcję?</h3>
+
+            <p className="mb-6">
+              Czy na pewno chcesz usunąć kolekcję <strong>{collection.name}</strong>? Ta operacja spowoduje również
+              usunięcie wszystkich fiszek ({flashcards.length}) w tej kolekcji. Tej operacji nie można cofnąć.
+            </p>
+
+            <div className="flex justify-end gap-2">
+              <Button
+                type="button"
+                onClick={() => setShowDeleteConfirmation(false)}
+                variant="outline"
+                disabled={isDeleting}
+                data-test-id="cancel-delete-button"
+              >
+                Anuluj
+              </Button>
+              <Button
+                onClick={handleDeleteCollection}
+                disabled={isDeleting}
+                className="bg-red-600 hover:bg-red-700 text-white"
+                data-test-id="confirm-delete-button"
+              >
+                {isDeleting ? "Usuwanie..." : "Tak, usuń kolekcję"}
+              </Button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
