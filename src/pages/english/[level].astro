@@ -1,0 +1,51 @@
+---
+export const prerender = false;
+
+import Layout from "../../layouts/Layout.astro";
+import EnglishLessonList from "../../components/english/EnglishLessonList";
+import type { CEFRLevel } from "../../types/english";
+
+// Auth check
+const { user } = Astro.locals;
+
+if (!user) {
+  return Astro.redirect("/auth/login?returnUrl=/english");
+}
+
+// Validate level parameter
+const { level } = Astro.params;
+const validLevels: CEFRLevel[] = ["A1", "A2", "B1", "B2"];
+
+if (!level || !validLevels.includes(level as CEFRLevel)) {
+  return Astro.redirect("/english");
+}
+
+const cefrLevel = level as CEFRLevel;
+
+const levelLabels: Record<CEFRLevel, string> = {
+  A1: "A1 – Beginner",
+  A2: "A2 – Elementary",
+  B1: "B1 – Intermediate",
+  B2: "B2 – Upper-Intermediate",
+};
+---
+
+<Layout title={`${levelLabels[cefrLevel]} | Nauka angielskiego`}>
+  <div class="max-w-5xl mx-auto px-4 py-8">
+    <div class="mb-6">
+      <a
+        href="/english"
+        class="inline-flex items-center text-sm text-gray-500 hover:text-gray-700 transition-colors"
+      >
+        ← Powrót do wyboru poziomu
+      </a>
+    </div>
+
+    <div class="mb-8">
+      <h1 class="text-3xl font-bold text-gray-900">{levelLabels[cefrLevel]}</h1>
+      <p class="mt-2 text-gray-600">Wybierz lekcję i rozpocznij ćwiczenie dialogów.</p>
+    </div>
+
+    <EnglishLessonList level={cefrLevel} client:load />
+  </div>
+</Layout>
