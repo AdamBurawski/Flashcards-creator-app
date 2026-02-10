@@ -50,12 +50,9 @@ export const GET: APIRoute = async ({ locals }) => {
       error_message: errorMessage,
     });
 
-    return new Response(
-      JSON.stringify({ error: "Wystąpił błąd podczas pobierania poziomów" }),
-      {
-        status: 500,
-        headers: { "Content-Type": "application/json" },
-      }
-    );
+    return new Response(JSON.stringify({ error: "Wystąpił błąd podczas pobierania poziomów" }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" },
+    });
   }
 };

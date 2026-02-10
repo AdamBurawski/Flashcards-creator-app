@@ -1,6 +1,5 @@
 import type { APIRoute } from "astro";
 import { z } from "zod";
-import { DEFAULT_USER_ID } from "../../../../../db/supabase.client";
 import { ErrorSource, logError } from "../../../../../lib/error-logger.service";
 import { getDialoguesForLesson } from "../../../../../lib/english.service";
 import type { CEFRLevel } from "../../../../../types/english";
@@ -29,11 +28,7 @@ const querySchema = z.object({
 export const GET: APIRoute = async ({ params, request, locals }) => {
   try {
     // 1. Authenticate user
-    let userId: string = DEFAULT_USER_ID;
-
-    if (locals.user?.id) {
-      userId = locals.user.id;
-    } else if (import.meta.env.MODE === "production") {
+    if (!locals.user?.id && import.meta.env.MODE === "production") {
       return new Response(JSON.stringify({ error: "Nieautoryzowany dostęp" }), {
         status: 401,
         headers: { "Content-Type": "application/json" },
@@ -80,12 +75,7 @@ export const GET: APIRoute = async ({ params, request, locals }) => {
     const { level, stage } = validationResult.data;
 
     // 4. Fetch dialogues with turns and audio
-    const result = await getDialoguesForLesson(
-      locals.supabase,
-      lessonId,
-      level as CEFRLevel,
-      stage
-    );
+    const result = await getDialoguesForLesson(locals.supabase, lessonId, level as CEFRLevel, stage);
 
     if (result.error) {
       return new Response(JSON.stringify({ error: result.error }), {
@@ -108,12 +98,9 @@ export const GET: APIRoute = async ({ params, request, locals }) => {
       metadata: { params },
     });
 
-    return new Response(
-      JSON.stringify({ error: "Wystąpił błąd podczas pobierania dialogów" }),
-      {
-        status: 500,
-        headers: { "Content-Type": "application/json" },
-      }
-    );
+    return new Response(JSON.stringify({ error: "Wystąpił błąd podczas pobierania dialogów" }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" },
+    });
   }
 };

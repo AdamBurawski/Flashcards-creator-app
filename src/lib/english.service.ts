@@ -14,24 +14,6 @@ import type {
 } from "../types/english";
 
 // ============================================================================
-// Helper: build JSON response
-// ============================================================================
-
-function jsonResponse(data: unknown, status = 200): Response {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: { "Content-Type": "application/json" },
-  });
-}
-
-function errorResponse(error: string, status: number): Response {
-  return new Response(JSON.stringify({ error }), {
-    status,
-    headers: { "Content-Type": "application/json" },
-  });
-}
-
-// ============================================================================
 // getLevels — returns CEFR levels with user progress
 // ============================================================================
 
@@ -82,17 +64,15 @@ export async function getLevels(
   }
 
   // 3. Aggregate per level
-  const levelMap = new Map<
-    string,
-    { totalDialogues: number; lessons: Set<string>; completedDialogues: number }
-  >();
+  const levelMap = new Map<string, { totalDialogues: number; lessons: Set<string>; completedDialogues: number }>();
 
   for (const d of dialogues) {
     const level = d.level as string;
     if (!levelMap.has(level)) {
       levelMap.set(level, { totalDialogues: 0, lessons: new Set(), completedDialogues: 0 });
     }
-    const entry = levelMap.get(level)!;
+    const entry = levelMap.get(level);
+    if (!entry) continue;
     entry.totalDialogues++;
     entry.lessons.add(`${d.stage}-${d.lesson}`);
     if (completedDialogueIds.has(d.id)) {
@@ -105,18 +85,18 @@ export async function getLevels(
   const levels: LevelSummary[] = levelOrder
     .filter((l) => levelMap.has(l))
     .map((level) => {
-      const entry = levelMap.get(level)!;
+      const entry = levelMap.get(level);
+      if (!entry) return undefined;
       return {
         level,
         total_lessons: entry.lessons.size,
         total_dialogues: entry.totalDialogues,
         completed_dialogues: entry.completedDialogues,
         completion_percent:
-          entry.totalDialogues > 0
-            ? Math.round((entry.completedDialogues / entry.totalDialogues) * 100)
-            : 0,
+          entry.totalDialogues > 0 ? Math.round((entry.completedDialogues / entry.totalDialogues) * 100) : 0,
       };
-    });
+    })
+    .filter((item): item is LevelSummary => item !== undefined);
 
   return { data: { levels } };
 }
@@ -172,10 +152,7 @@ export async function getLessons(
   }
 
   // 3. Group dialogues by lesson
-  const lessonMap = new Map<
-    string,
-    { lesson: number; stage: number; dialogues: DialogueOverview[] }
-  >();
+  const lessonMap = new Map<string, { lesson: number; stage: number; dialogues: DialogueOverview[] }>();
 
   for (const d of dialogues) {
     const key = `${d.stage}-${d.lesson}`;
@@ -186,7 +163,9 @@ export async function getLessons(
     const bestScore = bestScores.get(d.id);
     const completed = bestScore !== undefined && bestScore >= 50;
 
-    lessonMap.get(key)!.dialogues.push({
+    const lessonEntry = lessonMap.get(key);
+    if (!lessonEntry) continue;
+    lessonEntry.dialogues.push({
       id: d.id,
       title: d.title,
       tags: d.tags as string[],
@@ -197,7 +176,7 @@ export async function getLessons(
   }
 
   // 4. Build response
-  const lessons: LessonOverview[] = Array.from(lessonMap.values()).map((entry) => ({
+  const lessons: LessonOverview[] = [...lessonMap.values()].map((entry) => ({
     lesson: entry.lesson,
     stage: entry.stage,
     level,
@@ -260,23 +239,27 @@ export async function getDialoguesForLesson(
       if (!audioMap.has(af.dialogue_id)) {
         audioMap.set(af.dialogue_id, new Map());
       }
-      const turnMap = audioMap.get(af.dialogue_id)!;
+      const turnMap = audioMap.get(af.dialogue_id);
+      if (!turnMap) continue;
       if (!turnMap.has(af.turn_index)) {
         turnMap.set(af.turn_index, {});
       }
-      turnMap.get(af.turn_index)![af.audio_type] = af.audio_url;
+      const audioEntry = turnMap.get(af.turn_index);
+      if (audioEntry) {
+        audioEntry[af.audio_type] = af.audio_url;
+      }
     }
   }
 
   // 3. Map raw DB rows to typed EnglishDialogue objects with indexed turns and audio
   const dialogues: EnglishDialogue[] = rawDialogues.map((d) => {
-    const rawTurns = d.turns as Array<{
+    const rawTurns = d.turns as {
       role: string;
       text: string;
       repeat?: boolean;
       hint?: string;
       accept?: string[];
-    }>;
+    }[];
 
     const turnAudioMap = audioMap.get(d.id);
 
@@ -453,7 +436,8 @@ export async function getProgressSummary(
     if (!levelStats.has(dlevel)) {
       levelStats.set(dlevel, { completed: new Set(), totalScore: 0, count: 0 });
     }
-    const stat = levelStats.get(dlevel)!;
+    const stat = levelStats.get(dlevel);
+    if (!stat) continue;
     if (r.score >= 50) {
       stat.completed.add(r.dialogue_id);
     }
@@ -512,9 +496,9 @@ function calculateStreak(completedDates: string[]): number {
   if (completedDates.length === 0) return 0;
 
   // Get unique dates (YYYY-MM-DD) sorted descending
-  const uniqueDays = [
-    ...new Set(completedDates.map((d) => new Date(d).toISOString().split("T")[0])),
-  ].sort((a, b) => b.localeCompare(a));
+  const uniqueDays = [...new Set(completedDates.map((d) => new Date(d).toISOString().split("T")[0]))].sort((a, b) =>
+    b.localeCompare(a)
+  );
 
   const today = new Date().toISOString().split("T")[0];
 

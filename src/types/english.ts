@@ -173,12 +173,7 @@ export interface ProgressSummaryResponse {
 // --------------------------------------------
 
 /** Phase of the lesson session flow */
-export type LessonPhase =
-  | "teacher_speaking"
-  | "student_turn"
-  | "evaluating"
-  | "feedback"
-  | "summary";
+export type LessonPhase = "teacher_speaking" | "student_turn" | "evaluating" | "feedback" | "summary";
 
 /** State of the lesson session component */
 export interface LessonSessionState {

@@ -44,9 +44,7 @@ const studentTurnSchema = z.object({
 const turnSchema = z.discriminatedUnion("role", [teacherTurnSchema, studentTurnSchema]);
 
 const dialogueRecordSchema = z.object({
-  id: z
-    .string()
-    .regex(/^S\d+-L\d{2}-D\d{2}$/, 'ID must match format "S{stage}-L{lesson:02d}-D{dialogue:02d}"'),
+  id: z.string().regex(/^S\d+-L\d{2}-D\d{2}$/, 'ID must match format "S{stage}-L{lesson:02d}-D{dialogue:02d}"'),
   stage: z.number().int().min(1).max(12),
   lesson: z.number().int().positive(),
   level: z.enum(["A1", "A2", "B1", "B2"]),
@@ -159,11 +157,7 @@ async function upsertDialogues(
 
   for (const record of records) {
     // Check if record already exists
-    const { data: existing } = await supabase
-      .from("english_dialogues")
-      .select("id")
-      .eq("id", record.id)
-      .single();
+    const { data: existing } = await supabase.from("english_dialogues").select("id").eq("id", record.id).single();
 
     const isUpdate = existing !== null;
 
@@ -206,7 +200,9 @@ async function main() {
 
   if (args.length === 0) {
     console.error("Usage: npx tsx scripts/import-english-dialogues.ts <path-to-jsonl-file>");
-    console.error("Example: npx tsx scripts/import-english-dialogues.ts src/english_module/rozmowki_stage1_lessons1-9.jsonl");
+    console.error(
+      "Example: npx tsx scripts/import-english-dialogues.ts src/english_module/rozmowki_stage1_lessons1-9.jsonl"
+    );
     process.exit(1);
   }
 

@@ -107,13 +107,10 @@ export const POST: APIRoute = async ({ request, locals }) => {
       error_message: errorMessage,
     });
 
-    return new Response(
-      JSON.stringify({ error: "Wystąpił błąd podczas zapisu postępów" }),
-      {
-        status: 500,
-        headers: { "Content-Type": "application/json" },
-      }
-    );
+    return new Response(JSON.stringify({ error: "Wystąpił błąd podczas zapisu postępów" }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" },
+    });
   }
 };
 
@@ -184,12 +181,9 @@ export const GET: APIRoute = async ({ request, locals }) => {
       error_message: errorMessage,
     });
 
-    return new Response(
-      JSON.stringify({ error: "Wystąpił błąd podczas pobierania postępów" }),
-      {
-        status: 500,
-        headers: { "Content-Type": "application/json" },
-      }
-    );
+    return new Response(JSON.stringify({ error: "Wystąpił błąd podczas pobierania postępów" }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" },
+    });
   }
 };
