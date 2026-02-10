@@ -7,6 +7,7 @@ const protectedRoutes = [
   "/collections/edit",
   "/collections/delete",
   "/generate",
+  "/english",
 ];
 
 // Trasy, które mogą być używane zarówno przez zalogowanych jak i niezalogowanych użytkowników
