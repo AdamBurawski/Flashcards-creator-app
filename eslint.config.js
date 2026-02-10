@@ -20,6 +20,14 @@ const baseConfig = tseslint.config({
   rules: {
     "no-console": "warn",
     "no-unused-vars": "off",
+    "@typescript-eslint/no-unused-vars": [
+      "error",
+      {
+        argsIgnorePattern: "^_",
+        varsIgnorePattern: "^_",
+        caughtErrorsIgnorePattern: "^_",
+      },
+    ],
   },
 });
 
@@ -58,6 +66,9 @@ const reactConfig = tseslint.config({
 
 export default tseslint.config(
   includeIgnoreFile(gitignorePath),
+  {
+    ignores: ["e2e/**", "tests/e2e/**", "vitest.config.ts", "astro.config.mjs"],
+  },
   baseConfig,
   jsxA11yConfig,
   reactConfig,

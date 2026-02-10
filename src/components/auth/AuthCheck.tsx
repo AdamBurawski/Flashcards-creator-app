@@ -3,9 +3,9 @@ import { supabase } from "../../db/supabase.client";
 import { Button } from "../ui/button";
 
 export default function AuthCheck() {
-  const [status, setStatus] = useState<any>(null);
+  const [status, setStatus] = useState<Record<string, unknown> | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [token, setToken] = useState<string | null>(null);
+  const [_token, setToken] = useState<string | null>(null);
 
   // Funkcja do pobrania tokenu z Supabase
   const getToken = async () => {
@@ -16,8 +16,8 @@ export default function AuthCheck() {
         return data.session.access_token;
       }
       return null;
-    } catch (error) {
-      // console.error("Błąd podczas pobierania tokenu:", error);
+    } catch (_error) {
+      // console.error("Błąd podczas pobierania tokenu:", _error);
       return null;
     }
   };
@@ -38,8 +38,8 @@ export default function AuthCheck() {
 
       const data = await response.json();
       setStatus(data);
-    } catch (error) {
-      // console.error("Błąd podczas sprawdzania statusu:", error);
+    } catch (_error) {
+      // console.error("Błąd podczas sprawdzania statusu:", _error);
       setStatus({ error: "Wystąpił błąd podczas sprawdzania statusu" });
     } finally {
       setIsLoading(false);

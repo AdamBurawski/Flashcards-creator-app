@@ -8,7 +8,7 @@ const loginSchema = z.object({
   password: z.string().min(1, "Hasło jest wymagane"),
 });
 
-export const POST: APIRoute = async ({ request, locals, cookies }) => {
+export const POST: APIRoute = async ({ request, locals, cookies: _cookies }) => {
   try {
     // Walidacja danych wejściowych
     const body = await request.json();
@@ -59,4 +59,4 @@ export const POST: APIRoute = async ({ request, locals, cookies }) => {
       { status: 500 }
     );
   }
-}; 
+};

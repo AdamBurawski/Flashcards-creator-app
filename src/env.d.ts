@@ -2,7 +2,7 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "./db/supabase.types";
-import type { UserMetadata, Session as SupabaseSession, User as SupabaseUser } from "@supabase/supabase-js";
+import type { Session as SupabaseSession, User as SupabaseUser } from "@supabase/supabase-js";
 
 // Typy dla użytkownika i sesji
 type User = SupabaseUser;

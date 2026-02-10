@@ -24,6 +24,7 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:codegen": "playwright codegen http://localhost:4321",
+    "import:english": "npx tsx scripts/import-english-dialogues.ts",
     "dev:e2e": "astro dev --mode test",
     "netlify:build": "npm run prebuild && NETLIFY_USE_FILE_FUNCTIONS=true SUPABASE_URL=${SUPABASE_URL:-''} SUPABASE_KEY=${SUPABASE_KEY:-''} PUBLIC_SUPABASE_URL=${PUBLIC_SUPABASE_URL:-''} PUBLIC_SUPABASE_KEY=${PUBLIC_SUPABASE_KEY:-''} NODE_ENV=production astro build"
   },
@@ -61,6 +62,7 @@
     "@typescript-eslint/eslint-plugin": "8.28.0",
     "@typescript-eslint/parser": "8.28.0",
     "@vitejs/plugin-react": "^4.4.1",
+    "@vitest/coverage-v8": "^3.2.4",
     "eslint": "9.23.0",
     "eslint-config-prettier": "10.1.1",
     "eslint-import-resolver-typescript": "4.2.5",
@@ -76,6 +78,7 @@
     "lint-staged": "15.5.0",
     "prettier-plugin-astro": "0.14.1",
     "supertest": "^7.1.0",
+    "tsx": "^4.21.0",
     "typescript-eslint": "8.28.0",
     "vitest": "^3.1.2"
   },

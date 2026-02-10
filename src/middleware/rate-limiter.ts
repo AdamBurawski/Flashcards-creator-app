@@ -1,6 +1,4 @@
 import { defineMiddleware } from "astro:middleware";
-import { supabaseClient } from "../db/supabase.client";
-import { ErrorSource, logError } from "../lib/error-logger.service";
 
 interface RateLimitConfig {
   windowMs: number; // The time window in milliseconds

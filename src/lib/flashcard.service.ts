@@ -1,5 +1,5 @@
 import { DEFAULT_USER_ID, supabase } from "../db/supabase.client";
-import type { FlashcardCreateDto, FlashcardDto, Source } from "../types";
+import type { FlashcardCreateDto, FlashcardDto } from "../types";
 import { ErrorSource, logError } from "./error-logger.service";
 
 interface CreateFlashcardsResult {
@@ -20,45 +20,45 @@ export async function createFlashcards(
   const bypassEnv = import.meta.env.BYPASS_DATABASE;
   const isBypassMode = bypassEnv === "true" || bypassEnv === true;
   console.log("[DEBUG] BYPASS_DATABASE mode:", isBypassMode, "value:", bypassEnv);
-  
+
   if (isBypassMode) {
     console.log(`[BYPASS] Simulating creation of ${flashcards.length} flashcards`);
-    
+
     // Generate fake IDs and timestamps
     const now = new Date().toISOString();
-    const mockFlashcards: FlashcardDto[] = flashcards.map((flashcard, index) => ({
+    const mockFlashcards: FlashcardDto[] = flashcards.map((flashcard) => ({
       id: Math.floor(Math.random() * 10000) + 1,
       front: flashcard.front,
       back: flashcard.back,
       source: flashcard.source,
       generation_id: flashcard.generation_id,
       created_at: now,
-      updated_at: now
+      updated_at: now,
     }));
-    
+
     return {
-      flashcards: mockFlashcards
+      flashcards: mockFlashcards,
     };
   }
 
   // Sprawdź, czy klient Supabase jest zainicjalizowany
   if (!supabase) {
     console.error("[flashcard_create] Supabase client is not initialized");
-    
+
     // Zwróć mock w przypadku braku klienta Supabase
     const now = new Date().toISOString();
-    const mockFlashcards: FlashcardDto[] = flashcards.map((flashcard, index) => ({
+    const mockFlashcards: FlashcardDto[] = flashcards.map((flashcard) => ({
       id: Math.floor(Math.random() * 10000) + 1,
       front: flashcard.front,
       back: flashcard.back,
       source: flashcard.source,
       generation_id: flashcard.generation_id,
       created_at: now,
-      updated_at: now
+      updated_at: now,
     }));
-    
+
     return {
-      flashcards: mockFlashcards
+      flashcards: mockFlashcards,
     };
   }
 
@@ -73,16 +73,16 @@ export async function createFlashcards(
     }));
 
     // Zamiast bezpośredniego insertu, używamy funkcji RPC która omija RLS
-    const { data, error } = await supabase.rpc('insert_flashcards', {
+    const { data, error } = await supabase.rpc("insert_flashcards", {
       flashcards_data: {
         user_id: userId,
-        items: flashcardsToInsert.map(fc => ({
+        items: flashcardsToInsert.map((fc) => ({
           front: fc.front,
           back: fc.back,
           source: fc.source,
-          generation_id: fc.generation_id
-        }))
-      }
+          generation_id: fc.generation_id,
+        })),
+      },
     });
 
     if (error) {
@@ -99,18 +99,18 @@ export async function createFlashcards(
 
       // Zwróć mock w przypadku błędu
       const now = new Date().toISOString();
-      const mockFlashcards: FlashcardDto[] = flashcards.map((flashcard, index) => ({
+      const mockFlashcards: FlashcardDto[] = flashcards.map((flashcard) => ({
         id: Math.floor(Math.random() * 10000) + 1,
         front: flashcard.front,
         back: flashcard.back,
         source: flashcard.source,
         generation_id: flashcard.generation_id,
         created_at: now,
-        updated_at: now
+        updated_at: now,
       }));
-      
+
       return {
-        flashcards: mockFlashcards
+        flashcards: mockFlashcards,
       };
     }
 
@@ -125,18 +125,18 @@ export async function createFlashcards(
 
       // Zwróć mock w przypadku braku danych
       const now = new Date().toISOString();
-      const mockFlashcards: FlashcardDto[] = flashcards.map((flashcard, index) => ({
+      const mockFlashcards: FlashcardDto[] = flashcards.map((flashcard) => ({
         id: Math.floor(Math.random() * 10000) + 1,
         front: flashcard.front,
         back: flashcard.back,
         source: flashcard.source,
         generation_id: flashcard.generation_id,
         created_at: now,
-        updated_at: now
+        updated_at: now,
       }));
-      
+
       return {
-        flashcards: mockFlashcards
+        flashcards: mockFlashcards,
       };
     }
 
@@ -144,8 +144,8 @@ export async function createFlashcards(
     const { data: createdFlashcards, error: fetchError } = await supabase
       .from("flashcards")
       .select("id, front, back, source, generation_id, created_at, updated_at")
-      .in('id', data.ids);
-      
+      .in("id", data.ids);
+
     if (fetchError || !createdFlashcards) {
       await logError({
         source: ErrorSource.FLASHCARD_CREATE,
@@ -154,21 +154,21 @@ export async function createFlashcards(
         user_id: userId,
         metadata: { count: flashcards.length },
       });
-      
+
       // Zwróć mock w przypadku błędu pobierania
       const now = new Date().toISOString();
-      const mockFlashcards: FlashcardDto[] = flashcards.map((flashcard, index) => ({
+      const mockFlashcards: FlashcardDto[] = flashcards.map((flashcard) => ({
         id: Math.floor(Math.random() * 10000) + 1,
         front: flashcard.front,
         back: flashcard.back,
         source: flashcard.source,
         generation_id: flashcard.generation_id,
         created_at: now,
-        updated_at: now
+        updated_at: now,
       }));
-      
+
       return {
-        flashcards: mockFlashcards
+        flashcards: mockFlashcards,
       };
     }
 
@@ -184,21 +184,21 @@ export async function createFlashcards(
       user_id: userId,
       metadata: { count: flashcards.length },
     });
-    
+
     // Zwróć mock w przypadku błędu
     const now = new Date().toISOString();
-    const mockFlashcards: FlashcardDto[] = flashcards.map((flashcard, index) => ({
+    const mockFlashcards: FlashcardDto[] = flashcards.map((flashcard) => ({
       id: Math.floor(Math.random() * 10000) + 1,
       front: flashcard.front,
       back: flashcard.back,
       source: flashcard.source,
       generation_id: flashcard.generation_id,
       created_at: now,
-      updated_at: now
+      updated_at: now,
     }));
-    
+
     return {
-      flashcards: mockFlashcards
+      flashcards: mockFlashcards,
     };
   }
 }
@@ -216,7 +216,7 @@ export async function validateGenerationExists(
   // Check if we are bypassing database operations
   const bypassEnv = import.meta.env.BYPASS_DATABASE;
   const isBypassMode = bypassEnv === "true" || bypassEnv === true;
-  
+
   if (isBypassMode) {
     console.log(`[BYPASS] Skipping validation for generation ID ${generationId}`);
     return true;

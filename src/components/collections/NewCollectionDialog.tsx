@@ -16,7 +16,7 @@ export default function NewCollectionDialog({ onClose, savedFlashcardsData }: Ne
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [debugInfo, setDebugInfo] = useState<any>(null);
+  const [debugInfo, setDebugInfo] = useState<Record<string, unknown> | null>(null);
   const [newCollectionId, setNewCollectionId] = useState<number | null>(null);
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);

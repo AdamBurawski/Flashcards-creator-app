@@ -80,7 +80,7 @@ const ResetPasswordForm = ({ token }: ResetPasswordFormProps) => {
 
       // Ustawienie stanu sukcesu
       setIsSuccess(true);
-    } catch (error) {
+    } catch (_error) {
       setFormErrors({
         general: "Wystąpił błąd podczas resetowania hasła. Spróbuj ponownie lub uzyskaj nowy link resetujący.",
       });

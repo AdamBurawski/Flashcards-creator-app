@@ -1,4 +1,4 @@
-import { type PlaywrightTestConfig, devices } from '@playwright/test';
+import { type PlaywrightTestConfig, devices } from "@playwright/test";
 
 /**
  * Konfiguracja testów e2e dla Playwright
@@ -6,58 +6,58 @@ import { type PlaywrightTestConfig, devices } from '@playwright/test';
  */
 const config: PlaywrightTestConfig = {
   // Ustawienie katalogu testów
-  testDir: './',
+  testDir: "./",
   // Maksymalny czas oczekiwania na zakończenie testu
   timeout: 30000,
   // Zgłaszaj wyniki testów na bieżąco
-  reporter: 'html',
+  reporter: "html",
   // Tylko testy z adnotacją @smoke
   // grep: /@smoke/,
-  
+
   // Uruchom testy w trybie równoległym
   fullyParallel: true,
-  // Limit wystąpień równoległych 
+  // Limit wystąpień równoległych
   workers: process.env.CI ? 1 : undefined,
-  
+
   // Katalog na artefakty testów (zrzuty ekranu, śledzenie, wideo)
-  outputDir: './test-results',
-  
+  outputDir: "./test-results",
+
   // Wspólne ustawienia dla wszystkich projektów
   use: {
     // Maksymalny czas oczekiwania na operacje
     actionTimeout: 5000,
     // Zrzut ekranu przy niepowodzeniu
-    screenshot: 'only-on-failure',
+    screenshot: "only-on-failure",
     // Nagrywanie wideo przy niepowodzeniu
-    video: 'on-first-retry',
+    video: "on-first-retry",
     // Śledzenie dla debugowania
-    trace: 'retain-on-failure',
+    trace: "retain-on-failure",
     // Ustawienie headless
     headless: !!process.env.CI,
     // Podstawowy URL aplikacji
-    baseURL: 'http://localhost:3000',
+    baseURL: "http://localhost:3000",
     // Wybór stałych lokalizatorów
-    testIdAttribute: 'data-test-id',
+    testIdAttribute: "data-test-id",
     // Łapanie wszystkich żądań sieciowych
     contextOptions: {
-      recordHar: { 
-        path: './test-results/network-logs.har', 
-        omitContent: true 
-      }
-    }
+      recordHar: {
+        path: "./test-results/network-logs.har",
+        omitContent: true,
+      },
+    },
   },
-  
+
   // Konfiguracja projektów testowych - tylko Chrome/Chromium
   projects: [
     {
-      name: 'chromium',
-      use: { 
-        ...devices['Desktop Chrome'],
+      name: "chromium",
+      use: {
+        ...devices["Desktop Chrome"],
         // Użyj zewnętrznych narzędzi deweloperskich
-        launchOptions: { devtools: true }
+        launchOptions: { devtools: true },
       },
-    }
+    },
   ],
 };
 
-export default config; 
+export default config;

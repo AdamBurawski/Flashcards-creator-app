@@ -1,4 +1,4 @@
-import { Page, Locator, expect } from '@playwright/test';
+import { Page, Locator, expect } from "@playwright/test";
 
 /**
  * Page Object Model dla dialogu importu fiszek
@@ -37,7 +37,7 @@ export class ImportFlashcardsDialog {
    * Wybiera sesję generowania z listy rozwijanej
    * @param index Indeks sesji do wyboru (domyślnie pierwsza - 0)
    */
-  async selectGeneration(index: number = 0) {
+  async selectGeneration(index = 0) {
     await this.generationSelect.selectOption({ index });
   }
 
@@ -93,4 +93,4 @@ export class ImportFlashcardsDialog {
     const count = await flashcardItems.count();
     expect(count).toBeGreaterThan(0);
   }
-} 
+}

@@ -1,4 +1,4 @@
-import { Page, Locator, expect } from '@playwright/test';
+import { Page, Locator, expect } from "@playwright/test";
 
 /**
  * Page Object dla strony kolekcji
@@ -18,7 +18,7 @@ export class CollectionsPage {
 
   constructor(page: Page) {
     this.page = page;
-    this.heading = page.getByRole('heading', { name: /kolekcje/i });
+    this.heading = page.getByRole("heading", { name: /kolekcje/i });
     this.createCollectionButton = page.locator('[data-test-id="collection-save-button"]');
     this.collectionsList = page.locator('[data-test-id="collections-list"]');
     this.collectionForm = page.locator('[data-test-id="collection-form"]');
@@ -33,7 +33,7 @@ export class CollectionsPage {
    * Nawigacja do strony kolekcji
    */
   async goto() {
-    await this.page.goto('/collections');
+    await this.page.goto("/collections");
   }
 
   /**
@@ -88,4 +88,4 @@ export class CollectionsPage {
   async expectFormError() {
     await expect(this.formError).toBeVisible();
   }
-} 
+}

@@ -59,14 +59,16 @@ export const POST: APIRoute = async ({ request, locals }) => {
       const supabaseTypedClient = locals.supabase as SupabaseClient<Database>;
 
       const tokenStatus = await getUserTokenStatus(userId, supabaseTypedClient);
-      
+
       // Sprawdzamy, czy sama funkcja getUserTokenStatus nie zwróciła jakiegoś wewnętrznego problemu
       // (chociaż w obecnej implementacji loguje błędy i zwraca status z zerowym limitem)
       // Dla pewności, można by dodać pole `error?: string` do UserTokenStatus
 
       const { canUse, remainingTokens } = tokenStatus.canUseTokens(ESTIMATED_MAX_TOKENS_PER_GENERATION);
 
-      console.log(`[Generations API] Token status for user ${userId}: Limit=${tokenStatus.limit}, Usage=${tokenStatus.usage}, Left=${remainingTokens}, CanUse=${canUse} (estimated max cost: ${ESTIMATED_MAX_TOKENS_PER_GENERATION})`);
+      console.log(
+        `[Generations API] Token status for user ${userId}: Limit=${tokenStatus.limit}, Usage=${tokenStatus.usage}, Left=${remainingTokens}, CanUse=${canUse} (estimated max cost: ${ESTIMATED_MAX_TOKENS_PER_GENERATION})`
+      );
 
       if (!canUse) {
         console.warn(
@@ -81,18 +83,18 @@ export const POST: APIRoute = async ({ request, locals }) => {
         );
       }
     } catch (e) {
-        await logError({
-          source: ErrorSource.API,
-          error_code: "TOKEN_CHECK_UNEXPECTED_ERROR_GENERATIONS",
-          error_message: `Nieoczekiwany błąd podczas sprawdzania tokenów dla ${userId}: ${e instanceof Error ? e.message : String(e)}`,
-          user_id: userId,
-        });
-        return new Response(
-          JSON.stringify({ error: "Wystąpił nieoczekiwany błąd systemu." }),
-          { status: 500, headers: { "Content-Type": "application/json" } }
-        );
+      await logError({
+        source: ErrorSource.API,
+        error_code: "TOKEN_CHECK_UNEXPECTED_ERROR_GENERATIONS",
+        error_message: `Nieoczekiwany błąd podczas sprawdzania tokenów dla ${userId}: ${e instanceof Error ? e.message : String(e)}`,
+        user_id: userId,
+      });
+      return new Response(JSON.stringify({ error: "Wystąpił nieoczekiwany błąd systemu." }), {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      });
     }
-    
+
     // >>> MODERATION START <<<
     try {
       // Construct the full URL for the moderation endpoint
@@ -100,7 +102,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
       const moderationUrl = new URL("/api/moderate", request.url);
 
       console.log(`[Generations API] Wysyłanie tekstu do moderacji na adres: ${moderationUrl.toString()}`);
-      
+
       const moderationResponse = await fetch(moderationUrl.toString(), {
         method: "POST",
         headers: {
@@ -117,10 +119,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
         } catch (e) {
           console.error("[Generations API] Nie udało się sparsować odpowiedzi błędu z endpointu moderacji:", e);
         }
-        console.error(
-          `[Generations API] Błąd endpointu moderacji: ${moderationResponse.status}`,
-          moderationErrorBody
-        );
+        console.error(`[Generations API] Błąd endpointu moderacji: ${moderationResponse.status}`, moderationErrorBody);
         return new Response(
           JSON.stringify({
             error: "Wystąpił błąd podczas analizy treści.",
@@ -142,8 +141,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
         );
         return new Response(
           JSON.stringify({
-            error:
-              "Dostarczony tekst narusza zasady użytkowania i nie może zostać przetworzony.",
+            error: "Dostarczony tekst narusza zasady użytkowania i nie może zostać przetworzony.",
           }),
           {
             status: 400, // Bad Request, as the content is unacceptable
@@ -153,10 +151,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
       }
       console.log("[Generations API] Tekst przeszedł moderację pomyślnie.");
     } catch (error) {
-      console.error(
-        "[Generations API] Wystąpił nieoczekiwany błąd podczas komunikacji z endpointem moderacji:",
-        error
-      );
+      console.error("[Generations API] Wystąpił nieoczekiwany błąd podczas komunikacji z endpointem moderacji:", error);
       return new Response(
         JSON.stringify({
           error: "Wystąpił wewnętrzny błąd podczas próby moderacji treści.",
@@ -182,14 +177,16 @@ export const POST: APIRoute = async ({ request, locals }) => {
       try {
         const supabaseTypedClient = locals.supabase as SupabaseClient<Database>;
         await updateUserTokenUsage(userId, actualTokensUsed, supabaseTypedClient);
-        console.log(`[Generations API] Zaktualizowano zużycie tokenów dla ${userId} o ${actualTokensUsed} po generacji fiszek.`);
+        console.log(
+          `[Generations API] Zaktualizowano zużycie tokenów dla ${userId} o ${actualTokensUsed} po generacji fiszek.`
+        );
       } catch (updateError) {
         await logError({
-            source: ErrorSource.API,
-            error_code: "TOKEN_UPDATE_ERROR_GENERATIONS",
-            error_message: `Nie udało się zaktualizować rzeczywistego zużycia tokenów dla ${userId} po generacji: ${updateError instanceof Error ? updateError.message : String(updateError)}`,
-            user_id: userId,
-            metadata: { tokensConsumed: actualTokensUsed }
+          source: ErrorSource.API,
+          error_code: "TOKEN_UPDATE_ERROR_GENERATIONS",
+          error_message: `Nie udało się zaktualizować rzeczywistego zużycia tokenów dla ${userId} po generacji: ${updateError instanceof Error ? updateError.message : String(updateError)}`,
+          user_id: userId,
+          metadata: { tokensConsumed: actualTokensUsed },
         });
       }
 

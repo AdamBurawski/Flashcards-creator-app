@@ -402,8 +402,13 @@ const LearningSession: React.FC<LearningSessionProps> = ({ collectionId }) => {
               <div className="mb-4">
                 {userAnswer ? (
                   <>
-                    <label className="block text-gray-700 font-medium mb-2">Transkrypcja:</label>
-                    <div className="w-full px-4 py-3 border border-gray-300 bg-gray-50 rounded-lg text-gray-700 mb-2">
+                    <label htmlFor="transcription-display" className="block text-gray-700 font-medium mb-2">
+                      Transkrypcja:
+                    </label>
+                    <div
+                      id="transcription-display"
+                      className="w-full px-4 py-3 border border-gray-300 bg-gray-50 rounded-lg text-gray-700 mb-2"
+                    >
                       {userAnswer}
                     </div>
                     <p className="text-sm text-gray-500 mb-4">

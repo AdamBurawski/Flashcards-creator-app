@@ -7,33 +7,33 @@ import type { Database } from "../db/supabase.types";
 export const authMiddleware: MiddlewareHandler = async ({ locals, request, cookies }, next) => {
   // Inicjalizacja klienta Supabase za każdym razem dla żądania
   // Próbujemy pobrać URL i klucz z różnych możliwych źródeł
-  const supabaseUrl = 
-    import.meta.env.PUBLIC_SUPABASE_URL || 
-    import.meta.env.SUPABASE_URL || 
-    process.env.PUBLIC_SUPABASE_URL || 
+  const supabaseUrl =
+    import.meta.env.PUBLIC_SUPABASE_URL ||
+    import.meta.env.SUPABASE_URL ||
+    process.env.PUBLIC_SUPABASE_URL ||
     process.env.SUPABASE_URL;
-  
-  const supabaseKey = 
-    import.meta.env.PUBLIC_SUPABASE_KEY || 
-    import.meta.env.SUPABASE_KEY || 
-    process.env.PUBLIC_SUPABASE_KEY || 
+
+  const supabaseKey =
+    import.meta.env.PUBLIC_SUPABASE_KEY ||
+    import.meta.env.SUPABASE_KEY ||
+    process.env.PUBLIC_SUPABASE_KEY ||
     process.env.SUPABASE_KEY;
 
   // Sprawdzamy, czy mamy wymagane klucze Supabase
   if (!supabaseUrl || !supabaseKey) {
     // console.warn("Brak kluczy Supabase w zmiennych środowiskowych - middleware używa pustych wartości");
     // console.log("Dostępne zmienne środowiskowe:", Object.keys(process.env).filter(key => !key.includes('_SECRET')));
-    
+
     // W przypadku braku kluczy, tworzymy zastępczy klient z pustymi wartościami
     // zamiast przypisywać null, co mogłoby powodować błędy TypeScript
     const dummyClient = createClient<Database>(
-      'https://placeholder-supabase-url.supabase.co', 
-      'placeholder-supabase-key'
+      "https://placeholder-supabase-url.supabase.co",
+      "placeholder-supabase-key"
     );
     locals.supabase = dummyClient;
     locals.user = null;
     locals.session = null;
-    
+
     // Kontynuacja przetwarzania bez prawdziwego Supabase
     return await next();
   }
@@ -53,13 +53,13 @@ export const authMiddleware: MiddlewareHandler = async ({ locals, request, cooki
   // console.log("Wszystkie ciasteczka w żądaniu:", allCookies);
 
   // Pobierz konkretne ciasteczka Supabase, które są kluczowe dla autentykacji
-  const sbAuthCookie = cookies.get("sb-auth-token")?.value || null;
+  const _sbAuthCookie = cookies.get("sb-auth-token")?.value || null;
   const sbAccessToken = cookies.get("sb-access-token")?.value || null;
-  const sbRefreshToken = cookies.get("sb-refresh-token")?.value || null;
-  
+  const _sbRefreshToken = cookies.get("sb-refresh-token")?.value || null;
+
   // console.log("Ciasteczka Supabase:", {
   //   "sb-auth-token": sbAuthCookie ? "Istnieje" : "Brak",
-  //   "sb-access-token": sbAccessToken ? "Istnieje" : "Brak", 
+  //   "sb-access-token": sbAccessToken ? "Istnieje" : "Brak",
   //   "sb-refresh-token": sbRefreshToken ? "Istnieje" : "Brak"
   // });
 
@@ -84,24 +84,27 @@ export const authMiddleware: MiddlewareHandler = async ({ locals, request, cooki
     global: {
       headers: {
         Cookie: allCookies,
-        ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {})
+        ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
       },
     },
   });
 
   // Zapisanie klienta Supabase w locals
   locals.supabase = supabaseClient;
-  locals.user = null;  // Domyślnie brak użytkownika
+  locals.user = null; // Domyślnie brak użytkownika
   locals.session = null;
 
   try {
     // Sprawdź sesję tylko wtedy, gdy mamy jakiś token
     if (accessToken || sbAccessToken) {
       // console.log("Próbuję uwierzytelnić użytkownika z tokenem");
-      
+
       // 1. Jeśli mamy token z nagłówka lub z ciasteczka, ustaw go bezpośrednio
       if (accessToken) {
-        const { data: { user }, error } = await supabaseClient.auth.getUser(accessToken);
+        const {
+          data: { user },
+          error,
+        } = await supabaseClient.auth.getUser(accessToken);
         if (!error && user) {
           // console.log("Uwierzytelniono użytkownika z tokenu:", user.email);
           locals.user = user;
@@ -112,8 +115,11 @@ export const authMiddleware: MiddlewareHandler = async ({ locals, request, cooki
       }
 
       // 2. Standardowa metoda - sprawdź sesję
-      const { data: { session }, error } = await supabaseClient.auth.getSession();
-      
+      const {
+        data: { session },
+        error: _sessionError,
+      } = await supabaseClient.auth.getSession();
+
       // Logowanie dla debugowania
       // console.log("Session status in middleware:", session ? "Active" : "No session");
       if (session) {
@@ -127,10 +133,10 @@ export const authMiddleware: MiddlewareHandler = async ({ locals, request, cooki
     } else {
       // console.log("Brak tokenu lub ciasteczka sesji - użytkownik niezalogowany");
     }
-  } catch (error) {
-    // console.error("Błąd podczas uwierzytelniania:", error);
+  } catch (_error) {
+    // console.error("Błąd podczas uwierzytelniania:", _error);
   }
 
   // Kontynuacja przetwarzania
   return await next();
-}; 
+};
