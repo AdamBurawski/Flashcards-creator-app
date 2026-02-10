@@ -9,6 +9,139 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      english_dialogues: {
+        Row: {
+          id: string
+          stage: number
+          lesson: number
+          level: string
+          title: string
+          tags: string[]
+          target_vocab: string[]
+          target_structures: string[]
+          turns: Json
+          revision_from: string[]
+          estimated_duration_seconds: number | null
+          sort_order: number
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id: string
+          stage: number
+          lesson: number
+          level: string
+          title: string
+          tags?: string[]
+          target_vocab?: string[]
+          target_structures?: string[]
+          turns: Json
+          revision_from?: string[]
+          estimated_duration_seconds?: number | null
+          sort_order?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          stage?: number
+          lesson?: number
+          level?: string
+          title?: string
+          tags?: string[]
+          target_vocab?: string[]
+          target_structures?: string[]
+          turns?: Json
+          revision_from?: string[]
+          estimated_duration_seconds?: number | null
+          sort_order?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      english_progress: {
+        Row: {
+          id: number
+          user_id: string
+          dialogue_id: string
+          score: number
+          total_turns: number
+          correct_turns: number
+          duration_seconds: number | null
+          completed_at: string
+        }
+        Insert: {
+          id?: number
+          user_id: string
+          dialogue_id: string
+          score: number
+          total_turns: number
+          correct_turns: number
+          duration_seconds?: number | null
+          completed_at?: string
+        }
+        Update: {
+          id?: number
+          user_id?: string
+          dialogue_id?: string
+          score?: number
+          total_turns?: number
+          correct_turns?: number
+          duration_seconds?: number | null
+          completed_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "english_progress_dialogue_id_fkey"
+            columns: ["dialogue_id"]
+            isOneToOne: false
+            referencedRelation: "english_dialogues"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      english_audio_files: {
+        Row: {
+          id: number
+          dialogue_id: string
+          turn_index: number
+          audio_type: string
+          audio_url: string
+          voice_id: string | null
+          duration_ms: number | null
+          created_at: string
+        }
+        Insert: {
+          id?: number
+          dialogue_id: string
+          turn_index: number
+          audio_type: string
+          audio_url: string
+          voice_id?: string | null
+          duration_ms?: number | null
+          created_at?: string
+        }
+        Update: {
+          id?: number
+          dialogue_id?: string
+          turn_index?: number
+          audio_type?: string
+          audio_url?: string
+          voice_id?: string | null
+          duration_ms?: number | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "english_audio_files_dialogue_id_fkey"
+            columns: ["dialogue_id"]
+            isOneToOne: false
+            referencedRelation: "english_dialogues"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       collections: {
         Row: {
           created_at: string

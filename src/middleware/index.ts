@@ -7,7 +7,8 @@ const protectedRoutes = [
   "/collections/edit", 
   "/collections/delete",
   "/learn/collection",
-  "/generate"
+  "/generate",
+  "/english"
 ];
 
 // Główne middleware aplikacji
