@@ -156,7 +156,7 @@ describe("Flashcard Validation", () => {
         generation_id: null,
       };
 
-      // @ts-ignore - intentionally testing invalid source
+      // @ts-expect-error - intentionally testing invalid source
       const result = flashcardCreateSchema.safeParse(flashcard);
       expect(result.success).toBe(false);
       if (!result.success) {

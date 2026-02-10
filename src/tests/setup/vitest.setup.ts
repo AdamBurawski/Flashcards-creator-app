@@ -1,13 +1,13 @@
-import '@testing-library/jest-dom';
-import { vi, afterEach } from 'vitest';
-import { cleanup } from '@testing-library/react';
+import "@testing-library/jest-dom";
+import { vi, afterEach } from "vitest";
+import { cleanup } from "@testing-library/react";
 
 // Importujemy mocki
-import './mocks/supabase.mock';
+import "./mocks/supabase.mock";
 
 // Ustawiamy zmienne środowiskowe dla testów
-process.env.PUBLIC_SUPABASE_URL = 'https://example-supabase.co';
-process.env.PUBLIC_SUPABASE_ANON_KEY = 'example-anon-key';
+process.env.PUBLIC_SUPABASE_URL = "https://example-supabase.co";
+process.env.PUBLIC_SUPABASE_ANON_KEY = "example-anon-key";
 
 // Automatyczne czyszczenie po każdym teście
 afterEach(() => {
@@ -31,9 +31,7 @@ expect.extend({
     const pass = received !== null && received !== undefined;
     return {
       pass,
-      message: () => pass
-        ? `expected element not to be in the document`
-        : `expected element to be in the document`,
+      message: () => (pass ? `expected element not to be in the document` : `expected element to be in the document`),
     };
   },
-}); 
+});

@@ -28,8 +28,7 @@ const isConfigured = () => {
 interface UserTokenStatus {
   limit: number;
   usage: number;
-  canUseTokens: (requestedTokens: number)
-    => { canUse: boolean; remainingTokens: number };
+  canUseTokens: (requestedTokens: number) => { canUse: boolean; remainingTokens: number };
   userId: string;
 }
 
@@ -40,14 +39,18 @@ interface UserTokenStatus {
  * @param supabaseClient Instancja klienta Supabase
  * @returns Obiekt UserTokenStatus
  */
-export async function getUserTokenStatus(userId: string, supabaseClient: SupabaseClient<Database>): Promise<UserTokenStatus> {
-  let { data: profile, error: profileError } = await supabaseClient
+export async function getUserTokenStatus(
+  userId: string,
+  supabaseClient: SupabaseClient<Database>
+): Promise<UserTokenStatus> {
+  const { data: profile, error: profileError } = await supabaseClient
     .from("profiles") // Zakładamy, że 'profiles' będzie w Database['public']['Tables']
     .select("monthly_ai_token_limit, current_ai_token_usage, ai_usage_last_reset_at, user_id")
     .eq("user_id", userId)
     .single<Database["public"]["Tables"]["profiles"]["Row"]>(); // Jawne typowanie dla .single()
 
-  if (profileError && profileError.code !== "PGRST116") { // PGRST116: no rows found
+  if (profileError && profileError.code !== "PGRST116") {
+    // PGRST116: no rows found
     console.error(`[OpenAI Service] Błąd podczas pobierania profilu dla userId: ${userId}`, profileError);
     await logError({
       source: ErrorSource.DATABASE,
@@ -55,18 +58,20 @@ export async function getUserTokenStatus(userId: string, supabaseClient: Supabas
       error_message: profileError.message,
       metadata: { userId },
     });
-    return { 
-      limit: 0, 
-      usage: 0, 
-      canUseTokens: () => ({canUse: false, remainingTokens: 0 }), 
-      userId 
+    return {
+      limit: 0,
+      usage: 0,
+      canUseTokens: () => ({ canUse: false, remainingTokens: 0 }),
+      userId,
     };
   }
 
   const now = new Date();
   let limit = DEFAULT_MONTHLY_TOKEN_LIMIT;
   let usage = 0;
-  let lastReset = profile?.ai_usage_last_reset_at ? new Date(profile.ai_usage_last_reset_at) : new Date(now.getFullYear(), now.getMonth(), 1);
+  let lastReset = profile?.ai_usage_last_reset_at
+    ? new Date(profile.ai_usage_last_reset_at)
+    : new Date(now.getFullYear(), now.getMonth(), 1);
 
   if (profile) {
     limit = profile.monthly_ai_token_limit ?? DEFAULT_MONTHLY_TOKEN_LIMIT;
@@ -107,20 +112,20 @@ export async function getUserTokenStatus(userId: string, supabaseClient: Supabas
         error_message: insertError.message,
         metadata: { userId },
       });
-       return { 
-        limit: 0, 
-        usage: 0, 
-        canUseTokens: () => ({canUse: false, remainingTokens: 0 }), 
-        userId 
-      }; 
+      return {
+        limit: 0,
+        usage: 0,
+        canUseTokens: () => ({ canUse: false, remainingTokens: 0 }),
+        userId,
+      };
     }
   }
-  
+
   const canUseTokens = (requestedTokens: number) => {
     const remaining = limit - usage;
     return {
-        canUse: remaining >= requestedTokens,
-        remainingTokens: remaining
+      canUse: remaining >= requestedTokens,
+      remainingTokens: remaining,
     };
   };
 
@@ -133,12 +138,16 @@ export async function getUserTokenStatus(userId: string, supabaseClient: Supabas
  * @param tokensUsed Liczba zużytych tokenów
  * @param supabaseClient Instancja klienta Supabase
  */
-export async function updateUserTokenUsage(userId: string, tokensUsed: number, supabaseClient: SupabaseClient<Database>): Promise<void> {
+export async function updateUserTokenUsage(
+  userId: string,
+  tokensUsed: number,
+  supabaseClient: SupabaseClient<Database>
+): Promise<void> {
   if (tokensUsed <= 0) return;
 
-  const { error } = await supabaseClient.rpc('increment_ai_token_usage', { 
-    p_user_id: userId, 
-    p_tokens_used: tokensUsed 
+  const { error } = await supabaseClient.rpc("increment_ai_token_usage", {
+    p_user_id: userId,
+    p_tokens_used: tokensUsed,
   });
 
   if (error) {
@@ -160,7 +169,12 @@ export async function updateUserTokenUsage(userId: string, tokensUsed: number, s
  * @param audioDurationSeconds Długość nagrania w sekundach (opcjonalne, do dokładniejszego liczenia tokenów)
  * @returns Obiekt z transkrypcją lub błędem
  */
-export async function transcribeAudio(audioFile: File, userId: string, supabaseClient: SupabaseClient<Database>, audioDurationSeconds?: number): Promise<{
+export async function transcribeAudio(
+  audioFile: File,
+  userId: string,
+  supabaseClient: SupabaseClient<Database>,
+  audioDurationSeconds?: number
+): Promise<{
   transcript?: string;
   error?: string;
   errorCode?: "TOKEN_LIMIT_EXCEEDED" | "API_ERROR" | "CONFIG_ERROR" | "FILE_FORMAT_ERROR" | "UNEXPECTED_ERROR";
@@ -172,32 +186,38 @@ export async function transcribeAudio(audioFile: File, userId: string, supabaseC
     }
 
     const tokenStatus = await getUserTokenStatus(userId, supabaseClient);
-    const tokensForThisRequest = audioDurationSeconds 
+    const tokensForThisRequest = audioDurationSeconds
       ? Math.ceil(audioDurationSeconds * WHISPER_AUDIO_SECOND_TO_TOKENS_RATE)
       : ESTIMATED_TOKENS_PER_TRANSCRIPTION_REQUEST;
-    
+
     const { canUse, remainingTokens } = tokenStatus.canUseTokens(tokensForThisRequest);
 
     if (!canUse) {
-      console.warn(`[OpenAI Service] Użytkownik ${userId} przekroczył limit tokenów. Pozostało: ${remainingTokens}, Potrzebne: ${tokensForThisRequest}`);
-      return { 
+      console.warn(
+        `[OpenAI Service] Użytkownik ${userId} przekroczył limit tokenów. Pozostało: ${remainingTokens}, Potrzebne: ${tokensForThisRequest}`
+      );
+      return {
         error: `Przekroczono miesięczny limit tokenów AI. Odnawia się on pierwszego dnia każdego miesiąca. Pozostało: ${Math.max(0, remainingTokens)} tokenów.`,
-        errorCode: "TOKEN_LIMIT_EXCEEDED" 
+        errorCode: "TOKEN_LIMIT_EXCEEDED",
       };
     }
 
-    const validExtensions = ['flac', 'm4a', 'mp3', 'mp4', 'mpeg', 'mpga', 'oga', 'ogg', 'wav', 'webm'];
-    const fileExt = audioFile.name.split('.').pop()?.toLowerCase() || '';
-    
+    const validExtensions = ["flac", "m4a", "mp3", "mp4", "mpeg", "mpga", "oga", "ogg", "wav", "webm"];
+    const fileExt = audioFile.name.split(".").pop()?.toLowerCase() || "";
+
     if (!validExtensions.includes(fileExt)) {
-      console.error(`Nieprawidłowy format pliku: ${fileExt}. Nazwa pliku: ${audioFile.name}, typ MIME: ${audioFile.type}`);
-      return { 
+      console.error(
+        `Nieprawidłowy format pliku: ${fileExt}. Nazwa pliku: ${audioFile.name}, typ MIME: ${audioFile.type}`
+      );
+      return {
         error: `Format pliku ${fileExt} nie jest obsługiwany. Obsługiwane formaty: flac, m4a, mp3, mp4, mpeg, mpga, oga, ogg, wav, webm.`,
-        errorCode: "FILE_FORMAT_ERROR"
+        errorCode: "FILE_FORMAT_ERROR",
       };
     }
 
-    console.log(`[OpenAI Service] Wysyłam plik audio do transkrypcji dla userId: ${userId}: ${audioFile.name}, szacowany koszt tokenów: ${tokensForThisRequest}`);
+    console.log(
+      `[OpenAI Service] Wysyłam plik audio do transkrypcji dla userId: ${userId}: ${audioFile.name}, szacowany koszt tokenów: ${tokensForThisRequest}`
+    );
 
     const formData = new FormData();
     formData.append("file", audioFile);
@@ -225,9 +245,10 @@ export async function transcribeAudio(audioFile: File, userId: string, supabaseC
 
     const data = await response.json();
     await updateUserTokenUsage(userId, tokensForThisRequest, supabaseClient);
-    console.log(`[OpenAI Service] Transkrypcja zakończona dla userId: ${userId}. Zaktualizowano zużycie o ${tokensForThisRequest} tokenów.`);
+    console.log(
+      `[OpenAI Service] Transkrypcja zakończona dla userId: ${userId}. Zaktualizowano zużycie o ${tokensForThisRequest} tokenów.`
+    );
     return { transcript: data.text };
-
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     console.error(`[OpenAI Service] Nieoczekiwany błąd transkrypcji dla userId: ${userId}: ${errorMessage}`);
@@ -269,15 +290,17 @@ export async function evaluateAnswer(
       return { error: "Usługa oceny odpowiedzi jest niedostępna. Brak klucza API.", errorCode: "CONFIG_ERROR" };
     }
 
-    const estimatedMaxTokensForEval = 2000; 
+    const estimatedMaxTokensForEval = 2000;
     const tokenStatus = await getUserTokenStatus(userId, supabaseClient);
     const { canUse: canInitiallyUse, remainingTokens } = tokenStatus.canUseTokens(estimatedMaxTokensForEval);
 
-    if (!canInitiallyUse && tokenStatus.canUseTokens(1).remainingTokens <=0 ) {
-      console.warn(`[OpenAI Service] Użytkownik ${userId} przekroczył limit tokenów (wstępne sprawdzenie). Pozostało: ${remainingTokens}`);
-      return { 
+    if (!canInitiallyUse && tokenStatus.canUseTokens(1).remainingTokens <= 0) {
+      console.warn(
+        `[OpenAI Service] Użytkownik ${userId} przekroczył limit tokenów (wstępne sprawdzenie). Pozostało: ${remainingTokens}`
+      );
+      return {
         error: `Przekroczono miesięczny limit tokenów AI. Odnawia się on pierwszego dnia każdego miesiąca. Pozostało: ${Math.max(0, remainingTokens)} tokenów.`,
-        errorCode: "TOKEN_LIMIT_EXCEEDED" 
+        errorCode: "TOKEN_LIMIT_EXCEEDED",
       };
     }
 
@@ -303,7 +326,14 @@ Odpowiedz w formie JSON:
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${OPENAI_API_KEY}` },
       body: JSON.stringify({
         model: "gpt-4o-mini",
-        messages: [{ role: "system", content: "Jesteś asystentem oceniającym odpowiedzi na pytania edukacyjne. Odpowiadasz wyłącznie w formacie JSON." }, { role: "user", content: prompt }],
+        messages: [
+          {
+            role: "system",
+            content:
+              "Jesteś asystentem oceniającym odpowiedzi na pytania edukacyjne. Odpowiadasz wyłącznie w formacie JSON.",
+          },
+          { role: "user", content: prompt },
+        ],
         temperature: 0.2,
         max_tokens: 150,
         response_format: { type: "json_object" },
@@ -325,22 +355,29 @@ Odpowiedz w formie JSON:
 
     const data = await response.json();
     const actualTokensUsed = data.usage?.total_tokens || 0;
-    
+
     const finalTokenStatus = await getUserTokenStatus(userId, supabaseClient);
     const { canUse: canFinallyUse, remainingTokens: finalRemaining } = finalTokenStatus.canUseTokens(actualTokensUsed);
 
     if (!canFinallyUse) {
-      console.warn(`[OpenAI Service] Użytkownik ${userId} przekroczył limit tokenów po wykonaniu zapytania GPT. Zużyto: ${actualTokensUsed}, pozostało przed: ${finalRemaining + actualTokensUsed}`);
-       await logError({
+      console.warn(
+        `[OpenAI Service] Użytkownik ${userId} przekroczył limit tokenów po wykonaniu zapytania GPT. Zużyto: ${actualTokensUsed}, pozostało przed: ${finalRemaining + actualTokensUsed}`
+      );
+      await logError({
         source: ErrorSource.APPLICATION,
         error_code: "TOKEN_LIMIT_EXCEEDED_POST_CALL",
         error_message: "Użytkownik przekroczył limit tokenów po wywołaniu API GPT, ale przed aktualizacją zużycia.",
-        metadata: { userId, actualTokensUsed, limit: finalTokenStatus.limit, usageBeforeThisCall: finalTokenStatus.usage },
+        metadata: {
+          userId,
+          actualTokensUsed,
+          limit: finalTokenStatus.limit,
+          usageBeforeThisCall: finalTokenStatus.usage,
+        },
       });
-      return { 
+      return {
         error: `Przekroczono miesięczny limit tokenów AI. Skontaktuj się z administratorem.`,
-        errorCode: "TOKEN_LIMIT_EXCEEDED"
-      }; 
+        errorCode: "TOKEN_LIMIT_EXCEEDED",
+      };
     }
 
     await updateUserTokenUsage(userId, actualTokensUsed, supabaseClient);
@@ -349,13 +386,12 @@ Odpowiedz w formie JSON:
     const content = data.choices[0]?.message?.content;
     if (!content) throw new Error("Brak odpowiedzi z API GPT");
     const result = JSON.parse(content);
-    
+
     return {
       isCorrect: result.isCorrect,
       feedback: result.feedback || (result.isCorrect ? "Poprawna odpowiedź!" : "Niepoprawna odpowiedź."),
-      tokensUsed: actualTokensUsed
+      tokensUsed: actualTokensUsed,
     };
-
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     console.error(`[OpenAI Service] Nieoczekiwany błąd oceny dla userId: ${userId}: ${errorMessage}`);
@@ -367,4 +403,4 @@ Odpowiedz w formie JSON:
     });
     return { error: "Wystąpił nieoczekiwany błąd podczas oceny odpowiedzi.", errorCode: "UNEXPECTED_ERROR" };
   }
-} 
+}

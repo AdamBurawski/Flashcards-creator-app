@@ -2,17 +2,15 @@ import type { MiddlewareHandler } from "astro";
 
 // Lista chronionych tras
 const protectedRoutes = [
-  "/collections", 
-  "/collections/create", 
-  "/collections/edit", 
+  "/collections",
+  "/collections/create",
+  "/collections/edit",
   "/collections/delete",
-  "/generate"
+  "/generate",
 ];
 
 // Trasy, które mogą być używane zarówno przez zalogowanych jak i niezalogowanych użytkowników
-const hybridRoutes = [
-  "/flashcards"
-];
+const _hybridRoutes = ["/flashcards"];
 
 export const protectedRoutesMiddleware: MiddlewareHandler = async ({ locals, request, redirect }, next) => {
   // Sprawdzenie, czy trasa jest chroniona
@@ -26,4 +24,4 @@ export const protectedRoutesMiddleware: MiddlewareHandler = async ({ locals, req
 
   // Kontynuacja przetwarzania
   return next();
-}; 
+};

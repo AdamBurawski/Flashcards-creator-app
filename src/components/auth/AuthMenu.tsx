@@ -4,7 +4,7 @@ import LogoutButton from "./LogoutButton";
 import { supabase } from "../../db/supabase.client";
 
 // Synchronizuj sesję z serwerem
-const syncSessionWithServer = async () => {
+const _syncSessionWithServer = async () => {
   try {
     const { data } = await supabase.auth.getSession();
     if (data.session) {
@@ -22,8 +22,8 @@ const syncSessionWithServer = async () => {
       return responseData.success;
     }
     return false;
-  } catch (error) {
-    // console.error("Błąd podczas synchronizacji sesji w AuthMenu:", error);
+  } catch (_error) {
+    // console.error("Błąd podczas synchronizacji sesji w AuthMenu:", _error);
     return false;
   }
 };
@@ -32,7 +32,7 @@ interface AuthMenuProps {
   initialIsAuthenticated?: boolean;
 }
 
-export default function AuthMenu({ initialIsAuthenticated = false }: AuthMenuProps) {
+export default function AuthMenu({ initialIsAuthenticated: _initialIsAuthenticated = false }: AuthMenuProps) {
   const [mounted, setMounted] = useState(false);
   const { user, isLoading } = useAuth();
 

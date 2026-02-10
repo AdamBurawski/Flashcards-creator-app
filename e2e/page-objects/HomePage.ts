@@ -1,7 +1,7 @@
-import { Page, Locator, expect } from '@playwright/test';
+import { Page, Locator, expect } from "@playwright/test";
 
 /**
- * Page Object dla strony głównej 
+ * Page Object dla strony głównej
  * Implementacja wzorca Page Object do testów E2E
  */
 export class HomePage {
@@ -12,16 +12,16 @@ export class HomePage {
 
   constructor(page: Page) {
     this.page = page;
-    this.heading = page.getByRole('heading', { level: 1 });
-    this.createFlashcardButton = page.getByRole('button', { name: /utwórz fiszkę/i });
-    this.flashcardsList = page.getByTestId('flashcards-list');
+    this.heading = page.getByRole("heading", { level: 1 });
+    this.createFlashcardButton = page.getByRole("button", { name: /utwórz fiszkę/i });
+    this.flashcardsList = page.getByTestId("flashcards-list");
   }
 
   /**
    * Nawigacja do strony głównej
    */
   async goto() {
-    await this.page.goto('/');
+    await this.page.goto("/");
   }
 
   /**
@@ -50,6 +50,6 @@ export class HomePage {
    * Sprawdzenie zrzutu ekranu strony głównej
    */
   async verifyScreenshot() {
-    await expect(this.page).toHaveScreenshot('home-page.png');
+    await expect(this.page).toHaveScreenshot("home-page.png");
   }
-} 
+}

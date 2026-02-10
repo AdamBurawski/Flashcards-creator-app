@@ -43,7 +43,7 @@ const ForgotPasswordForm = () => {
 
       // Ustawienie stanu potwierdzenia wysłania
       setIsSubmitted(true);
-    } catch (error) {
+    } catch (_error) {
       setFormError("Wystąpił błąd podczas wysyłania instrukcji resetowania hasła. Spróbuj ponownie później.");
     } finally {
       setIsSubmitting(false);

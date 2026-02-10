@@ -1,10 +1,5 @@
 import { useState } from "react";
-import type { 
-  GenerateFlashcardsCommand, 
-  GenerationCreateResponseDto, 
-  FlashcardsCreateCommand,
-  Source
-} from "../types";
+import type { GenerateFlashcardsCommand, GenerationCreateResponseDto, FlashcardsCreateCommand, Source } from "../types";
 
 // Rozszerzony model widoku do fiszek
 export interface FlashcardProposalViewModel {
@@ -34,49 +29,57 @@ export function useGenerateFlashcards() {
     isLoading: false,
     isSaving: false,
     error: null,
-    successMessage: null
+    successMessage: null,
   });
 
   // Funkcja do generowania fiszek
   const generateFlashcards = async (sourceText: string): Promise<boolean> => {
     // Walidacja długości tekstu
     if (sourceText.length < 1000 || sourceText.length > 10000) {
-      setState(prev => ({ 
-        ...prev, 
-        error: "Tekst musi mieć długość od 1000 do 10000 znaków." 
+      setState((prev) => ({
+        ...prev,
+        error: "Tekst musi mieć długość od 1000 do 10000 znaków.",
       }));
       return false;
     }
 
-    setState(prev => ({ 
-      ...prev, 
-      isLoading: true, 
-      error: null, 
+    setState((prev) => ({
+      ...prev,
+      isLoading: true,
+      error: null,
       successMessage: null,
       flashcardProposals: [],
-      generationId: null
+      generationId: null,
     }));
 
     try {
       const command: GenerateFlashcardsCommand = {
-        source_text: sourceText
+        source_text: sourceText,
       };
 
       const response = await fetch("/api/generations", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify(command)
+        body: JSON.stringify(command),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
         // Sprawdzamy, czy to błąd moderacji (status 400 i specyficzny komunikat)
-        if (response.status === 400 && 
-            errorData.error === "Dostarczony tekst narusza zasady użytkowania i nie może zostać przetworzony.") {
-          throw new Error("Twój tekst nie przeszedł automatycznej moderacji treści. Upewnij się, że nie zawiera on niedozwolonych zwrotów i spróbuj ponownie.");
-        } else if (response.status === 400 && errorData.error === "Invalid request data" && errorData.details?.source_text?._errors?.length > 0) {
+        if (
+          response.status === 400 &&
+          errorData.error === "Dostarczony tekst narusza zasady użytkowania i nie może zostać przetworzony."
+        ) {
+          throw new Error(
+            "Twój tekst nie przeszedł automatycznej moderacji treści. Upewnij się, że nie zawiera on niedozwolonych zwrotów i spróbuj ponownie."
+          );
+        } else if (
+          response.status === 400 &&
+          errorData.error === "Invalid request data" &&
+          errorData.details?.source_text?._errors?.length > 0
+        ) {
           // Błąd walidacji Zod dla source_text
           throw new Error(errorData.details.source_text._errors[0]);
         }
@@ -85,27 +88,27 @@ export function useGenerateFlashcards() {
       }
 
       const data: GenerationCreateResponseDto = await response.json();
-      
+
       // Przekształcenie propozycji fiszek do widoku z dodatkowymi flagami
-      const viewModels: FlashcardProposalViewModel[] = data.flashcards_proposals.map(proposal => ({
+      const viewModels: FlashcardProposalViewModel[] = data.flashcards_proposals.map((proposal) => ({
         ...proposal,
         accepted: false,
-        edited: false
+        edited: false,
       }));
 
-      setState(prev => ({
+      setState((prev) => ({
         ...prev,
         flashcardProposals: viewModels,
         generationId: data.generation_id,
-        isLoading: false
+        isLoading: false,
       }));
-      
+
       return true;
     } catch (error) {
-      setState(prev => ({
+      setState((prev) => ({
         ...prev,
         error: error instanceof Error ? error.message : "Wystąpił nieznany błąd.",
-        isLoading: false
+        isLoading: false,
       }));
       return false;
     }
@@ -114,27 +117,27 @@ export function useGenerateFlashcards() {
   // Funkcja do zapisywania fiszek
   const saveFlashcards = async (command: FlashcardsCreateCommand): Promise<boolean> => {
     if (command.flashcards.length === 0) {
-      setState(prev => ({
+      setState((prev) => ({
         ...prev,
-        error: "Brak fiszek do zapisania."
+        error: "Brak fiszek do zapisania.",
       }));
       return false;
     }
 
-    setState(prev => ({
+    setState((prev) => ({
       ...prev,
       isSaving: true,
       error: null,
-      successMessage: null
+      successMessage: null,
     }));
 
     try {
       const response = await fetch("/api/flashcards", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify(command)
+        body: JSON.stringify(command),
       });
 
       if (!response.ok) {
@@ -142,18 +145,18 @@ export function useGenerateFlashcards() {
         throw new Error(errorData.message || "Wystąpił błąd podczas zapisywania fiszek.");
       }
 
-      setState(prev => ({
+      setState((prev) => ({
         ...prev,
         successMessage: `Pomyślnie zapisano ${command.flashcards.length} fiszek.`,
-        isSaving: false
+        isSaving: false,
       }));
 
       return true;
     } catch (error) {
-      setState(prev => ({
+      setState((prev) => ({
         ...prev,
         error: error instanceof Error ? error.message : "Wystąpił nieznany błąd podczas zapisywania.",
-        isSaving: false
+        isSaving: false,
       }));
       return false;
     }
@@ -161,45 +164,45 @@ export function useGenerateFlashcards() {
 
   // Funkcje do obsługi akcji na fiszkach
   const acceptFlashcard = (index: number) => {
-    setState(prev => ({
+    setState((prev) => ({
       ...prev,
-      flashcardProposals: prev.flashcardProposals.map((proposal, i) => 
+      flashcardProposals: prev.flashcardProposals.map((proposal, i) =>
         i === index ? { ...proposal, accepted: !proposal.accepted } : proposal
-      )
+      ),
     }));
   };
 
   const rejectFlashcard = (index: number) => {
-    setState(prev => ({
+    setState((prev) => ({
       ...prev,
-      flashcardProposals: prev.flashcardProposals.filter((_, i) => i !== index)
+      flashcardProposals: prev.flashcardProposals.filter((_, i) => i !== index),
     }));
   };
 
   const editFlashcard = (index: number, front: string, back: string) => {
-    setState(prev => ({
+    setState((prev) => ({
       ...prev,
-      flashcardProposals: prev.flashcardProposals.map((proposal, i) => 
-        i === index 
-          ? { 
-              ...proposal, 
-              front, 
-              back, 
-              edited: true, 
-              source: "ai-edited" as Source
-            } 
+      flashcardProposals: prev.flashcardProposals.map((proposal, i) =>
+        i === index
+          ? {
+              ...proposal,
+              front,
+              back,
+              edited: true,
+              source: "ai-edited" as Source,
+            }
           : proposal
-      )
+      ),
     }));
   };
 
   // Funkcje do obsługi komunikatów
   const clearError = () => {
-    setState(prev => ({ ...prev, error: null }));
+    setState((prev) => ({ ...prev, error: null }));
   };
 
   const clearSuccess = () => {
-    setState(prev => ({ ...prev, successMessage: null }));
+    setState((prev) => ({ ...prev, successMessage: null }));
   };
 
   return {
@@ -210,6 +213,6 @@ export function useGenerateFlashcards() {
     rejectFlashcard,
     editFlashcard,
     clearError,
-    clearSuccess
+    clearSuccess,
   };
-} 
+}

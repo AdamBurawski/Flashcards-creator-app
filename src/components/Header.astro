@@ -1,6 +1,5 @@
 ---
 // Header.astro - Komponent nagłówka z obsługą stanu autentykacji
-import LogoutButton from "./auth/LogoutButton";
 import AuthMenu from "./auth/AuthMenu";
 
 // Pobierz dane użytkownika z locals (przyda się tylko dla początkowego renderowania)
@@ -34,25 +33,3 @@ const isAuthenticated = !!user;
     </nav>
   </div>
 </header>
-
-<script>
-  // JavaScript dla obsługi wylogowania
-  document.getElementById("logout-button")?.addEventListener("click", async () => {
-    try {
-      const response = await fetch("/api/auth/logout", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        window.location.href = "/";
-      }
-    } catch (error) {
-      console.error("Błąd podczas wylogowywania:", error);
-    }
-  });
-</script>

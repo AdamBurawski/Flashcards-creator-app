@@ -1,4 +1,4 @@
-import { Page, Locator, expect } from '@playwright/test';
+import { Page, Locator, expect } from "@playwright/test";
 
 /**
  * Page Object dla strony logowania
@@ -27,7 +27,7 @@ export class LoginPage {
    * Nawigacja do strony logowania
    */
   async goto() {
-    await this.page.goto('/auth/login');
+    await this.page.goto("/auth/login");
   }
 
   /**
@@ -68,4 +68,4 @@ export class LoginPage {
   async goToForgotPassword() {
     await this.forgotPasswordLink.click();
   }
-} 
+}

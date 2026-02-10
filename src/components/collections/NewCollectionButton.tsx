@@ -11,7 +11,7 @@ export default function NewCollectionButton() {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [debugInfo, setDebugInfo] = useState<any>(null);
+  const [debugInfo, setDebugInfo] = useState<Record<string, unknown> | null>(null);
   const [newCollectionId, setNewCollectionId] = useState<number | null>(null);
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
@@ -63,7 +63,7 @@ export default function NewCollectionButton() {
       });
 
       // Testowa próba sprawdzenia czy tabela istnieje
-      const { data: testData, error: testError } = await supabase.from("collections").select("count").limit(1);
+      const { data: _testData, error: testError } = await supabase.from("collections").select("count").limit(1);
 
       if (testError) {
         setDebugInfo({ type: "table_check_error", details: testError });

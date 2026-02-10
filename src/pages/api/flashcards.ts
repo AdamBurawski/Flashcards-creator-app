@@ -1,7 +1,7 @@
 import type { APIRoute } from "astro";
 import { z } from "zod";
 import { createFlashcards, validateGenerationExists } from "../../lib/flashcard.service";
-import type { FlashcardsCreateCommand, FlashcardDto, Source } from "../../types";
+import type { FlashcardsCreateCommand } from "../../types";
 import { DEFAULT_USER_ID } from "../../db/supabase.client";
 import { ErrorSource, logError } from "../../lib/error-logger.service";
 
@@ -47,7 +47,7 @@ const flashcardsCreateCommandSchema = z.object({
  * @param request The incoming request object
  * @returns The authenticated user ID or null if authentication fails
  */
-async function authenticateUser(request: Request, locals: any): Promise<string | null> {
+async function authenticateUser(request: Request, locals: App.Locals): Promise<string | null> {
   // Get the authorization header
   const authHeader = request.headers.get("authorization");
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -63,7 +63,7 @@ async function authenticateUser(request: Request, locals: any): Promise<string |
   try {
     // Verify the token using Supabase from locals
     const supabase = locals.supabase;
-    
+
     if (!supabase) {
       await logError({
         source: ErrorSource.AUTHENTICATION,
@@ -73,7 +73,7 @@ async function authenticateUser(request: Request, locals: any): Promise<string |
       });
       return null;
     }
-    
+
     const {
       data: { user },
       error,
@@ -116,7 +116,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
     if (locals.user && locals.user.id) {
       userId = locals.user.id;
       console.log(`Użytkownik już uwierzytelniony przez middleware: ${locals.user.email}, ID: ${userId}`);
-    } 
+    }
     // Jeśli nie, spróbuj uwierzytelnić za pomocą nagłówka autoryzacji
     else if (import.meta.env.MODE === "production") {
       const authUserId = await authenticateUser(request, locals);
@@ -184,7 +184,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
     // Jeśli jesteśmy w trybie BYPASS_DATABASE, nie sprawdzamy referencji i symulujemy zapis
     if (isBypassMode) {
       console.log("[BYPASS_DATABASE] Simulating flashcard creation in API endpoint");
-      
+
       // Generuj sztuczną odpowiedź
       const now = new Date().toISOString();
       const mockFlashcards = flashcards.map((card, idx) => ({
@@ -194,16 +194,13 @@ export const POST: APIRoute = async ({ request, locals }) => {
         source: card.source,
         generation_id: card.generation_id,
         created_at: now,
-        updated_at: now
+        updated_at: now,
       }));
-      
-      return new Response(
-        JSON.stringify({ flashcards: mockFlashcards }), 
-        { 
-          status: 201, 
-          headers: { "Content-Type": "application/json" } 
-        }
-      );
+
+      return new Response(JSON.stringify({ flashcards: mockFlashcards }), {
+        status: 201,
+        headers: { "Content-Type": "application/json" },
+      });
     }
 
     // 3. Tylko jeśli nie w trybie bypass - Validate generation_id references
@@ -245,7 +242,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
     try {
       // Zapisz dodatkowe informacje do logów przed utworzeniem fiszek
       console.log(`Tworzenie fiszek dla user_id: ${userId}`);
-      
+
       // Call service to create flashcards
       const result = await createFlashcards(flashcards, userId);
 
@@ -254,14 +251,14 @@ export const POST: APIRoute = async ({ request, locals }) => {
         status: 201,
         headers: { "Content-Type": "application/json" },
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       // Error is already logged in the service
 
       // Return appropriate error response
       return new Response(
         JSON.stringify({
           error: "Failed to create flashcards",
-          details: error.message,
+          details: error instanceof Error ? error.message : String(error),
         }),
         {
           status: 500,
@@ -269,7 +266,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
         }
       );
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     await logError({
       source: ErrorSource.SERVER_ERROR,
       error_code: "UNHANDLED_ERROR",

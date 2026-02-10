@@ -32,7 +32,7 @@ interface Flashcard {
   source?: string;
   generation_id?: number | string;
   created_at?: string;
-  [key: string]: any; // Dla dodatkowych pól zwracanych przez API
+  [key: string]: unknown; // Dla dodatkowych pól zwracanych przez API
 }
 
 export default function ImportFlashcardsDialog({
@@ -118,7 +118,7 @@ export default function ImportFlashcardsDialog({
 
         if (data) {
           // Upewnij się, że dane z API mają wymagane pola dla typu Flashcard
-          const validatedFlashcards = data.map((item: any) => ({
+          const validatedFlashcards = data.map((item: Record<string, unknown>) => ({
             id: item.id,
             front: item.front,
             back: item.back,
@@ -273,13 +273,16 @@ export default function ImportFlashcardsDialog({
         ) : generations.length === 0 ? (
           <div className="py-10 text-center">
             <p className="text-gray-500 mb-2">Brak wygenerowanych fiszek do importu</p>
-            <p className="text-sm text-gray-400">Najpierw wygeneruj fiszki w zakładce "Generuj fiszki"</p>
+            <p className="text-sm text-gray-400">Najpierw wygeneruj fiszki w zakładce &quot;Generuj fiszki&quot;</p>
           </div>
         ) : (
           <>
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Wybierz sesję generowania</label>
+              <label htmlFor="generation-select" className="block text-sm font-medium text-gray-700 mb-1">
+                Wybierz sesję generowania
+              </label>
               <select
+                id="generation-select"
                 className="w-full px-3 py-2 border border-gray-300 rounded-md"
                 value={selectedGeneration || ""}
                 onChange={(e) => setSelectedGeneration(e.target.value ? parseInt(e.target.value) : null)}

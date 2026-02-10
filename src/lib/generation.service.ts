@@ -4,7 +4,7 @@ import { DEFAULT_USER_ID, supabase } from "../db/supabase.client";
 import { AIService, AIServiceError } from "./ai.service";
 
 // When in development, we can mock AI service results for testing
-const isDevelopment = import.meta.env.MODE === "development";
+const _isDevelopment = import.meta.env.MODE === "development";
 
 // Wykrywanie trybu obejścia bazy danych - odczytujemy z env lub używamy domyślnej wartości
 const bypassEnv = import.meta.env.BYPASS_DATABASE;
@@ -34,7 +34,10 @@ function calculateSourceTextHash(sourceText: string): string {
 }
 
 // The main function to generate flashcards
-export async function generateFlashcards(sourceText: string, userId: string = DEFAULT_USER_ID): Promise<GenerationResult> {
+export async function generateFlashcards(
+  sourceText: string,
+  userId: string = DEFAULT_USER_ID
+): Promise<GenerationResult> {
   console.log(`Generowanie fiszek dla użytkownika z ID: ${userId}`);
 
   // Calculate hash and other metadata
@@ -50,7 +53,7 @@ export async function generateFlashcards(sourceText: string, userId: string = DE
 
     // Sprawdź, czy OpenRouter API key jest dostępny
     const openRouterApiKey = import.meta.env.OPENROUTER_API_KEY;
-    
+
     // Jeśli klucz API nie jest dostępny lub jesteśmy w trybie development i chcemy używać mocków
     if (!openRouterApiKey) {
       console.warn("OPENROUTER_API_KEY is not set - using mock data instead");
@@ -63,18 +66,20 @@ export async function generateFlashcards(sourceText: string, userId: string = DE
         model = aiService.getModel(); // Get the actual model being used
 
         console.log(`[DEBUG-GENERATION] Using AI service with model: ${model}`);
-        
+
         // Call the AI service to generate flashcards
         const aiResult = await aiService.generateFlashcards(sourceText);
         flashcardProposals = aiResult.proposals;
         tokensActuallyUsed = aiResult.tokensUsed;
-        
-        console.log(`[DEBUG-GENERATION] Successfully generated ${flashcardProposals.length} flashcards, tokens used: ${tokensActuallyUsed}`);
-      } catch (aiError: any) {
+
+        console.log(
+          `[DEBUG-GENERATION] Successfully generated ${flashcardProposals.length} flashcards, tokens used: ${tokensActuallyUsed}`
+        );
+      } catch (aiError: unknown) {
         // Handle and log AI service errors
         const errorCode = aiError instanceof AIServiceError ? aiError.code : "UNKNOWN";
-        const errorMessage = aiError.message || "Unknown error occurred";
-        
+        const errorMessage = aiError instanceof Error ? aiError.message : "Unknown error occurred";
+
         console.error(`[DEBUG-GENERATION] AI service error: ${errorCode} - ${errorMessage}`);
 
         // Log AI error to the database (only if not bypassing database)
@@ -129,18 +134,17 @@ export async function generateFlashcards(sourceText: string, userId: string = DE
     // Otherwise, try to save to the database
     try {
       // Zamiast bezpośredniego insertu, używamy funkcji RPC która omija RLS
-      const { data: rpcResultData, error: generationError } = await supabase
-        .rpc('insert_generation', {
-          generation_data: {
-            user_id: userId,
-            model,
-            generated_count: flashcardProposals.length,
-            source_text_hash: sourceTextHash,
-            source_text_length: sourceTextLength,
-            generation_duration: generationDuration,
-            tokens_used: tokensActuallyUsed 
-          }
-        });
+      const { data: rpcResultData, error: generationError } = await supabase.rpc("insert_generation", {
+        generation_data: {
+          user_id: userId,
+          model,
+          generated_count: flashcardProposals.length,
+          source_text_hash: sourceTextHash,
+          source_text_length: sourceTextLength,
+          generation_duration: generationDuration,
+          tokens_used: tokensActuallyUsed,
+        },
+      });
 
       // Sprawdzamy błąd i czy dane zostały zwrócone.
       // Zakładamy, że funkcja RPC, jeśli się powiedzie, zwraca obiekt (lub tablicę obiektów)
@@ -149,27 +153,35 @@ export async function generateFlashcards(sourceText: string, userId: string = DE
       let newGenerationId: number | null = null;
       if (!generationError && rpcResultData) {
         // Jeśli rpcResultData jest tablicą, weź id z pierwszego elementu
-        if (Array.isArray(rpcResultData) && rpcResultData.length > 0 && rpcResultData[0] && typeof rpcResultData[0].id === 'number') {
+        if (
+          Array.isArray(rpcResultData) &&
+          rpcResultData.length > 0 &&
+          rpcResultData[0] &&
+          typeof rpcResultData[0].id === "number"
+        ) {
           newGenerationId = rpcResultData[0].id;
-        } else if (typeof (rpcResultData as any).id === 'number') {
+        } else if (typeof (rpcResultData as Record<string, unknown>).id === "number") {
           // Jeśli rpcResultData jest pojedynczym obiektem z polem id
-          newGenerationId = (rpcResultData as any).id;
+          newGenerationId = (rpcResultData as Record<string, unknown>).id as number;
         }
       }
 
       if (generationError || newGenerationId === null) {
-        console.error("Error saving generation data or ID not returned:", generationError || "No valid ID returned from RPC");
+        console.error(
+          "Error saving generation data or ID not returned:",
+          generationError || "No valid ID returned from RPC"
+        );
         return {
-          generationId: Math.floor(Math.random() * 1000), 
+          generationId: Math.floor(Math.random() * 1000),
           proposals: flashcardProposals,
-          tokensUsed: tokensActuallyUsed, 
+          tokensUsed: tokensActuallyUsed,
         };
       }
 
       return {
         generationId: newGenerationId, // Używamy newGenerationId
         proposals: flashcardProposals,
-        tokensUsed: tokensActuallyUsed, 
+        tokensUsed: tokensActuallyUsed,
       };
     } catch (dbError) {
       console.error("Database operation failed:", dbError);

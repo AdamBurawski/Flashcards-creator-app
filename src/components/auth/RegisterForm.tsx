@@ -3,7 +3,7 @@ import { Button } from "../ui/button";
 import { supabase } from "../../db/supabase.client";
 
 // Synchronizuj sesję z serwerem
-const syncSessionWithServer = async (session: any) => {
+const syncSessionWithServer = async (session: Record<string, unknown>) => {
   try {
     // console.log("Synchronizacja sesji po rejestracji...");
     const response = await fetch("/api/auth/sync-session", {
@@ -17,8 +17,8 @@ const syncSessionWithServer = async (session: any) => {
     const data = await response.json();
     // console.log("Odpowiedź z synchronizacji po rejestracji:", data);
     return data.success;
-  } catch (error) {
-    // console.error("Błąd podczas synchronizacji sesji po rejestracji:", error);
+  } catch (_error) {
+    // console.error("Błąd podczas synchronizacji sesji po rejestracji:", _error);
     return false;
   }
 };

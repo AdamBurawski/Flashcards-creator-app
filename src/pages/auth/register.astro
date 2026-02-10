@@ -1,6 +1,6 @@
+---
 export const prerender = false;
 
----
 import AuthLayout from "../../layouts/AuthLayout.astro";
 import RegisterForm from "../../components/auth/RegisterForm";
 
@@ -27,4 +27,3 @@ const returnUrl = Astro.url.searchParams.get("returnUrl") || "/";
     </a>
   </div>
 </AuthLayout>
-

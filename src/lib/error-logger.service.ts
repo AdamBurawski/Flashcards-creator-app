@@ -1,5 +1,3 @@
-import { supabase } from "../db/supabase.client";
-
 export enum ErrorSource {
   FLASHCARD_CREATE = "flashcard_create",
   GENERATION = "generation",
@@ -10,7 +8,7 @@ export enum ErrorSource {
   API = "API",
   AI_SERVICE = "AI_SERVICE",
   EXTERNAL_API = "EXTERNAL_API",
-  APPLICATION = "application"
+  APPLICATION = "application",
 }
 
 export interface ErrorLogEntry {
@@ -18,7 +16,7 @@ export interface ErrorLogEntry {
   error_code: string;
   error_message: string;
   user_id?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 /**
@@ -26,7 +24,7 @@ export interface ErrorLogEntry {
  * @param entry The error log entry to record
  * @param saveToDb Whether to persist the error in the database (defaults to false since table doesn't exist)
  */
-export async function logError(entry: ErrorLogEntry, saveToDb: boolean = false): Promise<void> {
+export async function logError(entry: ErrorLogEntry, saveToDb = false): Promise<void> {
   // Always log to console
   console.error(`[${entry.source}] Error ${entry.error_code}: ${entry.error_message}`, entry.metadata || "");
 

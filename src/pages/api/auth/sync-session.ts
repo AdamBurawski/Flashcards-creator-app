@@ -6,9 +6,9 @@ export const POST: APIRoute = async ({ request, locals, cookies }) => {
   try {
     // Pobierz dane sesji z body żądania
     const { session } = await request.json();
-    
+
     // console.log("Otrzymano dane sesji do synchronizacji:", !!session);
-    
+
     if (session && locals.supabase) {
       // Ustaw cookie z tokenem dla SSR
       if (session.access_token) {
@@ -19,7 +19,7 @@ export const POST: APIRoute = async ({ request, locals, cookies }) => {
           sameSite: "lax",
           maxAge: 60 * 60 * 24 * 7, // tydzień
         });
-        
+
         // Zapisz też w locals
         locals.token = session.access_token;
       }
@@ -29,7 +29,7 @@ export const POST: APIRoute = async ({ request, locals, cookies }) => {
         access_token: session.access_token,
         refresh_token: session.refresh_token,
       });
-      
+
       if (error) {
         // console.error("Błąd podczas synchronizacji sesji:", error);
         return new Response(
@@ -41,18 +41,18 @@ export const POST: APIRoute = async ({ request, locals, cookies }) => {
           {
             status: 400,
             headers: {
-              'Content-Type': 'application/json'
-            }
+              "Content-Type": "application/json",
+            },
           }
         );
       }
-      
+
       // Aktualizacja danych w locals
       locals.session = data.session;
       locals.user = data.session?.user ?? null;
-      
+
       // console.log("Sesja zsynchronizowana pomyślnie, użytkownik:", data.session?.user?.email);
-      
+
       return new Response(
         JSON.stringify({
           success: true,
@@ -63,14 +63,14 @@ export const POST: APIRoute = async ({ request, locals, cookies }) => {
         {
           status: 200,
           headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
             // Dodaj token jako nagłówek, aby klient mógł go używać
-            'Authorization': `Bearer ${session.access_token}`
-          }
+            Authorization: `Bearer ${session.access_token}`,
+          },
         }
       );
     }
-    
+
     return new Response(
       JSON.stringify({
         success: false,
@@ -79,12 +79,12 @@ export const POST: APIRoute = async ({ request, locals, cookies }) => {
       {
         status: 400,
         headers: {
-          'Content-Type': 'application/json'
-        }
+          "Content-Type": "application/json",
+        },
       }
     );
-  } catch (error) {
-    // console.error("Błąd podczas przetwarzania synchronizacji sesji:", error);
+  } catch (_error) {
+    // console.error("Błąd podczas przetwarzania synchronizacji sesji:", _error);
     return new Response(
       JSON.stringify({
         success: false,
@@ -93,9 +93,9 @@ export const POST: APIRoute = async ({ request, locals, cookies }) => {
       {
         status: 500,
         headers: {
-          'Content-Type': 'application/json'
-        }
+          "Content-Type": "application/json",
+        },
       }
     );
   }
-}; 
+};

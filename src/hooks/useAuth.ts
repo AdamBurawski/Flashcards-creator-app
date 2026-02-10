@@ -14,18 +14,18 @@ interface AuthContext {
 let authToken: string | null = null;
 
 // Sprawdzenie, czy kod jest wykonywany w przeglądarce
-const isBrowser = typeof window !== 'undefined';
+const isBrowser = typeof window !== "undefined";
 
 // Funkcja do modyfikacji fetch tylko po stronie klienta
 if (isBrowser) {
   // Dodaj token do wszystkich żądań fetch (monkey patch)
   const originalFetch = window.fetch;
-  window.fetch = function(input, init) {
-    if (typeof input === 'string' && !input.includes('/api/auth/sync-session') && authToken) {
+  window.fetch = function (input, init) {
+    if (typeof input === "string" && !input.includes("/api/auth/sync-session") && authToken) {
       init = init || {};
       init.headers = {
         ...init.headers,
-        'Authorization': `Bearer ${authToken}`
+        Authorization: `Bearer ${authToken}`,
       };
     }
     return originalFetch.call(this, input, init);
@@ -33,31 +33,31 @@ if (isBrowser) {
 }
 
 // Synchronizuj sesję z serwerem
-const syncSessionWithServer = async (session: any) => {
+const syncSessionWithServer = async (session: Record<string, unknown>) => {
   if (!isBrowser) return false;
 
   try {
     if (!session) {
       return false;
     }
-    
+
     // Zapisz token do użycia w przyszłych żądaniach
     if (session.access_token) {
       authToken = session.access_token;
     }
-    
+
     const response = await fetch("/api/auth/sync-session", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${session.access_token}`
+        Authorization: `Bearer ${session.access_token}`,
       },
       body: JSON.stringify({ session }),
     });
 
     const data = await response.json();
     return data.success;
-  } catch (error) {
+  } catch (_error) {
     return false;
   }
 };
@@ -74,11 +74,11 @@ export function useAuth(): AuthContext {
       setIsLoading(false);
       return;
     }
-    
+
     setIsLoading(true);
     try {
       const { data, error } = await supabase.auth.getSession();
-      
+
       if (error) {
         throw error;
       }
@@ -86,13 +86,13 @@ export function useAuth(): AuthContext {
       if (data.session) {
         // Synchronizuj sesję z serwerem
         await syncSessionWithServer(data.session);
-        
+
         const { data: userData, error: userError } = await supabase.auth.getUser();
-        
+
         if (userError) {
           throw userError;
         }
-        
+
         setUser(userData.user);
       } else {
         setUser(null);
@@ -108,7 +108,7 @@ export function useAuth(): AuthContext {
   // Funkcja do wylogowania - zdefiniowana poza useEffect
   const logout = async () => {
     if (!isBrowser) return;
-    
+
     setIsLoading(true);
     try {
       const { error } = await supabase.auth.signOut();
@@ -138,22 +138,20 @@ export function useAuth(): AuthContext {
     checkSession();
 
     // Nasłuchuj zmian w stanie autentykacji
-    const { data: authListener } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
-          if (session) {
-            // Synchronizuj sesję z serwerem przy zalogowaniu lub odświeżeniu tokenu
-            await syncSessionWithServer(session);
-            setUser(session.user);
-          }
-        } else if (event === "SIGNED_OUT") {
-          // Wyczyść token przy wylogowaniu
-          authToken = null;
-          setUser(null);
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
+        if (session) {
+          // Synchronizuj sesję z serwerem przy zalogowaniu lub odświeżeniu tokenu
+          await syncSessionWithServer(session);
+          setUser(session.user);
         }
-        setIsLoading(false);
+      } else if (event === "SIGNED_OUT") {
+        // Wyczyść token przy wylogowaniu
+        authToken = null;
+        setUser(null);
       }
-    );
+      setIsLoading(false);
+    });
 
     // Sprzątanie po odmontowaniu
     return () => {
@@ -164,4 +162,4 @@ export function useAuth(): AuthContext {
   }, []);
 
   return { user, isLoading, error, logout };
-} 
+}

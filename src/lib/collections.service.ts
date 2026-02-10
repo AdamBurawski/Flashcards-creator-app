@@ -32,17 +32,17 @@ export async function checkCollectionAccess(
         metadata: { collection_id: collectionId },
       });
 
-      return { 
-        hasAccess: false, 
-        error: "Wystąpił błąd podczas weryfikacji dostępu do kolekcji" 
+      return {
+        hasAccess: false,
+        error: "Wystąpił błąd podczas weryfikacji dostępu do kolekcji",
       };
     }
 
     // Jeśli nie znaleziono kolekcji, oznacza to brak dostępu
     if (!data) {
-      return { 
-        hasAccess: false, 
-        error: "Kolekcja nie istnieje lub nie masz do niej dostępu" 
+      return {
+        hasAccess: false,
+        error: "Kolekcja nie istnieje lub nie masz do niej dostępu",
       };
     }
 
@@ -50,7 +50,7 @@ export async function checkCollectionAccess(
   } catch (error) {
     // Obsługa nieoczekiwanych błędów
     const errorMessage = error instanceof Error ? error.message : String(error);
-    
+
     await logError({
       source: ErrorSource.DATABASE,
       error_code: "UNEXPECTED_COLLECTION_ACCESS_ERROR",
@@ -59,9 +59,9 @@ export async function checkCollectionAccess(
       metadata: { collection_id: collectionId },
     });
 
-    return { 
-      hasAccess: false, 
-      error: "Wystąpił nieoczekiwany błąd podczas weryfikacji dostępu do kolekcji" 
+    return {
+      hasAccess: false,
+      error: "Wystąpił nieoczekiwany błąd podczas weryfikacji dostępu do kolekcji",
     };
   }
 }
@@ -73,11 +73,7 @@ export async function checkCollectionAccess(
  * @param userId ID użytkownika
  * @returns Tablica fiszek lub null w przypadku błędu
  */
-export async function getFlashcardsForLearning(
-  supabase: SupabaseClient,
-  collectionId: number,
-  userId: string
-) {
+export async function getFlashcardsForLearning(supabase: SupabaseClient, collectionId: number, userId: string) {
   try {
     // Pobierz wszystkie fiszki należące do kolekcji i użytkownika
     const { data, error } = await supabase
@@ -95,18 +91,18 @@ export async function getFlashcardsForLearning(
         user_id: userId,
         metadata: { collection_id: collectionId },
       });
-      
+
       return null;
     }
-    
+
     // Losowanie kolejności fiszek
     const shuffledFlashcards = data ? [...data].sort(() => Math.random() - 0.5) : [];
-    
+
     return shuffledFlashcards;
   } catch (error) {
     // Obsługa nieoczekiwanych błędów
     const errorMessage = error instanceof Error ? error.message : String(error);
-    
+
     await logError({
       source: ErrorSource.DATABASE,
       error_code: "UNEXPECTED_FLASHCARDS_FETCH_ERROR",
@@ -114,7 +110,7 @@ export async function getFlashcardsForLearning(
       user_id: userId,
       metadata: { collection_id: collectionId },
     });
-    
+
     return null;
   }
-} 
+}

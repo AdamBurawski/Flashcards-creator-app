@@ -1,5 +1,3 @@
-import { X } from "lucide-react";
-
 interface ErrorNotificationProps {
   message: string;
   onDismiss?: () => void;

@@ -1,23 +1,23 @@
 /**
  * Formatuje datę ISO do czytelnego formatu.
  * @param isoDateString data w formacie ISO (np. z pola created_at z bazy danych)
- * @returns sformatowany string daty w lokalnym formacie 
+ * @returns sformatowany string daty w lokalnym formacie
  */
 export function formatDate(isoDateString: string): string {
   try {
     const date = new Date(isoDateString);
-    
+
     // Sprawdź, czy data jest prawidłowa
     if (isNaN(date.getTime())) {
       return "Data nieznana";
     }
-    
+
     return date.toLocaleDateString("pl-PL", {
       year: "numeric",
       month: "short",
       day: "numeric",
       hour: "2-digit",
-      minute: "2-digit"
+      minute: "2-digit",
     });
   } catch (error) {
     console.error("Błąd formatowania daty:", error);
@@ -34,18 +34,18 @@ export function formatRelativeDate(isoDateString: string): string {
   try {
     const date = new Date(isoDateString);
     const now = new Date();
-    
+
     // Sprawdź, czy data jest prawidłowa
     if (isNaN(date.getTime())) {
       return "Data nieznana";
     }
-    
+
     const diffInMilliseconds = now.getTime() - date.getTime();
     const diffInSeconds = Math.floor(diffInMilliseconds / 1000);
     const diffInMinutes = Math.floor(diffInSeconds / 60);
     const diffInHours = Math.floor(diffInMinutes / 60);
     const diffInDays = Math.floor(diffInHours / 24);
-    
+
     if (diffInSeconds < 60) {
       return "przed chwilą";
     } else if (diffInMinutes < 60) {
@@ -74,4 +74,4 @@ function pluralize(count: number, form1: string, form2to4: string, form5plus: st
   } else {
     return form5plus;
   }
-} 
+}

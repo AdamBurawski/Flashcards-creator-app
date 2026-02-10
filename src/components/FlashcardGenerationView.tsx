@@ -8,13 +8,7 @@ import SuccessNotification from "./SuccessNotification";
 import BulkSaveButton from "./BulkSaveButton";
 import NewCollectionDialog from "../components/collections/NewCollectionDialog";
 import { useGenerateFlashcards } from "../hooks/useGenerateFlashcards";
-import type {
-  GenerateFlashcardsCommand,
-  GenerationCreateResponseDto,
-  FlashcardProposalDto,
-  Source,
-  FlashcardsCreateCommand,
-} from "../types";
+import type { Source, FlashcardsCreateCommand } from "../types";
 
 // Rozszerzamy model widoku dla komponentów potomnych
 export interface FlashcardProposalViewModel {
@@ -42,7 +36,7 @@ const FlashcardGenerationView = () => {
     error,
     successMessage,
     generateFlashcards,
-    saveFlashcards,
+    saveFlashcards: _saveFlashcards,
     acceptFlashcard,
     rejectFlashcard,
     editFlashcard,

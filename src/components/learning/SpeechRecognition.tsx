@@ -11,7 +11,7 @@ const SpeechRecognition: React.FC<SpeechRecognitionProps> = ({ onTranscriptionCo
   const [error, setError] = useState<string | null>(null);
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
   const [audioChunks, setAudioChunks] = useState<Blob[]>([]);
-  const [selectedFormat, setSelectedFormat] = useState<string>("");
+  const [_selectedFormat, setSelectedFormat] = useState<string>("");
   const [recordingDuration, setRecordingDuration] = useState(0);
   const [recordingTimer, setRecordingTimer] = useState<number | null>(null);
 

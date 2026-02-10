@@ -106,7 +106,7 @@ describe("POST /flashcards Endpoint", () => {
     const context = {
       request,
       params: {},
-      locals: { user: { id: "test-user-id" } }
+      locals: { user: { id: "test-user-id" } },
     } as unknown as APIContext;
 
     // Act
@@ -120,7 +120,7 @@ describe("POST /flashcards Endpoint", () => {
       expect(Array.isArray(responseBody.flashcards)).toBe(true);
       expect(flashcardService.createFlashcards).toHaveBeenCalledTimes(1);
     } catch (error) {
-      console.error('Test error:', error);
+      console.error("Test error:", error);
       throw error;
     }
   });
@@ -149,7 +149,7 @@ describe("POST /flashcards Endpoint", () => {
     const context = {
       request,
       params: {},
-      locals: { user: { id: "test-user-id" } }
+      locals: { user: { id: "test-user-id" } },
     } as unknown as APIContext;
 
     // Act
@@ -163,7 +163,7 @@ describe("POST /flashcards Endpoint", () => {
       expect(responseBody.error).toBe("Invalid request data");
       expect(flashcardService.createFlashcards).not.toHaveBeenCalled();
     } catch (error) {
-      console.error('Test error:', error);
+      console.error("Test error:", error);
       throw error;
     }
   });
@@ -194,7 +194,7 @@ describe("POST /flashcards Endpoint", () => {
     const context = {
       request,
       params: {},
-      locals: { user: { id: "test-user-id" } }
+      locals: { user: { id: "test-user-id" } },
     } as unknown as APIContext;
 
     // Act
@@ -209,7 +209,7 @@ describe("POST /flashcards Endpoint", () => {
       expect(flashcardService.validateGenerationExists).toHaveBeenCalledTimes(1);
       expect(flashcardService.createFlashcards).not.toHaveBeenCalled();
     } catch (error) {
-      console.error('Test error:', error);
+      console.error("Test error:", error);
       throw error;
     }
   });
@@ -240,7 +240,7 @@ describe("POST /flashcards Endpoint", () => {
     const context = {
       request,
       params: {},
-      locals: { user: { id: "test-user-id" } }
+      locals: { user: { id: "test-user-id" } },
     } as unknown as APIContext;
 
     // Act
@@ -255,7 +255,7 @@ describe("POST /flashcards Endpoint", () => {
       expect(responseBody.error).toBe("Failed to create flashcards");
       expect(flashcardService.createFlashcards).toHaveBeenCalledTimes(1);
     } catch (error) {
-      console.error('Test error:', error);
+      console.error("Test error:", error);
       throw error;
     }
   });
@@ -290,7 +290,7 @@ describe("POST /flashcards Endpoint", () => {
     const context = {
       request,
       params: {},
-      locals: { user: { id: "test-user-id" } }
+      locals: { user: { id: "test-user-id" } },
     } as unknown as APIContext;
 
     // Act
@@ -304,7 +304,7 @@ describe("POST /flashcards Endpoint", () => {
       expect(responseBody.error).toBe("Invalid request data");
       expect(flashcardService.createFlashcards).not.toHaveBeenCalled();
     } catch (error) {
-      console.error('Test error:', error);
+      console.error("Test error:", error);
       throw error;
     }
   });

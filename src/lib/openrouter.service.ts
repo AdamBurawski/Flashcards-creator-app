@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from "zod";
 
 /**
  * Interfejs określający parametry modelu LLM
@@ -15,7 +15,7 @@ export interface ModelParameters {
  * Interfejs dla struktury komunikatu w formacie ChatGPT
  */
 interface ChatMessage {
-  role: 'system' | 'user' | 'assistant';
+  role: "system" | "user" | "assistant";
   content: string;
 }
 
@@ -26,7 +26,7 @@ interface JSONSchema {
   name: string;
   schema: {
     type: string;
-    properties: Record<string, any>;
+    properties: Record<string, unknown>;
     required: string[];
   };
 }
@@ -39,7 +39,7 @@ interface RequestPayload {
   messages: ChatMessage[];
   response_format?: {
     type: string;
-    json_schema?: Record<string, any>;
+    json_schema?: Record<string, unknown>;
   };
   temperature?: number;
   top_p?: number;
@@ -76,7 +76,7 @@ interface ApiResponse {
  */
 export interface ChatCompletionResult<T> {
   response: T;
-  usage: ApiResponse['usage'];
+  usage: ApiResponse["usage"];
 }
 
 /**
@@ -98,29 +98,29 @@ interface OpenRouterServiceOptions {
  * Interfejs dla loggera
  */
 export interface Logger {
-  debug(message: string, ...args: any[]): void;
-  info(message: string, ...args: any[]): void;
-  warn(message: string, ...args: any[]): void;
-  error(message: string, ...args: any[]): void;
+  debug(message: string, ...args: unknown[]): void;
+  info(message: string, ...args: unknown[]): void;
+  warn(message: string, ...args: unknown[]): void;
+  error(message: string, ...args: unknown[]): void;
 }
 
 /**
  * Domyślny logger do konsoli
  */
 class ConsoleLogger implements Logger {
-  debug(message: string, ...args: any[]): void {
+  debug(message: string, ...args: unknown[]): void {
     console.debug(message, ...args);
   }
 
-  info(message: string, ...args: any[]): void {
+  info(message: string, ...args: unknown[]): void {
     console.info(message, ...args);
   }
 
-  warn(message: string, ...args: any[]): void {
+  warn(message: string, ...args: unknown[]): void {
     console.warn(message, ...args);
   }
 
-  error(message: string, ...args: any[]): void {
+  error(message: string, ...args: unknown[]): void {
     console.error(message, ...args);
   }
 }
@@ -131,7 +131,7 @@ class ConsoleLogger implements Logger {
 export class AuthenticationError extends Error {
   constructor(message: string) {
     super(message);
-    this.name = 'AuthenticationError';
+    this.name = "AuthenticationError";
   }
 }
 
@@ -141,7 +141,7 @@ export class AuthenticationError extends Error {
 export class RateLimitError extends Error {
   constructor(message: string) {
     super(message);
-    this.name = 'RateLimitError';
+    this.name = "RateLimitError";
   }
 }
 
@@ -151,7 +151,7 @@ export class RateLimitError extends Error {
 export class ResponseProcessingError extends Error {
   constructor(message: string) {
     super(message);
-    this.name = 'ResponseProcessingError';
+    this.name = "ResponseProcessingError";
   }
 }
 
@@ -161,7 +161,7 @@ export class ResponseProcessingError extends Error {
 export class NoResponseError extends Error {
   constructor(message: string) {
     super(message);
-    this.name = 'NoResponseError';
+    this.name = "NoResponseError";
   }
 }
 
@@ -179,8 +179,8 @@ export class OpenRouterService {
   private maxHistoryLength: number;
   private maskSensitiveData: boolean;
 
-  private currentSystemMessage: string = '';
-  private currentUserMessage: string = '';
+  private currentSystemMessage = "";
+  private currentUserMessage = "";
   private currentResponseFormat?: JSONSchema;
   private currentModelName?: string;
   private currentModelParameters?: ModelParameters;
@@ -192,16 +192,18 @@ export class OpenRouterService {
     object: z.string(),
     created: z.number(),
     model: z.string(),
-    choices: z.array(
-      z.object({
-        index: z.number(),
-        message: z.object({
-          role: z.string(),
-          content: z.string(),
-        }),
-        finish_reason: z.string(),
-      })
-    ).min(1),
+    choices: z
+      .array(
+        z.object({
+          index: z.number(),
+          message: z.object({
+            role: z.string(),
+            content: z.string(),
+          }),
+          finish_reason: z.string(),
+        })
+      )
+      .min(1),
     usage: z.object({
       prompt_tokens: z.number(),
       completion_tokens: z.number(),
@@ -214,16 +216,16 @@ export class OpenRouterService {
    */
   constructor(options: OpenRouterServiceOptions) {
     this._apiKey = options.apiKey;
-    this.apiUrl = options.apiUrl || 'https://openrouter.ai/api/v1/chat/completions';
+    this.apiUrl = options.apiUrl || "https://openrouter.ai/api/v1/chat/completions";
     this.timeout = options.timeout || 30000; // 30 sekund domyślnie
     this.retries = options.retries || 3;
-    this.defaultModelName = options.defaultModel || 'openai/gpt-4o-mini';
+    this.defaultModelName = options.defaultModel || "openai/gpt-4o-mini";
     this.defaultModelParams = options.defaultModelParams || {
       temperature: 0.7,
       top_p: 1,
       frequency_penalty: 0,
       presence_penalty: 0,
-      max_tokens: 1000
+      max_tokens: 1000,
     };
     this.logger = options.logger || new ConsoleLogger();
     this.maxHistoryLength = options.maxHistoryLength || 10;
@@ -234,7 +236,7 @@ export class OpenRouterService {
    * Getter dla apiKey - nie pozwala na bezpośredni dostęp do klucza
    */
   get apiKey(): string {
-    return this.maskSensitiveData ? '********' : this._apiKey;
+    return this.maskSensitiveData ? "********" : this._apiKey;
   }
 
   /**
@@ -242,7 +244,7 @@ export class OpenRouterService {
    */
   public setSystemMessage(message: string): void {
     this.currentSystemMessage = message;
-    this.logger.debug('Ustawiono komunikat systemowy');
+    this.logger.debug("Ustawiono komunikat systemowy");
   }
 
   /**
@@ -250,7 +252,7 @@ export class OpenRouterService {
    */
   public setUserMessage(message: string): void {
     this.currentUserMessage = message;
-    this.logger.debug('Ustawiono komunikat użytkownika');
+    this.logger.debug("Ustawiono komunikat użytkownika");
   }
 
   /**
@@ -273,13 +275,13 @@ export class OpenRouterService {
   /**
    * Dodaje wiadomość do historii z zachowaniem limitu długości
    */
-  private addMessageToHistory(role: 'system' | 'user' | 'assistant', content: string): void {
+  private addMessageToHistory(role: "system" | "user" | "assistant", content: string): void {
     this.messageHistory.push({ role, content });
-    
+
     // Usuń najstarsze wiadomości, jeśli przekroczono limit
     if (this.messageHistory.length > this.maxHistoryLength) {
       // Jeśli pierwsza wiadomość jest systemowa, zachowaj ją
-      const startIndex = this.messageHistory[0].role === 'system' ? 1 : 0;
+      const startIndex = this.messageHistory[0].role === "system" ? 1 : 0;
       this.messageHistory = this.messageHistory.slice(startIndex);
     }
   }
@@ -289,7 +291,7 @@ export class OpenRouterService {
    */
   public clearHistory(): void {
     this.messageHistory = [];
-    this.logger.debug('Wyczyszczono historię komunikatów');
+    this.logger.debug("Wyczyszczono historię komunikatów");
   }
 
   /**
@@ -309,30 +311,30 @@ export class OpenRouterService {
     if (userMessage) {
       this.currentUserMessage = userMessage;
     }
-    
+
     if (!this.currentUserMessage) {
-      const error = new Error('Nie ustawiono komunikatu użytkownika');
+      const error = new Error("Nie ustawiono komunikatu użytkownika");
       this.logger.error(error.message);
       throw error;
     }
 
     try {
       // Dodaj wiadomość użytkownika do historii
-      this.addMessageToHistory('user', this.currentUserMessage);
+      this.addMessageToHistory("user", this.currentUserMessage);
 
       const requestPayload = this.buildRequestPayload();
-      this.logger.debug('Wysyłanie żądania do API z ładunkiem:', this.maskSensitiveDataInPayload(requestPayload));
-      
+      this.logger.debug("Wysyłanie żądania do API z ładunkiem:", this.maskSensitiveDataInPayload(requestPayload));
+
       const apiResponse = await this.executeRequest(requestPayload);
-      this.logger.debug('Otrzymano odpowiedź z API:', apiResponse);
-      
+      this.logger.debug("Otrzymano odpowiedź z API:", apiResponse);
+
       if (!apiResponse.choices || apiResponse.choices.length === 0 || !apiResponse.choices[0].message) {
-        this.logger.error('Nieprawidłowa struktura odpowiedzi API: brak choices lub message');
-        throw new NoResponseError('Nieprawidłowa struktura odpowiedzi API');
+        this.logger.error("Nieprawidłowa struktura odpowiedzi API: brak choices lub message");
+        throw new NoResponseError("Nieprawidłowa struktura odpowiedzi API");
       }
 
       const assistantMessage = apiResponse.choices[0].message.content;
-      this.addMessageToHistory('assistant', assistantMessage);
+      this.addMessageToHistory("assistant", assistantMessage);
 
       let parsedContent: T;
       try {
@@ -340,22 +342,29 @@ export class OpenRouterService {
         // to oczekiwany jest JSON. AIService używa T = {flashcards: ...}
         // i jego prompt systemowy instruuje model do zwracania JSON.
         // Dlatego zawsze próbujemy parsować odpowiedź.
-        this.logger.debug(`Próba parsowania odpowiedzi jako JSON. Treść (max 200 znaków): "${assistantMessage.substring(0,200)}"`);
+        this.logger.debug(
+          `Próba parsowania odpowiedzi jako JSON. Treść (max 200 znaków): "${assistantMessage.substring(0, 200)}"`
+        );
         parsedContent = JSON.parse(assistantMessage) as T;
-        this.logger.debug('Pomyślnie sparsowano zawartość odpowiedzi jako JSON.');
+        this.logger.debug("Pomyślnie sparsowano zawartość odpowiedzi jako JSON.");
       } catch (error) {
-        this.logger.error(`Błąd podczas parsowania odpowiedzi JSON. Otrzymana treść (max 200 znaków): "${assistantMessage.substring(0,200)}"`, error);
-        
-        let detail = 'Sprawdzenie, czy model zwrócił poprawny JSON.';
+        this.logger.error(
+          `Błąd podczas parsowania odpowiedzi JSON. Otrzymana treść (max 200 znaków): "${assistantMessage.substring(0, 200)}"`,
+          error
+        );
+
+        let detail = "Sprawdzenie, czy model zwrócił poprawny JSON.";
         // Sprawdzenie, czy currentResponseFormat było ustawione, może dać dodatkowy kontekst
-        if (this.currentResponseFormat && this.currentResponseFormat.name === 'json_object') {
-            detail += ' Tryb json_object był włączony.';
+        if (this.currentResponseFormat && this.currentResponseFormat.name === "json_object") {
+          detail += " Tryb json_object był włączony.";
         } else if (this.currentResponseFormat) {
-            detail += ` Tryb response_format był ustawiony (name: ${this.currentResponseFormat.name}), ale nie jako 'json_object'.`;
+          detail += ` Tryb response_format był ustawiony (name: ${this.currentResponseFormat.name}), ale nie jako 'json_object'.`;
         } else {
-            detail += ' Żaden konkretny response_format nie był ustawiony (poleganie na prompcie).';
+          detail += " Żaden konkretny response_format nie był ustawiony (poleganie na prompcie).";
         }
-        throw new ResponseProcessingError(`Błąd podczas przetwarzania odpowiedzi JSON z API. ${detail} Otrzymana treść (max 100 znaków): "${assistantMessage.substring(0,100)}"`);
+        throw new ResponseProcessingError(
+          `Błąd podczas przetwarzania odpowiedzi JSON z API. ${detail} Otrzymana treść (max 100 znaków): "${assistantMessage.substring(0, 100)}"`
+        );
       }
 
       return {
@@ -368,15 +377,17 @@ export class OpenRouterService {
         this.logger.error(responseError.message);
         throw responseError;
       }
-      
-      if (error instanceof NoResponseError || 
-          error instanceof ResponseProcessingError || 
-          error instanceof AuthenticationError || 
-          error instanceof RateLimitError) {
+
+      if (
+        error instanceof NoResponseError ||
+        error instanceof ResponseProcessingError ||
+        error instanceof AuthenticationError ||
+        error instanceof RateLimitError
+      ) {
         this.logger.error(`${error.name}: ${error.message}`);
         throw error;
       }
-      
+
       const genericError = new Error(
         `Błąd przetwarzania odpowiedzi: ${error instanceof Error ? error.message : String(error)}`
       );
@@ -390,42 +401,41 @@ export class OpenRouterService {
    */
   private buildRequestPayload(): RequestPayload {
     const messages: ChatMessage[] = [];
-    
+
     // Jeśli mamy historię, użyj jej zamiast tylko bieżących wiadomości
     if (this.messageHistory.length > 0) {
       // Dodaj bieżący komunikat systemowy, jeśli istnieje i pierwsza wiadomość historii nie jest systemowa
-      if (this.currentSystemMessage && 
-         (this.messageHistory.length === 0 || this.messageHistory[0].role !== 'system')) {
+      if (this.currentSystemMessage && (this.messageHistory.length === 0 || this.messageHistory[0].role !== "system")) {
         messages.push({
-          role: 'system',
-          content: this.currentSystemMessage
+          role: "system",
+          content: this.currentSystemMessage,
         });
       }
-      
+
       // Dodaj historię
       messages.push(...this.messageHistory);
     } else {
       // Dodaj komunikat systemowy, jeśli istnieje
       if (this.currentSystemMessage) {
         messages.push({
-          role: 'system',
-          content: this.currentSystemMessage
+          role: "system",
+          content: this.currentSystemMessage,
         });
       }
-      
+
       // Dodaj komunikat użytkownika
       messages.push({
-        role: 'user',
-        content: this.currentUserMessage
+        role: "user",
+        content: this.currentUserMessage,
       });
     }
-    
+
     // Utwórz podstawowy ładunek
     const payload: RequestPayload = {
       model: this.currentModelName || this.defaultModelName,
-      messages
+      messages,
     };
-    
+
     // Dodaj parametry modelu
     const modelParams = this.currentModelParameters || this.defaultModelParams;
     if (modelParams.temperature !== undefined) payload.temperature = modelParams.temperature;
@@ -433,36 +443,36 @@ export class OpenRouterService {
     if (modelParams.frequency_penalty !== undefined) payload.frequency_penalty = modelParams.frequency_penalty;
     if (modelParams.presence_penalty !== undefined) payload.presence_penalty = modelParams.presence_penalty;
     if (modelParams.max_tokens !== undefined) payload.max_tokens = modelParams.max_tokens;
-    
+
     // Dodaj format odpowiedzi, jeśli ustawiony
     if (this.currentResponseFormat) {
       payload.response_format = {
-        type: 'json_schema',
-        json_schema: this.currentResponseFormat.schema
+        type: "json_schema",
+        json_schema: this.currentResponseFormat.schema,
       };
     }
-    
+
     return payload;
   }
 
   /**
    * Maskuje dane wrażliwe w ładunku żądania
    */
-  private maskSensitiveDataInPayload(payload: any): any {
+  private maskSensitiveDataInPayload(payload: Record<string, unknown>): Record<string, unknown> {
     if (!this.maskSensitiveData) {
       return payload;
     }
 
     const masked = { ...payload };
-    
+
     // Nie logujemy zawartości wiadomości, tylko ich obecność
     if (masked.messages) {
       masked.messages = masked.messages.map((msg: ChatMessage) => ({
         role: msg.role,
-        content: `[${msg.content.length} znaków]`
+        content: `[${msg.content.length} znaków]`,
       }));
     }
-    
+
     return masked;
   }
 
@@ -471,55 +481,54 @@ export class OpenRouterService {
    */
   private async executeRequest(requestPayload: RequestPayload): Promise<ApiResponse> {
     let lastError: Error | null = null;
-    
+
     // Log z zanonimizowanymi danymi
-    this.logger.debug(
-      'Payload żądania:',
-      this.maskSensitiveDataInPayload(requestPayload)
-    );
-    
+    this.logger.debug("Payload żądania:", this.maskSensitiveDataInPayload(requestPayload));
+
     for (let attempt = 0; attempt < this.retries; attempt++) {
       if (attempt > 0) {
         this.logger.warn(`Ponowna próba (${attempt}/${this.retries - 1}) po wcześniejszym błędzie`);
       }
-      
+
       try {
         console.log(`[OPENROUTER-SERVICE] Sending request to ${this.apiUrl}, model: ${requestPayload.model}`);
         console.log(`[OPENROUTER-SERVICE] Messages count: ${requestPayload.messages.length}`);
-        
+
         if (requestPayload.response_format) {
           console.log(`[OPENROUTER-SERVICE] Using response_format type: ${requestPayload.response_format.type}`);
         }
-        
+
         const response = await fetch(this.apiUrl, {
-          method: 'POST',
+          method: "POST",
           headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${this._apiKey}`, // Używamy prawdziwego klucza, nie zamaskowanego
-            'HTTP-Referer': 'https://flashcards-creator-app.com',
-            'X-Title': 'Flashcards Creator App'
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${this._apiKey}`, // Używamy prawdziwego klucza, nie zamaskowanego
+            "HTTP-Referer": "https://flashcards-creator-app.com",
+            "X-Title": "Flashcards Creator App",
           },
           body: JSON.stringify(requestPayload),
-          signal: AbortSignal.timeout(this.timeout)
+          signal: AbortSignal.timeout(this.timeout),
         });
-        
+
         console.log(`[OPENROUTER-SERVICE] Response status: ${response.status}`);
-        
+
         const responseText = await response.text();
         console.log(`[OPENROUTER-SERVICE] Response body (first 100 chars): ${responseText.substring(0, 100)}...`);
-        
+
         let parsedResponse;
         try {
           parsedResponse = JSON.parse(responseText);
         } catch (parseError) {
           console.error(`[OPENROUTER-SERVICE] Error parsing JSON response:`, parseError);
-          throw new Error(`Error parsing JSON response: ${parseError instanceof Error ? parseError.message : String(parseError)}`);
+          throw new Error(
+            `Error parsing JSON response: ${parseError instanceof Error ? parseError.message : String(parseError)}`
+          );
         }
-        
+
         // Sprawdź, czy odpowiedź zawiera błąd
         if (parsedResponse.error) {
           console.error(`[OPENROUTER-SERVICE] API returned error:`, parsedResponse.error);
-          
+
           if (parsedResponse.error.code === 401 || parsedResponse.error.code === 403) {
             throw new AuthenticationError(`Błąd autentykacji: ${JSON.stringify(parsedResponse.error)}`);
           } else if (parsedResponse.error.code === 429) {
@@ -528,13 +537,13 @@ export class OpenRouterService {
             throw new Error(`Błąd API: ${parsedResponse.error.message || JSON.stringify(parsedResponse.error)}`);
           }
         }
-        
+
         // Obsługa różnych kodów błędów HTTP
         if (!response.ok) {
           const status = response.status;
-          
+
           console.error(`[OPENROUTER-SERVICE] API error (${status}):`, parsedResponse);
-          
+
           // Rozpoznawanie konkretnych błędów
           if (status === 401 || status === 403) {
             throw new AuthenticationError(`Błąd autentykacji: ${JSON.stringify(parsedResponse)}`);
@@ -544,63 +553,61 @@ export class OpenRouterService {
             throw new Error(`Błąd API (${status}): ${JSON.stringify(parsedResponse)}`);
           }
         }
-        
+
         // Upewnij się, że mamy poprawną strukturę odpowiedzi
         const apiResponse = parsedResponse as ApiResponse;
-        
+
         // Sprawdź, czy odpowiedź zawiera wymagane pola
         if (!apiResponse.choices || apiResponse.choices.length === 0 || !apiResponse.choices[0].message) {
           console.error(`[OPENROUTER-SERVICE] Invalid API response structure:`, apiResponse);
-          throw new Error('Nieprawidłowa struktura odpowiedzi API');
+          throw new Error("Nieprawidłowa struktura odpowiedzi API");
         }
-        
-        this.logger.debug('Otrzymano odpowiedź API', {
-          id: apiResponse.id || 'unknown',
-          model: apiResponse.model || 'unknown',
-          usage: apiResponse.usage || { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 }
+
+        this.logger.debug("Otrzymano odpowiedź API", {
+          id: apiResponse.id || "unknown",
+          model: apiResponse.model || "unknown",
+          usage: apiResponse.usage || { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
         });
-        
-        console.log(`[OPENROUTER-SERVICE] Successfully received API response, ID: ${apiResponse.id || 'unknown'}`);
-        console.log(`[OPENROUTER-SERVICE] Response model: ${apiResponse.model || 'unknown'}`);
+
+        console.log(`[OPENROUTER-SERVICE] Successfully received API response, ID: ${apiResponse.id || "unknown"}`);
+        console.log(`[OPENROUTER-SERVICE] Response model: ${apiResponse.model || "unknown"}`);
         if (apiResponse.usage) {
-          console.log(`[OPENROUTER-SERVICE] Tokens used: ${apiResponse.usage.total_tokens || 'unknown'}`);
+          console.log(`[OPENROUTER-SERVICE] Tokens used: ${apiResponse.usage.total_tokens || "unknown"}`);
         } else {
           console.log(`[OPENROUTER-SERVICE] Usage information not available`);
         }
-        
+
         return apiResponse;
       } catch (error) {
         // Zapisz ostatni błąd
         lastError = error instanceof Error ? error : new Error(String(error));
-        
+
         console.error(`[OPENROUTER-SERVICE] Error during attempt ${attempt + 1}:`, lastError);
-        
+
         // Loguj błąd
-        this.logger.error(
-          `Błąd podczas próby ${attempt + 1}/${this.retries}: ${lastError.message}`
-        );
-        
+        this.logger.error(`Błąd podczas próby ${attempt + 1}/${this.retries}: ${lastError.message}`);
+
         // Natychmiast propaguj błędy autentykacji i limitów - nie ma sensu ponownie próbować
         if (error instanceof AuthenticationError || error instanceof RateLimitError) {
           throw lastError;
         }
-        
+
         // Jeśli to ostatnia próba, rzuć błąd
         if (attempt === this.retries - 1) {
           throw lastError;
         }
-        
+
         // Oblicz czas oczekiwania przed następną próbą z wykładniczym backoff-em
         const backoffTime = Math.min(1000 * Math.pow(2, attempt), 10000);
         this.logger.info(`Oczekiwanie ${backoffTime}ms przed ponowną próbą`);
-        await new Promise(resolve => setTimeout(resolve, backoffTime));
+        await new Promise((resolve) => setTimeout(resolve, backoffTime));
       }
     }
-    
+
     // Ten kod nigdy nie powinien zostać wykonany, ale kompilatora TypeScript będzie zadowolony
-    throw lastError || new Error('Nieznany błąd podczas wykonywania żądania');
+    throw lastError || new Error("Nieznany błąd podczas wykonywania żądania");
   }
-  
+
   /**
    * Tworzy schemat JSON dla fiszek na podstawie przekazanego szablonu
    */
@@ -616,14 +623,14 @@ export class OpenRouterService {
               type: "object",
               properties: {
                 front: { type: "string" },
-                back: { type: "string" }
+                back: { type: "string" },
               },
-              required: ["front", "back"]
-            }
-          }
+              required: ["front", "back"],
+            },
+          },
         },
-        required: ["flashcards"]
-      }
+        required: ["flashcards"],
+      },
     };
   }
 }
