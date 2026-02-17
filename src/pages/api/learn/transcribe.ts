@@ -58,6 +58,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
     // 4. Pobranie danych formularza
     const formData = await request.formData();
     const audioFile = formData.get("audio") as File | null;
+    const language = (formData.get("language") as string) || undefined;
 
     if (!audioFile) {
       return new Response(JSON.stringify({ error: "Nie znaleziono pliku audio" }), {
@@ -134,7 +135,13 @@ export const POST: APIRoute = async ({ request, locals }) => {
       const correctAudioFile = new File([audioData], `recording.${newExtension}`, { type: `audio/${newExtension}` });
 
       // 8. Wywołanie API Whisper przez nasz serwis z poprawionym plikiem
-      const { transcript, error, errorCode } = await transcribeAudio(correctAudioFile, userId, locals.supabase);
+      const { transcript, error, errorCode } = await transcribeAudio(
+        correctAudioFile,
+        userId,
+        locals.supabase,
+        undefined,
+        language
+      );
 
       if (error) {
         let statusCode = 500;
@@ -157,7 +164,13 @@ export const POST: APIRoute = async ({ request, locals }) => {
     }
 
     // 8. Wywołanie API Whisper przez nasz serwis (używając oryginalnego pliku, jeśli jego rozszerzenie jest ok)
-    const { transcript, error, errorCode } = await transcribeAudio(audioFile, userId, locals.supabase);
+    const { transcript, error, errorCode } = await transcribeAudio(
+      audioFile,
+      userId,
+      locals.supabase,
+      undefined,
+      language
+    );
 
     if (error) {
       let statusCode = 500;

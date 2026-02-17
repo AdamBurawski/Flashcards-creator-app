@@ -173,7 +173,8 @@ export async function transcribeAudio(
   audioFile: File,
   userId: string,
   supabaseClient: SupabaseClient<Database>,
-  audioDurationSeconds?: number
+  audioDurationSeconds?: number,
+  language?: string
 ): Promise<{
   transcript?: string;
   error?: string;
@@ -222,7 +223,7 @@ export async function transcribeAudio(
     const formData = new FormData();
     formData.append("file", audioFile);
     formData.append("model", "whisper-1");
-    formData.append("language", "pl");
+    formData.append("language", language || "pl");
 
     const response = await fetch(`${OPENAI_API_BASE_URL}/audio/transcriptions`, {
       method: "POST",
