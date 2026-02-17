@@ -25,6 +25,7 @@
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:codegen": "playwright codegen http://localhost:4321",
     "import:english": "npx tsx scripts/import-english-dialogues.ts",
+    "update:english-images": "npx tsx scripts/update-dialogue-images.ts",
     "dev:e2e": "astro dev --mode test",
     "netlify:build": "npm run prebuild && NETLIFY_USE_FILE_FUNCTIONS=true SUPABASE_URL=${SUPABASE_URL:-''} SUPABASE_KEY=${SUPABASE_KEY:-''} PUBLIC_SUPABASE_URL=${PUBLIC_SUPABASE_URL:-''} PUBLIC_SUPABASE_KEY=${PUBLIC_SUPABASE_KEY:-''} NODE_ENV=production astro build"
   },

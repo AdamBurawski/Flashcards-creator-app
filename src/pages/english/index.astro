@@ -1,0 +1,24 @@
+---
+export const prerender = false;
+
+import Layout from "../../layouts/Layout.astro";
+import EnglishLevelSelector from "../../components/english/EnglishLevelSelector";
+
+// Auth check (middleware handles redirect, this is a safety fallback)
+const { user } = Astro.locals;
+
+if (!user) {
+  return Astro.redirect("/auth/login?returnUrl=/english");
+}
+---
+
+<Layout title="Nauka angielskiego | Flashcards Creator">
+  <div class="max-w-5xl mx-auto px-4 py-8">
+    <div class="mb-8">
+      <h1 class="text-3xl font-bold text-gray-900">Nauka angielskiego</h1>
+      <p class="mt-2 text-gray-600">Wybierz poziom i ćwicz konwersacje w formie dialogów nauczyciel-uczeń.</p>
+    </div>
+
+    <EnglishLevelSelector client:load />
+  </div>
+</Layout>
