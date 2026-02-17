@@ -115,7 +115,9 @@ export default function EnglishLevelSelector() {
             key={levelData.level}
             href={hasContent ? `/english/${levelData.level}` : undefined}
             className={`block border rounded-xl p-6 transition-all duration-200 ${
-              hasContent ? `${config.bgColor} cursor-pointer shadow-sm hover:shadow-md` : "bg-gray-50 border-gray-200 opacity-60 cursor-not-allowed"
+              hasContent
+                ? `${config.bgColor} cursor-pointer shadow-sm hover:shadow-md`
+                : "bg-gray-50 border-gray-200 opacity-60 cursor-not-allowed"
             }`}
             onClick={(e) => {
               if (!hasContent) e.preventDefault();
@@ -151,9 +153,7 @@ export default function EnglishLevelSelector() {
             </div>
 
             {/* Lesson count */}
-            {hasContent && (
-              <p className="mt-3 text-xs text-gray-500">{levelData.total_lessons} lekcji dostępnych</p>
-            )}
+            {hasContent && <p className="mt-3 text-xs text-gray-500">{levelData.total_lessons} lekcji dostępnych</p>}
 
             {/* Empty state */}
             {!hasContent && <p className="mt-3 text-xs text-gray-400 italic">Brak dostępnych lekcji</p>}

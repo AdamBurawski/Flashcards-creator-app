@@ -1,26 +1,34 @@
 import type { APIRoute } from "astro";
 import { z } from "zod";
 import { ErrorSource, logError } from "../../../lib/error-logger.service";
-import { saveProgress } from "../../../lib/english.service";
+import { evaluateStudentAnswer } from "../../../lib/english-evaluator.service";
+import type { EvaluateAnswerCommand } from "../../../types/english";
 
 export const prerender = false;
 
-const progressSchema = z.object({
+const evaluateSchema = z.object({
   dialogue_id: z.string().min(1),
-  total_turns: z.number().int().min(1),
-  correct_turns: z.number().int().min(0),
-  duration_seconds: z.number().int().min(0),
+  turn_index: z.number().int().min(0),
+  expected_answer: z.string().min(1),
+  accepted_answers: z.array(z.string()).min(1),
+  user_answer: z.string().min(1).max(500),
+  target_structures: z.array(z.string()),
+  context: z.object({
+    teacher_question: z.string(),
+    lesson_title: z.string(),
+  }),
 });
 
 /**
- * POST /api/english/progress
- * Saves the result of a completed dialogue session.
- * Calculates score and stores in english_progress table.
+ * POST /api/english/evaluate
+ * Evaluates a student's answer against the expected answer.
+ * Uses exact match first, then LLM evaluation as fallback.
+ * Optionally generates Polish TTS feedback via ElevenLabs.
  */
 export const POST: APIRoute = async ({ request, locals }) => {
   try {
     // 1. Auth check
-    if (!locals.user?.id) {
+    if (!locals.user?.id && import.meta.env.MODE === "production") {
       return new Response(JSON.stringify({ error: "Nieautoryzowany dostęp" }), {
         status: 401,
         headers: { "Content-Type": "application/json" },
@@ -38,7 +46,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
       });
     }
 
-    const validationResult = progressSchema.safeParse(body);
+    const validationResult = evaluateSchema.safeParse(body);
     if (!validationResult.success) {
       return new Response(
         JSON.stringify({
@@ -52,18 +60,14 @@ export const POST: APIRoute = async ({ request, locals }) => {
       );
     }
 
-    // 3. Save progress
-    const result = await saveProgress(locals.supabase, locals.user.id, validationResult.data);
+    const command: EvaluateAnswerCommand = validationResult.data;
 
-    if (result.error) {
-      return new Response(JSON.stringify({ error: result.error }), {
-        status: result.status ?? 500,
-        headers: { "Content-Type": "application/json" },
-      });
-    }
+    // 3. Evaluate the answer
+    const openrouterApiKey = import.meta.env.OPENROUTER_API_KEY;
+    const result = await evaluateStudentAnswer(command, openrouterApiKey);
 
-    return new Response(JSON.stringify(result.data), {
-      status: 201,
+    return new Response(JSON.stringify(result), {
+      status: 200,
       headers: { "Content-Type": "application/json" },
     });
   } catch (error) {
@@ -71,11 +75,11 @@ export const POST: APIRoute = async ({ request, locals }) => {
 
     await logError({
       source: ErrorSource.API,
-      error_code: "ENGLISH_PROGRESS_ERROR",
+      error_code: "ENGLISH_EVALUATE_ERROR",
       error_message: errorMessage,
     });
 
-    return new Response(JSON.stringify({ error: "Wystąpił błąd podczas zapisywania postępu" }), {
+    return new Response(JSON.stringify({ error: "Wystąpił błąd podczas oceny odpowiedzi" }), {
       status: 500,
       headers: { "Content-Type": "application/json" },
     });

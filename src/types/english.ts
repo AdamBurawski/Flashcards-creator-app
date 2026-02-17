@@ -23,6 +23,8 @@ export interface EnglishDialogue {
   revision_from: string[];
   estimated_duration_seconds: number;
   sort_order: number;
+  /** URL to a visual context image for the dialogue (Google Drive, etc.) */
+  image_url?: string;
 }
 
 /** Union type for dialogue turns — either teacher or student */
@@ -226,4 +228,6 @@ export interface RawDialogueRecord {
   revision_from: string[];
   estimated_duration_seconds: number;
   sort_order?: number;
+  /** Optional URL to a visual context image */
+  image_url?: string;
 }

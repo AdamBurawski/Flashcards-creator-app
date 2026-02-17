@@ -1,0 +1,41 @@
+---
+export const prerender = false;
+
+import Layout from "../../../../../layouts/Layout.astro";
+import EnglishLessonSession from "../../../../../components/english/EnglishLessonSession";
+import type { CEFRLevel } from "../../../../../types/english";
+
+// Auth check
+const { user } = Astro.locals;
+if (!user) {
+  return Astro.redirect("/auth/login?returnUrl=/english");
+}
+
+// Validate params
+const { level, stage, lesson } = Astro.params;
+const validLevels: CEFRLevel[] = ["A1", "A2", "B1", "B2"];
+
+if (
+  !level ||
+  !validLevels.includes(level as CEFRLevel) ||
+  !stage ||
+  isNaN(Number(stage)) ||
+  !lesson ||
+  isNaN(Number(lesson))
+) {
+  return Astro.redirect("/english");
+}
+
+const cefrLevel = level as CEFRLevel;
+const stageNum = Number(stage);
+const lessonNum = Number(lesson);
+---
+
+<Layout title={`Lekcja ${lessonNum} | ${cefrLevel}`} hideHeader={true}>
+  <EnglishLessonSession
+    level={cefrLevel}
+    stage={stageNum}
+    lesson={lessonNum}
+    client:load
+  />
+</Layout>

@@ -306,6 +306,7 @@ export async function getDialoguesForLesson(
       revision_from: (d.revision_from as string[]) ?? [],
       estimated_duration_seconds: d.estimated_duration_seconds ?? 0,
       sort_order: d.sort_order,
+      image_url: (d.image_url as string) ?? undefined,
     };
   });
 

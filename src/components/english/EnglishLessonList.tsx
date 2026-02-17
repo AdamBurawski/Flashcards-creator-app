@@ -96,7 +96,8 @@ interface LessonCardProps {
 }
 
 function LessonCard({ lesson, level }: LessonCardProps) {
-  const completionPercent = lesson.total_dialogues > 0 ? (lesson.completed_dialogues / lesson.total_dialogues) * 100 : 0;
+  const completionPercent =
+    lesson.total_dialogues > 0 ? (lesson.completed_dialogues / lesson.total_dialogues) * 100 : 0;
   const isFullyCompleted = lesson.completed_dialogues === lesson.total_dialogues && lesson.total_dialogues > 0;
 
   return (
@@ -107,7 +108,9 @@ function LessonCard({ lesson, level }: LessonCardProps) {
           <div className="flex items-center gap-3">
             <h2 className="text-lg font-semibold text-gray-900">
               Lekcja {lesson.lesson}
-              {lesson.stage > 1 && <span className="ml-2 text-sm font-normal text-gray-500">(Etap {lesson.stage})</span>}
+              {lesson.stage > 1 && (
+                <span className="ml-2 text-sm font-normal text-gray-500">(Etap {lesson.stage})</span>
+              )}
             </h2>
             {isFullyCompleted && (
               <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">
@@ -134,7 +137,13 @@ function LessonCard({ lesson, level }: LessonCardProps) {
       {/* Dialogues list */}
       <div className="divide-y divide-gray-100">
         {lesson.dialogues.map((dialogue) => (
-          <DialogueRow key={dialogue.id} dialogue={dialogue} level={level} stage={lesson.stage} lesson={lesson.lesson} />
+          <DialogueRow
+            key={dialogue.id}
+            dialogue={dialogue}
+            level={level}
+            stage={lesson.stage}
+            lesson={lesson.lesson}
+          />
         ))}
       </div>
     </div>
@@ -168,7 +177,10 @@ function DialogueRow({ dialogue, level, stage, lesson }: DialogueRowProps) {
               <span className="text-green-600 text-sm">✓</span>
             </div>
           ) : (
-            <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center group-hover:bg-blue-100" title="Do wykonania">
+            <div
+              className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center group-hover:bg-blue-100"
+              title="Do wykonania"
+            >
               <span className="text-gray-400 group-hover:text-blue-500 text-sm">▶</span>
             </div>
           )}
@@ -184,9 +196,7 @@ function DialogueRow({ dialogue, level, stage, lesson }: DialogueRowProps) {
                   {tag}
                 </span>
               ))}
-              {dialogue.tags.length > 3 && (
-                <span className="text-xs text-gray-400">+{dialogue.tags.length - 3}</span>
-              )}
+              {dialogue.tags.length > 3 && <span className="text-xs text-gray-400">+{dialogue.tags.length - 3}</span>}
             </div>
           )}
         </div>

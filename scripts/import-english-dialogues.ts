@@ -72,6 +72,7 @@ const dialogueRecordSchema = z.object({
   revision_from: z.array(z.string()).default([]),
   estimated_duration_seconds: z.number().int().positive().optional(),
   sort_order: z.number().int().optional(),
+  image_url: z.string().url().optional(),
 });
 
 type DialogueRecord = z.infer<typeof dialogueRecordSchema>;
@@ -175,6 +176,7 @@ async function upsertDialogues(
         revision_from: record.revision_from,
         estimated_duration_seconds: record.estimated_duration_seconds ?? null,
         sort_order: record.sort_order ?? 0,
+        image_url: record.image_url ?? null,
       },
       { onConflict: "id" }
     );
