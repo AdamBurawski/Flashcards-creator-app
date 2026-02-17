@@ -32,10 +32,5 @@ const lessonNum = Number(lesson);
 ---
 
 <Layout title={`Lekcja ${lessonNum} | ${cefrLevel}`} hideHeader={true}>
-  <EnglishLessonSession
-    level={cefrLevel}
-    stage={stageNum}
-    lesson={lessonNum}
-    client:load
-  />
+  <EnglishLessonSession level={cefrLevel} stage={stageNum} lesson={lessonNum} client:load />
 </Layout>
