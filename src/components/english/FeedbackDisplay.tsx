@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import AudioPlayer from "./AudioPlayer";
 import type { EvaluationResult } from "../../types/english";
 
@@ -11,11 +11,49 @@ interface FeedbackDisplayProps {
   isLastTurn: boolean;
 }
 
+async function fetchNarratorAudio(text: string): Promise<string | undefined> {
+  try {
+    const res = await fetch("/api/english/narrator-audio", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text }),
+    });
+    if (!res.ok) return undefined;
+    const data = await res.json();
+    return data.audio_url as string | undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 /**
  * Displays feedback after evaluating a student's answer.
  * Shows correctness, Polish feedback text, correct answer, and plays TTS audio.
+ * Fetches narrator PL audio on demand if no pre-baked URL is provided.
  */
 const FeedbackDisplay: React.FC<FeedbackDisplayProps> = ({ result, onNext, isLastTurn }) => {
+  const [audioSrc, setAudioSrc] = useState<string | undefined>(result.feedback_audio_url);
+  const [audioReady, setAudioReady] = useState(!!result.feedback_audio_url);
+
+  useEffect(() => {
+    if (result.feedback_audio_url) {
+      setAudioSrc(result.feedback_audio_url);
+      setAudioReady(true);
+      return;
+    }
+    setAudioReady(false);
+    let cancelled = false;
+    fetchNarratorAudio(result.feedback_text).then((url) => {
+      if (!cancelled) {
+        setAudioSrc(url);
+        setAudioReady(true);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [result.feedback_text, result.feedback_audio_url]);
+
   return (
     <div className="mb-4">
       {/* Feedback card */}
@@ -62,18 +100,23 @@ const FeedbackDisplay: React.FC<FeedbackDisplayProps> = ({ result, onNext, isLas
           </div>
         )}
 
-        {/* Feedback audio */}
-        {result.feedback_audio_url && (
-          <div className="mb-2">
+        {/* Feedback audio — fetched from narrator-audio API or falls back to browser TTS */}
+        <div className="mb-2">
+          {audioReady ? (
             <AudioPlayer
-              src={result.feedback_audio_url}
+              src={audioSrc}
               fallbackText={result.feedback_text}
               fallbackLang="pl-PL"
               autoPlay={true}
               showControls={true}
             />
-          </div>
-        )}
+          ) : (
+            <div className="flex items-center gap-2 text-xs text-gray-400 mt-1">
+              <div className="w-3 h-3 border-2 border-gray-300 border-t-transparent rounded-full animate-spin" />
+              <span>Ładowanie audio...</span>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Next button */}
