@@ -68,35 +68,25 @@ export async function generateSpeechBase64(
 
 /**
  * Get the ElevenLabs API key from environment variables.
+ * import.meta.env is resolved at build time by Vite; process.env is the
+ * reliable runtime fallback in Netlify Functions (esbuild-bundled).
  */
 function getApiKey(): string | undefined {
-  try {
-    return import.meta.env.ELEVENLABS_API_KEY;
-  } catch {
-    return process.env.ELEVENLABS_API_KEY;
-  }
+  return import.meta.env.ELEVENLABS_API_KEY || process.env.ELEVENLABS_API_KEY || undefined;
 }
 
 /**
  * Get the feedback voice ID for Polish TTS.
  */
 export function getFeedbackVoiceId(): string {
-  try {
-    return import.meta.env.ELEVENLABS_FEEDBACK_VOICE_ID ?? "";
-  } catch {
-    return process.env.ELEVENLABS_FEEDBACK_VOICE_ID ?? "";
-  }
+  return import.meta.env.ELEVENLABS_FEEDBACK_VOICE_ID || process.env.ELEVENLABS_FEEDBACK_VOICE_ID || "";
 }
 
 /**
  * Get the English teacher voice ID for dialogue questions and demo turns.
  */
 export function getTeacherEnVoiceId(): string {
-  try {
-    return import.meta.env.ELEVENLABS_TEACHER_VOICE_EN_ID || "";
-  } catch {
-    return process.env.ELEVENLABS_TEACHER_VOICE_EN_ID || "";
-  }
+  return import.meta.env.ELEVENLABS_TEACHER_VOICE_EN_ID || process.env.ELEVENLABS_TEACHER_VOICE_EN_ID || "";
 }
 
 /**
@@ -104,11 +94,13 @@ export function getTeacherEnVoiceId(): string {
  * Defaults to the feedback voice if not separately configured.
  */
 export function getNarratorVoiceId(): string {
-  try {
-    return import.meta.env.ELEVENLABS_TEACHER_VOICE_ID || import.meta.env.ELEVENLABS_FEEDBACK_VOICE_ID || "";
-  } catch {
-    return process.env.ELEVENLABS_TEACHER_VOICE_ID || process.env.ELEVENLABS_FEEDBACK_VOICE_ID || "";
-  }
+  return (
+    import.meta.env.ELEVENLABS_TEACHER_VOICE_ID ||
+    process.env.ELEVENLABS_TEACHER_VOICE_ID ||
+    import.meta.env.ELEVENLABS_FEEDBACK_VOICE_ID ||
+    process.env.ELEVENLABS_FEEDBACK_VOICE_ID ||
+    ""
+  );
 }
 
 /**
