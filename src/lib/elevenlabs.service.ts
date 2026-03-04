@@ -89,6 +89,37 @@ export function getFeedbackVoiceId(): string {
 }
 
 /**
+ * Get the English teacher voice ID for dialogue questions and demo turns.
+ */
+export function getTeacherEnVoiceId(): string {
+  try {
+    return import.meta.env.ELEVENLABS_TEACHER_VOICE_EN_ID || "";
+  } catch {
+    return process.env.ELEVENLABS_TEACHER_VOICE_EN_ID || "";
+  }
+}
+
+/**
+ * Get the narrator/teacher voice ID for Polish narration (intro context).
+ * Defaults to the feedback voice if not separately configured.
+ */
+export function getNarratorVoiceId(): string {
+  try {
+    return (
+      import.meta.env.ELEVENLABS_TEACHER_VOICE_ID ||
+      import.meta.env.ELEVENLABS_FEEDBACK_VOICE_ID ||
+      ""
+    );
+  } catch {
+    return (
+      process.env.ELEVENLABS_TEACHER_VOICE_ID ||
+      process.env.ELEVENLABS_FEEDBACK_VOICE_ID ||
+      ""
+    );
+  }
+}
+
+/**
  * Convert an ArrayBuffer to a base64 string.
  */
 function bufferToBase64(buffer: ArrayBuffer): string {

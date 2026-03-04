@@ -12,6 +12,8 @@ import TeacherBubble from "./TeacherBubble";
 import StudentAnswerInput from "./StudentAnswerInput";
 import FeedbackDisplay from "./FeedbackDisplay";
 import LessonSummary from "./LessonSummary";
+import IntroNarrator from "./IntroNarrator";
+import IntroDemo from "./IntroDemo";
 
 // ---------- PURE HELPER FUNCTIONS (outside component) ----------
 
@@ -58,8 +60,21 @@ function advanceToNextTurn(prev: SessionState): SessionState {
   const nextDialogueIndex = prev.currentDialogueIndex + 1;
   if (nextDialogueIndex < prev.dialogues.length) {
     const nextDialogue = prev.dialogues[nextDialogueIndex];
-    const firstTurn = nextDialogue.turns[0];
 
+    // If next dialogue has intro — show it first
+    if (nextDialogue.intro) {
+      return {
+        ...prev,
+        currentDialogueIndex: nextDialogueIndex,
+        currentTurnIndex: 0,
+        phase: "intro_narrator",
+        teacherSubPhase: "question",
+        userAnswer: "",
+        evaluationResult: null,
+      };
+    }
+
+    const firstTurn = nextDialogue.turns[0];
     return {
       ...prev,
       currentDialogueIndex: nextDialogueIndex,
@@ -159,30 +174,34 @@ const EnglishLessonSession: React.FC<EnglishLessonSessionProps> = ({ level, stag
 
         if (cancelled) return;
 
+        const firstDialogue = dialogues[0];
+        const hasIntro = !!firstDialogue?.intro;
+
         setState((prev) => ({
           ...prev,
           dialogues,
           isLoading: false,
           currentDialogueIndex: 0,
           currentTurnIndex: 0,
-          phase: "teacher_speaking",
+          phase: hasIntro ? "intro_narrator" : "teacher_speaking",
           teacherSubPhase: "question",
           sessionStartTime: Date.now(),
         }));
 
-        // Add first teacher turn to history
-        const firstDialogue = dialogues[0];
-        const firstTurn = firstDialogue.turns[0];
-        if (firstTurn && firstTurn.role === "teacher") {
-          setConversationHistory([
-            {
-              type: "teacher",
-              text: firstTurn.text,
-              hint: firstTurn.hint,
-              dialogueId: firstDialogue.id,
-              imageUrl: firstDialogue.image_url,
-            },
-          ]);
+        // Add first teacher turn to history only when there is no intro
+        if (!hasIntro) {
+          const firstTurn = firstDialogue?.turns[0];
+          if (firstTurn && firstTurn.role === "teacher") {
+            setConversationHistory([
+              {
+                type: "teacher",
+                text: firstTurn.text,
+                hint: firstTurn.hint,
+                dialogueId: firstDialogue.id,
+                imageUrl: firstDialogue.image_url,
+              },
+            ]);
+          }
         }
       } catch (err) {
         if (cancelled) return;
@@ -363,29 +382,80 @@ const EnglishLessonSession: React.FC<EnglishLessonSessionProps> = ({ level, stag
     });
   }, []);
 
+  /** Helper: add the first teacher turn of current dialogue to conversation history */
+  const addFirstTeacherTurnToHistory = useCallback(
+    (dialogue: EnglishDialogue) => {
+      const firstTurn = dialogue.turns[0];
+      if (firstTurn && isTeacherTurn(firstTurn)) {
+        setConversationHistory((h) => [
+          ...h,
+          {
+            type: "teacher" as const,
+            text: firstTurn.text,
+            hint: firstTurn.hint,
+            dialogueId: dialogue.id,
+            imageUrl: dialogue.image_url,
+          },
+        ]);
+      }
+    },
+    []
+  );
+
+  const handleIntroNarratorComplete = useCallback(() => {
+    setState((prev) => {
+      if (prev.phase !== "intro_narrator") return prev;
+      const dialogue = prev.dialogues[prev.currentDialogueIndex];
+      if (!dialogue) return prev;
+
+      if (dialogue.intro?.demo && dialogue.intro.demo.length > 0) {
+        return { ...prev, phase: "intro_demo" };
+      }
+
+      addFirstTeacherTurnToHistory(dialogue);
+      return { ...prev, phase: "teacher_speaking", teacherSubPhase: "question", currentTurnIndex: 0 };
+    });
+  }, [addFirstTeacherTurnToHistory]);
+
+  const handleIntroDemoComplete = useCallback(() => {
+    setState((prev) => {
+      if (prev.phase !== "intro_demo") return prev;
+      const dialogue = prev.dialogues[prev.currentDialogueIndex];
+      if (!dialogue) return prev;
+
+      addFirstTeacherTurnToHistory(dialogue);
+      return { ...prev, phase: "teacher_speaking", teacherSubPhase: "question", currentTurnIndex: 0 };
+    });
+  }, [addFirstTeacherTurnToHistory]);
+
   const handleRetry = useCallback(() => {
     setConversationHistory([]);
     setState((prev) => {
       const firstDialogue = prev.dialogues[0];
-      const firstTurn = firstDialogue?.turns[0];
+      if (!firstDialogue) return prev;
 
-      if (firstTurn && isTeacherTurn(firstTurn)) {
-        setConversationHistory([
-          {
-            type: "teacher",
-            text: firstTurn.text,
-            hint: firstTurn.hint,
-            dialogueId: firstDialogue?.id,
-            imageUrl: firstDialogue?.image_url,
-          },
-        ]);
+      const hasIntro = !!firstDialogue.intro;
+
+      if (!hasIntro) {
+        const firstTurn = firstDialogue.turns[0];
+        if (firstTurn && isTeacherTurn(firstTurn)) {
+          setConversationHistory([
+            {
+              type: "teacher",
+              text: firstTurn.text,
+              hint: firstTurn.hint,
+              dialogueId: firstDialogue.id,
+              imageUrl: firstDialogue.image_url,
+            },
+          ]);
+        }
       }
 
       return {
         ...prev,
         currentDialogueIndex: 0,
         currentTurnIndex: 0,
-        phase: "teacher_speaking",
+        phase: hasIntro ? "intro_narrator" : "teacher_speaking",
         teacherSubPhase: "question",
         userAnswer: "",
         isRecording: false,
@@ -498,7 +568,24 @@ const EnglishLessonSession: React.FC<EnglishLessonSessionProps> = ({ level, stag
       </div>
 
       {/* Chat area */}
-      <div ref={chatContainerRef} className="flex-1 overflow-y-auto px-4 py-6 space-y-2">
+      <div ref={chatContainerRef} className="flex-1 overflow-y-auto px-4 py-2">
+        {/* Intro phases — shown before the dialogue exercise starts */}
+        {state.phase === "intro_narrator" && currentDialogue?.intro && (
+          <IntroNarrator
+            intro={currentDialogue.intro}
+            imageUrl={currentDialogue.image_url}
+            dialogueId={currentDialogue.id}
+            onComplete={handleIntroNarratorComplete}
+          />
+        )}
+
+        {state.phase === "intro_demo" && currentDialogue?.intro?.demo && (
+          <IntroDemo demo={currentDialogue.intro.demo} onFinish={handleIntroDemoComplete} />
+        )}
+
+        {/* Regular conversation history (hidden during intro phases) */}
+        {state.phase !== "intro_narrator" && state.phase !== "intro_demo" && (
+          <div className="py-4 space-y-2">
         {conversationHistory.map((entry, idx) => {
           if (entry.type === "teacher") {
             const isActive = state.phase === "teacher_speaking" && idx === conversationHistory.length - 1;
@@ -562,6 +649,8 @@ const EnglishLessonSession: React.FC<EnglishLessonSessionProps> = ({ level, stag
           <div className="flex items-center gap-3 mb-4 px-3">
             <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
             <span className="text-gray-500 text-sm">Sprawdzam odpowiedź...</span>
+          </div>
+        )}
           </div>
         )}
       </div>

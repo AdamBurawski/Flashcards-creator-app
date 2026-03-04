@@ -9,6 +9,32 @@ export type CEFRLevel = "A1" | "A2" | "B1" | "B2";
 // Dialogue & Turn types
 // --------------------------------------------
 
+// --------------------------------------------
+// Intro types (pre-exercise context)
+// --------------------------------------------
+
+/** Single turn in the intro demo dialogue (teacher or peer model) */
+export interface IntroDemoTurn {
+  role: "teacher" | "peer";
+  text: string;
+  /** Polish translation displayed and spoken after the English phrase */
+  translation_pl?: string;
+  /** Pre-generated EN audio URL (optional — falls back to TTS) */
+  audio_url?: string;
+  /** Pre-generated PL translation audio URL (optional — falls back to TTS) */
+  translation_audio_url?: string;
+}
+
+/** Polish-language context narration + demo dialogue shown before exercise */
+export interface DialogueIntro {
+  /** Polish narration describing the scene/situation */
+  narrator_pl: string;
+  /** Pre-generated Polish audio URL for the narration (optional) */
+  narrator_audio_url?: string;
+  /** Optional modelled demonstration dialogue */
+  demo?: IntroDemoTurn[];
+}
+
 /** Full dialogue entity as stored in the database */
 export interface EnglishDialogue {
   id: string;
@@ -25,6 +51,8 @@ export interface EnglishDialogue {
   sort_order: number;
   /** URL to a visual context image for the dialogue (Google Drive, etc.) */
   image_url?: string;
+  /** Optional intro shown before the exercise begins */
+  intro?: DialogueIntro;
 }
 
 /** Union type for dialogue turns — either teacher or student */
@@ -175,7 +203,14 @@ export interface ProgressSummaryResponse {
 // --------------------------------------------
 
 /** Phase of the lesson session flow */
-export type LessonPhase = "teacher_speaking" | "student_turn" | "evaluating" | "feedback" | "summary";
+export type LessonPhase =
+  | "intro_narrator"
+  | "intro_demo"
+  | "teacher_speaking"
+  | "student_turn"
+  | "evaluating"
+  | "feedback"
+  | "summary";
 
 /** State of the lesson session component */
 export interface LessonSessionState {
@@ -230,4 +265,10 @@ export interface RawDialogueRecord {
   sort_order?: number;
   /** Optional URL to a visual context image */
   image_url?: string;
+  /** Optional intro context shown before the exercise */
+  intro?: {
+    narrator_pl: string;
+    narrator_audio_url?: string;
+    demo?: Array<{ role: "teacher" | "peer"; text: string; audio_url?: string }>;
+  };
 }
