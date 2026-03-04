@@ -253,6 +253,22 @@ export async function getDialoguesForLesson(
 
   // 3. Map raw DB rows to typed EnglishDialogue objects with indexed turns and audio
   const dialogues: EnglishDialogue[] = rawDialogues.map((d) => {
+    // Cast to include optional columns not yet in the generated Supabase types
+    const row = d as typeof d & {
+      image_url?: string;
+      intro?: {
+        narrator_pl?: string;
+        narrator_audio_url?: string;
+        demo?: {
+          role: "teacher" | "peer";
+          text: string;
+          translation_pl?: string;
+          audio_url?: string;
+          translation_audio_url?: string;
+        }[];
+      } | null;
+    };
+
     const rawTurns = d.turns as {
       role: string;
       text: string;
@@ -306,7 +322,14 @@ export async function getDialoguesForLesson(
       revision_from: (d.revision_from as string[]) ?? [],
       estimated_duration_seconds: d.estimated_duration_seconds ?? 0,
       sort_order: d.sort_order,
-      image_url: (d.image_url as string) ?? undefined,
+      image_url: row.image_url ?? undefined,
+      intro: row.intro?.narrator_pl
+        ? {
+            narrator_pl: row.intro.narrator_pl,
+            narrator_audio_url: row.intro.narrator_audio_url,
+            demo: row.intro.demo,
+          }
+        : undefined,
     };
   });
 

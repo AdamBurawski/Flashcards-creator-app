@@ -43,6 +43,20 @@ const studentTurnSchema = z.object({
 
 const turnSchema = z.discriminatedUnion("role", [teacherTurnSchema, studentTurnSchema]);
 
+const introDemoTurnSchema = z.object({
+  role: z.enum(["teacher", "peer"]),
+  text: z.string().min(1),
+  translation_pl: z.string().optional(),
+  audio_url: z.string().url().optional(),
+  translation_audio_url: z.string().url().optional(),
+});
+
+const introSchema = z.object({
+  narrator_pl: z.string().min(1, "narrator_pl cannot be empty"),
+  narrator_audio_url: z.string().url().optional(),
+  demo: z.array(introDemoTurnSchema).optional(),
+});
+
 const dialogueRecordSchema = z.object({
   id: z.string().regex(/^S\d+-L\d{2}-D\d{2}$/, 'ID must match format "S{stage}-L{lesson:02d}-D{dialogue:02d}"'),
   stage: z.number().int().min(1).max(12),
@@ -73,6 +87,7 @@ const dialogueRecordSchema = z.object({
   estimated_duration_seconds: z.number().int().positive().optional(),
   sort_order: z.number().int().optional(),
   image_url: z.string().url().optional(),
+  intro: introSchema.optional(),
 });
 
 type DialogueRecord = z.infer<typeof dialogueRecordSchema>;
@@ -177,6 +192,7 @@ async function upsertDialogues(
         estimated_duration_seconds: record.estimated_duration_seconds ?? null,
         sort_order: record.sort_order ?? 0,
         image_url: record.image_url ?? null,
+        intro: record.intro ?? null,
       },
       { onConflict: "id" }
     );

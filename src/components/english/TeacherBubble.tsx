@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import AudioPlayer from "./AudioPlayer";
 
 interface TeacherBubbleProps {
@@ -31,9 +31,25 @@ function resolveImageSrc(dialogueId?: string, imageUrl?: string): string | null 
   return null;
 }
 
+async function fetchTeacherAudio(text: string): Promise<string | undefined> {
+  try {
+    const res = await fetch("/api/english/teacher-audio", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text }),
+    });
+    if (!res.ok) return undefined;
+    const data = await res.json();
+    return data.audio_url as string | undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 /**
  * Displays a teacher speech bubble with text, optional image, and audio playback.
  * Handles sequential playback: question → repeat → hint.
+ * When no pre-generated audio is provided, fetches ElevenLabs EN TTS on demand.
  */
 const TeacherBubble: React.FC<TeacherBubbleProps> = ({
   text,
@@ -47,6 +63,45 @@ const TeacherBubble: React.FC<TeacherBubbleProps> = ({
 }) => {
   const showHint = subPhase === "hint" && hint;
   const [imageError, setImageError] = useState(false);
+
+  // ElevenLabs audio fetched on demand when no pre-generated audio exists
+  const [elAudio, setElAudio] = useState<{ text?: string; hint?: string }>({});
+  const [audioReady, setAudioReady] = useState(false);
+
+  useEffect(() => {
+    if (!isActive) return;
+
+    // Pre-generated audio available — no need to fetch
+    if (audio?.question) {
+      setAudioReady(true);
+      return;
+    }
+
+    let cancelled = false;
+    setAudioReady(false);
+
+    async function load() {
+      const [textAudio, hintAudio] = await Promise.all([
+        fetchTeacherAudio(text),
+        hint ? fetchTeacherAudio(hint) : Promise.resolve(undefined),
+      ]);
+      if (cancelled) return;
+      setElAudio({ text: textAudio, hint: hintAudio });
+      setAudioReady(true);
+    }
+
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [isActive, text, hint, audio?.question]);
+
+  const resolvedSrc =
+    subPhase === "question"
+      ? (audio?.question ?? elAudio.text)
+      : subPhase === "repeat"
+        ? (audio?.question_repeat ?? elAudio.text)
+        : (audio?.hint ?? elAudio.hint);
 
   const imageSrc = resolveImageSrc(dialogueId, imageUrl);
 
@@ -80,24 +135,29 @@ const TeacherBubble: React.FC<TeacherBubbleProps> = ({
           {showHint && <p className="mt-2 text-indigo-600 text-sm italic border-t border-indigo-100 pt-2">💡 {hint}</p>}
         </div>
 
-        {/* Audio player */}
+        {/* Audio player — shown after audio is ready */}
         {isActive && (
           <div className="mt-1 ml-1">
-            <AudioPlayer
-              src={
-                subPhase === "question" ? audio?.question : subPhase === "repeat" ? audio?.question_repeat : audio?.hint
-              }
-              fallbackText={subPhase === "hint" && hint ? hint : text}
-              fallbackLang="en-US"
-              autoPlay={true}
-              onEnded={onAudioComplete}
-              showControls={true}
-            />
+            {!audioReady ? (
+              <div className="flex items-center gap-2 py-1">
+                <div className="w-3 h-3 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin" />
+                <span className="text-xs text-gray-400">Przygotowuję audio...</span>
+              </div>
+            ) : (
+              <AudioPlayer
+                src={resolvedSrc}
+                fallbackText={subPhase === "hint" && hint ? hint : text}
+                fallbackLang="en-US"
+                autoPlay={true}
+                onEnded={onAudioComplete}
+                showControls={true}
+              />
+            )}
           </div>
         )}
 
         {/* Phase indicator */}
-        {isActive && (
+        {isActive && audioReady && (
           <div className="mt-1 ml-1">
             <span className="text-xs text-gray-400">
               {subPhase === "question" && "Posłuchaj pytania..."}
