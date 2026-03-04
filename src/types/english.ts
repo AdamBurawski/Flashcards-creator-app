@@ -269,6 +269,6 @@ export interface RawDialogueRecord {
   intro?: {
     narrator_pl: string;
     narrator_audio_url?: string;
-    demo?: Array<{ role: "teacher" | "peer"; text: string; audio_url?: string }>;
+    demo?: { role: "teacher" | "peer"; text: string; audio_url?: string }[];
   };
 }

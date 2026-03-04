@@ -383,24 +383,21 @@ const EnglishLessonSession: React.FC<EnglishLessonSessionProps> = ({ level, stag
   }, []);
 
   /** Helper: add the first teacher turn of current dialogue to conversation history */
-  const addFirstTeacherTurnToHistory = useCallback(
-    (dialogue: EnglishDialogue) => {
-      const firstTurn = dialogue.turns[0];
-      if (firstTurn && isTeacherTurn(firstTurn)) {
-        setConversationHistory((h) => [
-          ...h,
-          {
-            type: "teacher" as const,
-            text: firstTurn.text,
-            hint: firstTurn.hint,
-            dialogueId: dialogue.id,
-            imageUrl: dialogue.image_url,
-          },
-        ]);
-      }
-    },
-    []
-  );
+  const addFirstTeacherTurnToHistory = useCallback((dialogue: EnglishDialogue) => {
+    const firstTurn = dialogue.turns[0];
+    if (firstTurn && isTeacherTurn(firstTurn)) {
+      setConversationHistory((h) => [
+        ...h,
+        {
+          type: "teacher" as const,
+          text: firstTurn.text,
+          hint: firstTurn.hint,
+          dialogueId: dialogue.id,
+          imageUrl: dialogue.image_url,
+        },
+      ]);
+    }
+  }, []);
 
   const handleIntroNarratorComplete = useCallback(() => {
     setState((prev) => {
@@ -586,71 +583,71 @@ const EnglishLessonSession: React.FC<EnglishLessonSessionProps> = ({ level, stag
         {/* Regular conversation history (hidden during intro phases) */}
         {state.phase !== "intro_narrator" && state.phase !== "intro_demo" && (
           <div className="py-4 space-y-2">
-        {conversationHistory.map((entry, idx) => {
-          if (entry.type === "teacher") {
-            const isActive = state.phase === "teacher_speaking" && idx === conversationHistory.length - 1;
-            const teacherTurnData = isActive ? (currentTurn as TeacherTurn) : null;
+            {conversationHistory.map((entry, idx) => {
+              if (entry.type === "teacher") {
+                const isActive = state.phase === "teacher_speaking" && idx === conversationHistory.length - 1;
+                const teacherTurnData = isActive ? (currentTurn as TeacherTurn) : null;
 
-            return (
-              <TeacherBubble
-                key={`conv-${idx}`}
-                text={entry.text}
-                hint={entry.hint}
-                dialogueId={entry.dialogueId}
-                imageUrl={entry.imageUrl}
-                audio={teacherTurnData?.audio}
-                subPhase={isActive ? state.teacherSubPhase : "question"}
-                onAudioComplete={handleTeacherAudioComplete}
-                isActive={isActive}
-              />
-            );
-          }
+                return (
+                  <TeacherBubble
+                    key={`conv-${idx}`}
+                    text={entry.text}
+                    hint={entry.hint}
+                    dialogueId={entry.dialogueId}
+                    imageUrl={entry.imageUrl}
+                    audio={teacherTurnData?.audio}
+                    subPhase={isActive ? state.teacherSubPhase : "question"}
+                    onAudioComplete={handleTeacherAudioComplete}
+                    isActive={isActive}
+                  />
+                );
+              }
 
-          if (entry.type === "student") {
-            return (
-              <div key={`conv-${idx}`} className="flex justify-end mb-4">
-                <div className="max-w-lg bg-blue-600 text-white rounded-2xl rounded-tr-sm px-4 py-3">
-                  <p className="text-base">{entry.text}</p>
-                </div>
+              if (entry.type === "student") {
+                return (
+                  <div key={`conv-${idx}`} className="flex justify-end mb-4">
+                    <div className="max-w-lg bg-blue-600 text-white rounded-2xl rounded-tr-sm px-4 py-3">
+                      <p className="text-base">{entry.text}</p>
+                    </div>
+                  </div>
+                );
+              }
+
+              if (entry.type === "feedback" && entry.evaluationResult) {
+                const isActive = state.phase === "feedback" && idx === conversationHistory.length - 1;
+
+                if (isActive) {
+                  return (
+                    <FeedbackDisplay
+                      key={`conv-${idx}`}
+                      result={entry.evaluationResult}
+                      onNext={handleNextAfterFeedback}
+                      isLastTurn={isLastTurnInSession()}
+                    />
+                  );
+                }
+
+                return (
+                  <div
+                    key={`conv-${idx}`}
+                    className={`mb-2 px-3 py-2 rounded-lg text-sm ${
+                      entry.evaluationResult.is_correct ? "bg-green-50 text-green-700" : "bg-amber-50 text-amber-700"
+                    }`}
+                  >
+                    {entry.evaluationResult.is_correct ? "✓" : "✗"} {entry.text}
+                  </div>
+                );
+              }
+
+              return null;
+            })}
+
+            {state.phase === "evaluating" && (
+              <div className="flex items-center gap-3 mb-4 px-3">
+                <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                <span className="text-gray-500 text-sm">Sprawdzam odpowiedź...</span>
               </div>
-            );
-          }
-
-          if (entry.type === "feedback" && entry.evaluationResult) {
-            const isActive = state.phase === "feedback" && idx === conversationHistory.length - 1;
-
-            if (isActive) {
-              return (
-                <FeedbackDisplay
-                  key={`conv-${idx}`}
-                  result={entry.evaluationResult}
-                  onNext={handleNextAfterFeedback}
-                  isLastTurn={isLastTurnInSession()}
-                />
-              );
-            }
-
-            return (
-              <div
-                key={`conv-${idx}`}
-                className={`mb-2 px-3 py-2 rounded-lg text-sm ${
-                  entry.evaluationResult.is_correct ? "bg-green-50 text-green-700" : "bg-amber-50 text-amber-700"
-                }`}
-              >
-                {entry.evaluationResult.is_correct ? "✓" : "✗"} {entry.text}
-              </div>
-            );
-          }
-
-          return null;
-        })}
-
-        {state.phase === "evaluating" && (
-          <div className="flex items-center gap-3 mb-4 px-3">
-            <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-            <span className="text-gray-500 text-sm">Sprawdzam odpowiedź...</span>
-          </div>
-        )}
+            )}
           </div>
         )}
       </div>

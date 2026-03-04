@@ -39,10 +39,10 @@ export const POST: APIRoute = async ({ request, locals }) => {
 
     const parsed = bodySchema.safeParse(body);
     if (!parsed.success) {
-      return new Response(
-        JSON.stringify({ error: "Pole 'text' jest wymagane i nie może przekraczać 500 znaków" }),
-        { status: 400, headers: { "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: "Pole 'text' jest wymagane i nie może przekraczać 500 znaków" }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      });
     }
 
     const voiceId = getTeacherEnVoiceId();

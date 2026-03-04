@@ -259,7 +259,13 @@ export async function getDialoguesForLesson(
       intro?: {
         narrator_pl?: string;
         narrator_audio_url?: string;
-        demo?: Array<{ role: "teacher" | "peer"; text: string; translation_pl?: string; audio_url?: string; translation_audio_url?: string }>;
+        demo?: {
+          role: "teacher" | "peer";
+          text: string;
+          translation_pl?: string;
+          audio_url?: string;
+          translation_audio_url?: string;
+        }[];
       } | null;
     };
 

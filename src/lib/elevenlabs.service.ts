@@ -105,17 +105,9 @@ export function getTeacherEnVoiceId(): string {
  */
 export function getNarratorVoiceId(): string {
   try {
-    return (
-      import.meta.env.ELEVENLABS_TEACHER_VOICE_ID ||
-      import.meta.env.ELEVENLABS_FEEDBACK_VOICE_ID ||
-      ""
-    );
+    return import.meta.env.ELEVENLABS_TEACHER_VOICE_ID || import.meta.env.ELEVENLABS_FEEDBACK_VOICE_ID || "";
   } catch {
-    return (
-      process.env.ELEVENLABS_TEACHER_VOICE_ID ||
-      process.env.ELEVENLABS_FEEDBACK_VOICE_ID ||
-      ""
-    );
+    return process.env.ELEVENLABS_TEACHER_VOICE_ID || process.env.ELEVENLABS_FEEDBACK_VOICE_ID || "";
   }
 }
 

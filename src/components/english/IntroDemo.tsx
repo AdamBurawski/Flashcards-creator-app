@@ -122,11 +122,7 @@ const IntroDemo: React.FC<IntroDemoProps> = ({ demo, onFinish }) => {
     }
   }, [activeIdx, demo.length, showNext]);
 
-  const enAudioReady =
-    activeIdx < 0 ||
-    !demo[activeIdx] ||
-    !!demo[activeIdx].audio_url ||
-    activeIdx in enAudioCache;
+  const enAudioReady = activeIdx < 0 || !demo[activeIdx] || !!demo[activeIdx].audio_url || activeIdx in enAudioCache;
 
   const plAudioReady =
     activePhase !== "pl" ||
@@ -141,9 +137,7 @@ const IntroDemo: React.FC<IntroDemoProps> = ({ demo, onFinish }) => {
       {/* Label */}
       <div className="flex items-center gap-2 justify-center">
         <span className="text-xl">🎬</span>
-        <span className="text-sm font-semibold text-indigo-600 uppercase tracking-wider">
-          Przykładowa rozmowa
-        </span>
+        <span className="text-sm font-semibold text-indigo-600 uppercase tracking-wider">Przykładowa rozmowa</span>
       </div>
 
       {/* Animated turn bubbles */}
@@ -151,8 +145,8 @@ const IntroDemo: React.FC<IntroDemoProps> = ({ demo, onFinish }) => {
         {demo.slice(0, visibleCount).map((turn, idx) => {
           const isTeacher = turn.role === "teacher";
           const isActive = idx === activeIdx && !isAllDone;
-          const enSrc = turn.audio_url ?? (enAudioCache[idx] ?? undefined);
-          const plSrc = turn.translation_audio_url ?? (plAudioCache[idx] ?? undefined);
+          const enSrc = turn.audio_url ?? enAudioCache[idx] ?? undefined;
+          const plSrc = turn.translation_audio_url ?? plAudioCache[idx] ?? undefined;
           const showPl = idx < plRevealedCount && !!turn.translation_pl;
 
           return (
@@ -175,9 +169,10 @@ const IntroDemo: React.FC<IntroDemoProps> = ({ demo, onFinish }) => {
                 {/* EN bubble */}
                 <div
                   className={`max-w-xs rounded-2xl px-4 py-2.5 shadow-sm
-                    ${isTeacher
-                      ? "bg-indigo-50 border border-indigo-100 rounded-bl-sm"
-                      : "bg-green-50 border border-green-100 rounded-br-sm"
+                    ${
+                      isTeacher
+                        ? "bg-indigo-50 border border-indigo-100 rounded-bl-sm"
+                        : "bg-green-50 border border-green-100 rounded-br-sm"
                     }`}
                 >
                   <p className="text-gray-800 text-base leading-snug">{turn.text}</p>
@@ -201,9 +196,7 @@ const IntroDemo: React.FC<IntroDemoProps> = ({ demo, onFinish }) => {
                     className={`max-w-xs rounded-xl px-4 py-1.5 bg-amber-50 border border-amber-100
                       animate-[fadeIn_0.4s_ease-in]`}
                   >
-                    <p className="text-amber-800 text-sm italic leading-snug">
-                      {turn.translation_pl}
-                    </p>
+                    <p className="text-amber-800 text-sm italic leading-snug">{turn.translation_pl}</p>
 
                     {/* PL loading spinner while fetching narrator audio */}
                     {isActive && activePhase === "pl" && !plAudioReady && (
@@ -233,14 +226,10 @@ const IntroDemo: React.FC<IntroDemoProps> = ({ demo, onFinish }) => {
         {/* Typing indicator for the upcoming next turn (shown during EN phase only) */}
         {!allVisible && visibleCount > 0 && activePhase === "en" && (
           <div
-            className={`flex items-center gap-2 ${
-              demo[visibleCount]?.role !== "teacher" ? "flex-row-reverse" : ""
-            }`}
+            className={`flex items-center gap-2 ${demo[visibleCount]?.role !== "teacher" ? "flex-row-reverse" : ""}`}
           >
             <div className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
-              <span className="text-base">
-                {demo[visibleCount]?.role === "teacher" ? "🎓" : "👦"}
-              </span>
+              <span className="text-base">{demo[visibleCount]?.role === "teacher" ? "🎓" : "👦"}</span>
             </div>
             {!enAudioReady ? (
               <div className="bg-gray-100 rounded-2xl px-4 py-3 flex items-center gap-2">
