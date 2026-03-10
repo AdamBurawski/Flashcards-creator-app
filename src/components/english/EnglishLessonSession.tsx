@@ -113,6 +113,10 @@ interface SessionState {
   isLoading: boolean;
   error: string | null;
   sessionStartTime: number;
+  /** Phase to restore after the child finishes reviewing the intro demo */
+  reviewReturnPhase: LessonPhase | null;
+  /** TeacherSubPhase to restore after review */
+  reviewReturnTeacherSubPhase: TeacherSubPhase | null;
 }
 
 interface ConversationEntry {
@@ -144,10 +148,15 @@ const EnglishLessonSession: React.FC<EnglishLessonSessionProps> = ({ level, stag
     isLoading: true,
     error: null,
     sessionStartTime: Date.now(),
+    reviewReturnPhase: null,
+    reviewReturnTeacherSubPhase: null,
   });
 
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const [conversationHistory, setConversationHistory] = useState<ConversationEntry[]>([]);
+  // Once the review intro has been opened once, keep IntroDemo mounted in the background
+  // so the audio cache and scroll position survive between repeated visits.
+  const [reviewIntroEverOpened, setReviewIntroEverOpened] = useState(false);
 
   // ---------- DATA LOADING ----------
 
@@ -425,6 +434,35 @@ const EnglishLessonSession: React.FC<EnglishLessonSessionProps> = ({ level, stag
     });
   }, [addFirstTeacherTurnToHistory]);
 
+  /** Open the intro demo as a mid-exercise review — saves current phase to restore later */
+  const handleOpenReviewIntro = useCallback(() => {
+    setReviewIntroEverOpened(true);
+    setState((prev) => {
+      const dialogue = prev.dialogues[prev.currentDialogueIndex];
+      if (!dialogue?.intro?.demo?.length) return prev;
+      return {
+        ...prev,
+        phase: "review_intro",
+        reviewReturnPhase: prev.phase,
+        reviewReturnTeacherSubPhase: prev.teacherSubPhase,
+      };
+    });
+  }, []);
+
+  /** Return to the exact turn the child was on after finishing the review demo */
+  const handleReviewIntroDone = useCallback(() => {
+    setState((prev) => {
+      if (prev.phase !== "review_intro") return prev;
+      return {
+        ...prev,
+        phase: prev.reviewReturnPhase ?? "teacher_speaking",
+        teacherSubPhase: prev.reviewReturnTeacherSubPhase ?? "question",
+        reviewReturnPhase: null,
+        reviewReturnTeacherSubPhase: null,
+      };
+    });
+  }, []);
+
   const handleRetry = useCallback(() => {
     setConversationHistory([]);
     setState((prev) => {
@@ -544,11 +582,30 @@ const EnglishLessonSession: React.FC<EnglishLessonSessionProps> = ({ level, stag
           </div>
         </div>
 
-        <div className="text-right">
-          <div className="text-sm font-medium text-gray-700">
-            {state.sessionScore.correct}/{state.sessionScore.total}
+        <div className="flex items-center gap-3 justify-end">
+          {/* Review intro button — visible when current dialogue has a demo and we're in the exercise */}
+          {currentDialogue?.intro?.demo?.length &&
+            state.phase !== "intro_narrator" &&
+            state.phase !== "intro_demo" &&
+            state.phase !== "review_intro" &&
+            state.phase !== "summary" && (
+              <button
+                type="button"
+                onClick={handleOpenReviewIntro}
+                className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-indigo-50 text-indigo-600
+                  hover:bg-indigo-100 transition-colors text-xs font-medium border border-indigo-100"
+                title="Wróć do przykładowej rozmowy"
+              >
+                <span>🎬</span>
+                <span>Przypomnij</span>
+              </button>
+            )}
+          <div className="text-right">
+            <div className="text-sm font-medium text-gray-700">
+              {state.sessionScore.correct}/{state.sessionScore.total}
+            </div>
+            <div className="text-xs text-gray-500">wynik</div>
           </div>
-          <div className="text-xs text-gray-500">wynik</div>
         </div>
       </div>
 
@@ -580,8 +637,21 @@ const EnglishLessonSession: React.FC<EnglishLessonSessionProps> = ({ level, stag
           <IntroDemo demo={currentDialogue.intro.demo} onFinish={handleIntroDemoComplete} />
         )}
 
-        {/* Regular conversation history (hidden during intro phases) */}
-        {state.phase !== "intro_narrator" && state.phase !== "intro_demo" && (
+        {/* Mid-exercise review: child revisits the demo already in "done" state */}
+        {/* Mid-exercise review — mounted on first open, then kept alive in background.
+            CSS hidden preserves audio cache and scroll position between visits. */}
+        {reviewIntroEverOpened && currentDialogue?.intro?.demo && (
+          <div className={state.phase === "review_intro" ? "flex flex-col" : "hidden"}>
+            <div className="flex items-center justify-center gap-2 pt-4 pb-1 text-xs text-indigo-500 font-medium">
+              <span>↩</span>
+              <span>Po przypomnieniu wrócisz do tego samego miejsca w ćwiczeniu</span>
+            </div>
+            <IntroDemo demo={currentDialogue.intro.demo} onFinish={handleReviewIntroDone} initiallyDone={true} />
+          </div>
+        )}
+
+        {/* Regular conversation history (hidden during intro / review phases) */}
+        {state.phase !== "intro_narrator" && state.phase !== "intro_demo" && state.phase !== "review_intro" && (
           <div className="py-4 space-y-2">
             {conversationHistory.map((entry, idx) => {
               if (entry.type === "teacher") {
