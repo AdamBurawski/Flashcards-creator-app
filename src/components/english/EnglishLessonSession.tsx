@@ -633,14 +633,14 @@ const EnglishLessonSession: React.FC<EnglishLessonSessionProps> = ({ level, stag
           <IntroDemo demo={currentDialogue.intro.demo} onFinish={handleIntroDemoComplete} />
         )}
 
-        {/* Mid-exercise review: child revisits the demo, then returns to the same turn */}
+        {/* Mid-exercise review: child revisits the demo already in "done" state */}
         {state.phase === "review_intro" && currentDialogue?.intro?.demo && (
           <div className="flex flex-col">
             <div className="flex items-center justify-center gap-2 pt-4 pb-1 text-xs text-indigo-500 font-medium">
               <span>↩</span>
               <span>Po przypomnieniu wrócisz do tego samego miejsca w ćwiczeniu</span>
             </div>
-            <IntroDemo demo={currentDialogue.intro.demo} onFinish={handleReviewIntroDone} />
+            <IntroDemo demo={currentDialogue.intro.demo} onFinish={handleReviewIntroDone} initiallyDone={true} />
           </div>
         )}
 

@@ -6,6 +6,12 @@ interface IntroDemoProps {
   demo: IntroDemoTurn[];
   /** Called when user clicks "Zaczynamy!" after all turns are shown */
   onFinish: () => void;
+  /**
+   * When true the component skips sequential auto-play and opens directly
+   * in the "all done" state — all bubbles visible with replay buttons ready.
+   * Used when the child revisits the demo mid-exercise.
+   */
+  initiallyDone?: boolean;
 }
 
 async function fetchTeacherAudio(text: string): Promise<string | undefined> {
@@ -116,15 +122,15 @@ function ReplayButton({ text, lang, audioSrc, label }: ReplayButtonProps) {
  * Completed turns show replay buttons so the child can listen again.
  * After all turns finish, a "Zaczynamy!" button appears.
  */
-const IntroDemo: React.FC<IntroDemoProps> = ({ demo, onFinish }) => {
-  const [visibleCount, setVisibleCount] = useState(0);
+const IntroDemo: React.FC<IntroDemoProps> = ({ demo, onFinish, initiallyDone = false }) => {
+  const [visibleCount, setVisibleCount] = useState(initiallyDone ? demo.length : 0);
   // How many turns have their PL translation text revealed
-  const [plRevealedCount, setPlRevealedCount] = useState(0);
+  const [plRevealedCount, setPlRevealedCount] = useState(initiallyDone ? demo.length : 0);
   // Audio phase for the currently active turn
   const [activePhase, setActivePhase] = useState<"en" | "pl">("en");
   const [enAudioCache, setEnAudioCache] = useState<Record<number, string | null>>({});
   const [plAudioCache, setPlAudioCache] = useState<Record<number, string | null>>({});
-  const [isAllDone, setIsAllDone] = useState(false);
+  const [isAllDone, setIsAllDone] = useState(initiallyDone);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const showNext = useCallback(() => {
@@ -132,13 +138,32 @@ const IntroDemo: React.FC<IntroDemoProps> = ({ demo, onFinish }) => {
     setVisibleCount((prev) => Math.min(prev + 1, demo.length));
   }, [demo.length]);
 
-  // Reveal first turn after a short delay on mount
+  // Reveal first turn after a short delay on mount (skipped when initiallyDone)
   useEffect(() => {
+    if (initiallyDone) return;
     timerRef.current = setTimeout(showNext, 600);
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
     };
-  }, [showNext]);
+  }, [showNext, initiallyDone]);
+
+  // Pre-fetch all audio in the background when opening in initiallyDone mode
+  useEffect(() => {
+    if (!initiallyDone) return;
+    demo.forEach((turn, idx) => {
+      if (!turn.audio_url) {
+        fetchTeacherAudio(turn.text).then((url) => {
+          setEnAudioCache((prev) => ({ ...prev, [idx]: url ?? null }));
+        });
+      }
+      if (turn.translation_pl && !turn.translation_audio_url) {
+        fetchNarratorAudio(turn.translation_pl).then((url) => {
+          setPlAudioCache((prev) => ({ ...prev, [idx]: url ?? null }));
+        });
+      }
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initiallyDone]);
 
   // Fetch EN audio when a new turn becomes visible
   useEffect(() => {
