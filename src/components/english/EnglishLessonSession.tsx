@@ -154,6 +154,9 @@ const EnglishLessonSession: React.FC<EnglishLessonSessionProps> = ({ level, stag
 
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const [conversationHistory, setConversationHistory] = useState<ConversationEntry[]>([]);
+  // Once the review intro has been opened once, keep IntroDemo mounted in the background
+  // so the audio cache and scroll position survive between repeated visits.
+  const [reviewIntroEverOpened, setReviewIntroEverOpened] = useState(false);
 
   // ---------- DATA LOADING ----------
 
@@ -433,6 +436,7 @@ const EnglishLessonSession: React.FC<EnglishLessonSessionProps> = ({ level, stag
 
   /** Open the intro demo as a mid-exercise review — saves current phase to restore later */
   const handleOpenReviewIntro = useCallback(() => {
+    setReviewIntroEverOpened(true);
     setState((prev) => {
       const dialogue = prev.dialogues[prev.currentDialogueIndex];
       if (!dialogue?.intro?.demo?.length) return prev;
@@ -634,8 +638,10 @@ const EnglishLessonSession: React.FC<EnglishLessonSessionProps> = ({ level, stag
         )}
 
         {/* Mid-exercise review: child revisits the demo already in "done" state */}
-        {state.phase === "review_intro" && currentDialogue?.intro?.demo && (
-          <div className="flex flex-col">
+        {/* Mid-exercise review — mounted on first open, then kept alive in background.
+            CSS hidden preserves audio cache and scroll position between visits. */}
+        {reviewIntroEverOpened && currentDialogue?.intro?.demo && (
+          <div className={state.phase === "review_intro" ? "flex flex-col" : "hidden"}>
             <div className="flex items-center justify-center gap-2 pt-4 pb-1 text-xs text-indigo-500 font-medium">
               <span>↩</span>
               <span>Po przypomnieniu wrócisz do tego samego miejsca w ćwiczeniu</span>
