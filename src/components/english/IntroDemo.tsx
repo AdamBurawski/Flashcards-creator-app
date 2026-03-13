@@ -95,8 +95,7 @@ const IntroDemo: React.FC<IntroDemoProps> = ({ demo, onFinish, initiallyDone = f
         });
       }
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initiallyDone]);
+  }, [initiallyDone, demo]);
 
   // Fetch EN audio when a new turn becomes visible
   useEffect(() => {

@@ -92,8 +92,7 @@ const DemoPairHint: React.FC<DemoPairHintProps> = ({ pair }) => {
         });
       }
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [pair]);
 
   return (
     <div className="mt-2 rounded-xl border border-indigo-100 bg-white/80 px-3 py-2.5 space-y-2.5">

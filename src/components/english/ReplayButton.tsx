@@ -10,20 +10,17 @@ interface ReplayButtonProps {
 const ReplayButton: React.FC<ReplayButtonProps> = ({ text, lang, audioSrc, label }) => {
   const [isPlaying, setIsPlaying] = useState(false);
 
-  const speakTTS = useCallback(
-    (t: string, l: string) => {
-      if (!("speechSynthesis" in window)) return;
-      window.speechSynthesis.cancel();
-      const utt = new SpeechSynthesisUtterance(t);
-      utt.lang = l;
-      utt.rate = 0.9;
-      setIsPlaying(true);
-      utt.onend = () => setIsPlaying(false);
-      utt.onerror = () => setIsPlaying(false);
-      window.speechSynthesis.speak(utt);
-    },
-    []
-  );
+  const speakTTS = useCallback((t: string, l: string) => {
+    if (!("speechSynthesis" in window)) return;
+    window.speechSynthesis.cancel();
+    const utt = new SpeechSynthesisUtterance(t);
+    utt.lang = l;
+    utt.rate = 0.9;
+    setIsPlaying(true);
+    utt.onend = () => setIsPlaying(false);
+    utt.onerror = () => setIsPlaying(false);
+    window.speechSynthesis.speak(utt);
+  }, []);
 
   const play = useCallback(() => {
     if (isPlaying) return;
