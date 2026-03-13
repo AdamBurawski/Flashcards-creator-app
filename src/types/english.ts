@@ -206,7 +206,6 @@ export interface ProgressSummaryResponse {
 export type LessonPhase =
   | "intro_narrator"
   | "intro_demo"
-  | "review_intro" // mid-exercise: child revisits the demo, then returns to same turn
   | "teacher_speaking"
   | "student_turn"
   | "evaluating"

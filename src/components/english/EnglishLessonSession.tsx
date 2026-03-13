@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from "react";
 import type {
   CEFRLevel,
   EnglishDialogue,
+  IntroDemoTurn,
   LessonPhase,
   EvaluationResult,
   DialogueTurn,
@@ -90,6 +91,23 @@ function advanceToNextTurn(prev: SessionState): SessionState {
   return { ...prev, phase: "summary" };
 }
 
+/** Normalize curly/typographic apostrophes and quotes to ASCII equivalents for comparison */
+function normalizeApostrophes(s: string): string {
+  return s.replace(/[\u2018\u2019\u201a\u201b\u2032]/g, "'").replace(/[\u201c\u201d\u201e\u201f\u2033]/g, '"');
+}
+
+/** Find the demo pair (teacher turn + following peer turn) matching a given teacher question */
+function findDemoPair(demo: IntroDemoTurn[], teacherText: string): IntroDemoTurn[] {
+  const normalized = normalizeApostrophes(teacherText);
+  const idx = demo.findIndex((t) => t.role === "teacher" && normalizeApostrophes(t.text) === normalized);
+  if (idx === -1) return [];
+  const pair: IntroDemoTurn[] = [demo[idx]];
+  if (idx + 1 < demo.length && demo[idx + 1].role === "peer") {
+    pair.push(demo[idx + 1]);
+  }
+  return pair;
+}
+
 // ---------- TYPES ----------
 
 interface EnglishLessonSessionProps {
@@ -113,10 +131,6 @@ interface SessionState {
   isLoading: boolean;
   error: string | null;
   sessionStartTime: number;
-  /** Phase to restore after the child finishes reviewing the intro demo */
-  reviewReturnPhase: LessonPhase | null;
-  /** TeacherSubPhase to restore after review */
-  reviewReturnTeacherSubPhase: TeacherSubPhase | null;
 }
 
 interface ConversationEntry {
@@ -128,6 +142,8 @@ interface ConversationEntry {
   /** Optional explicit image URL override */
   imageUrl?: string;
   evaluationResult?: EvaluationResult;
+  /** Matching demo pair (teacher + peer) for this teacher turn — enables inline hint */
+  demoPair?: IntroDemoTurn[];
 }
 
 /**
@@ -148,15 +164,10 @@ const EnglishLessonSession: React.FC<EnglishLessonSessionProps> = ({ level, stag
     isLoading: true,
     error: null,
     sessionStartTime: Date.now(),
-    reviewReturnPhase: null,
-    reviewReturnTeacherSubPhase: null,
   });
 
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const [conversationHistory, setConversationHistory] = useState<ConversationEntry[]>([]);
-  // Once the review intro has been opened once, keep IntroDemo mounted in the background
-  // so the audio cache and scroll position survive between repeated visits.
-  const [reviewIntroEverOpened, setReviewIntroEverOpened] = useState(false);
 
   // ---------- DATA LOADING ----------
 
@@ -201,6 +212,7 @@ const EnglishLessonSession: React.FC<EnglishLessonSessionProps> = ({ level, stag
         if (!hasIntro) {
           const firstTurn = firstDialogue?.turns[0];
           if (firstTurn && firstTurn.role === "teacher") {
+            const demo = firstDialogue.intro?.demo;
             setConversationHistory([
               {
                 type: "teacher",
@@ -208,6 +220,7 @@ const EnglishLessonSession: React.FC<EnglishLessonSessionProps> = ({ level, stag
                 hint: firstTurn.hint,
                 dialogueId: firstDialogue.id,
                 imageUrl: firstDialogue.image_url,
+                demoPair: demo ? findDemoPair(demo, firstTurn.text) : undefined,
               },
             ]);
           }
@@ -374,6 +387,7 @@ const EnglishLessonSession: React.FC<EnglishLessonSessionProps> = ({ level, stag
       if (dialogue && next.phase === "teacher_speaking") {
         const turn = dialogue.turns[next.currentTurnIndex];
         if (turn && isTeacherTurn(turn)) {
+          const demo = dialogue.intro?.demo;
           setConversationHistory((h) => [
             ...h,
             {
@@ -382,6 +396,7 @@ const EnglishLessonSession: React.FC<EnglishLessonSessionProps> = ({ level, stag
               hint: turn.hint,
               dialogueId: dialogue.id,
               imageUrl: dialogue.image_url,
+              demoPair: demo ? findDemoPair(demo, turn.text) : undefined,
             },
           ]);
         }
@@ -395,6 +410,7 @@ const EnglishLessonSession: React.FC<EnglishLessonSessionProps> = ({ level, stag
   const addFirstTeacherTurnToHistory = useCallback((dialogue: EnglishDialogue) => {
     const firstTurn = dialogue.turns[0];
     if (firstTurn && isTeacherTurn(firstTurn)) {
+      const demo = dialogue.intro?.demo;
       setConversationHistory((h) => [
         ...h,
         {
@@ -403,6 +419,7 @@ const EnglishLessonSession: React.FC<EnglishLessonSessionProps> = ({ level, stag
           hint: firstTurn.hint,
           dialogueId: dialogue.id,
           imageUrl: dialogue.image_url,
+          demoPair: demo ? findDemoPair(demo, firstTurn.text) : undefined,
         },
       ]);
     }
@@ -434,35 +451,6 @@ const EnglishLessonSession: React.FC<EnglishLessonSessionProps> = ({ level, stag
     });
   }, [addFirstTeacherTurnToHistory]);
 
-  /** Open the intro demo as a mid-exercise review — saves current phase to restore later */
-  const handleOpenReviewIntro = useCallback(() => {
-    setReviewIntroEverOpened(true);
-    setState((prev) => {
-      const dialogue = prev.dialogues[prev.currentDialogueIndex];
-      if (!dialogue?.intro?.demo?.length) return prev;
-      return {
-        ...prev,
-        phase: "review_intro",
-        reviewReturnPhase: prev.phase,
-        reviewReturnTeacherSubPhase: prev.teacherSubPhase,
-      };
-    });
-  }, []);
-
-  /** Return to the exact turn the child was on after finishing the review demo */
-  const handleReviewIntroDone = useCallback(() => {
-    setState((prev) => {
-      if (prev.phase !== "review_intro") return prev;
-      return {
-        ...prev,
-        phase: prev.reviewReturnPhase ?? "teacher_speaking",
-        teacherSubPhase: prev.reviewReturnTeacherSubPhase ?? "question",
-        reviewReturnPhase: null,
-        reviewReturnTeacherSubPhase: null,
-      };
-    });
-  }, []);
-
   const handleRetry = useCallback(() => {
     setConversationHistory([]);
     setState((prev) => {
@@ -474,6 +462,7 @@ const EnglishLessonSession: React.FC<EnglishLessonSessionProps> = ({ level, stag
       if (!hasIntro) {
         const firstTurn = firstDialogue.turns[0];
         if (firstTurn && isTeacherTurn(firstTurn)) {
+          const demo = firstDialogue.intro?.demo;
           setConversationHistory([
             {
               type: "teacher",
@@ -481,6 +470,7 @@ const EnglishLessonSession: React.FC<EnglishLessonSessionProps> = ({ level, stag
               hint: firstTurn.hint,
               dialogueId: firstDialogue.id,
               imageUrl: firstDialogue.image_url,
+              demoPair: demo ? findDemoPair(demo, firstTurn.text) : undefined,
             },
           ]);
         }
@@ -583,23 +573,6 @@ const EnglishLessonSession: React.FC<EnglishLessonSessionProps> = ({ level, stag
         </div>
 
         <div className="flex items-center gap-3 justify-end">
-          {/* Review intro button — visible when current dialogue has a demo and we're in the exercise */}
-          {currentDialogue?.intro?.demo?.length &&
-            state.phase !== "intro_narrator" &&
-            state.phase !== "intro_demo" &&
-            state.phase !== "review_intro" &&
-            state.phase !== "summary" && (
-              <button
-                type="button"
-                onClick={handleOpenReviewIntro}
-                className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-indigo-50 text-indigo-600
-                  hover:bg-indigo-100 transition-colors text-xs font-medium border border-indigo-100"
-                title="Wróć do przykładowej rozmowy"
-              >
-                <span>🎬</span>
-                <span>Przypomnij</span>
-              </button>
-            )}
           <div className="text-right">
             <div className="text-sm font-medium text-gray-700">
               {state.sessionScore.correct}/{state.sessionScore.total}
@@ -637,21 +610,8 @@ const EnglishLessonSession: React.FC<EnglishLessonSessionProps> = ({ level, stag
           <IntroDemo demo={currentDialogue.intro.demo} onFinish={handleIntroDemoComplete} />
         )}
 
-        {/* Mid-exercise review: child revisits the demo already in "done" state */}
-        {/* Mid-exercise review — mounted on first open, then kept alive in background.
-            CSS hidden preserves audio cache and scroll position between visits. */}
-        {reviewIntroEverOpened && currentDialogue?.intro?.demo && (
-          <div className={state.phase === "review_intro" ? "flex flex-col" : "hidden"}>
-            <div className="flex items-center justify-center gap-2 pt-4 pb-1 text-xs text-indigo-500 font-medium">
-              <span>↩</span>
-              <span>Po przypomnieniu wrócisz do tego samego miejsca w ćwiczeniu</span>
-            </div>
-            <IntroDemo demo={currentDialogue.intro.demo} onFinish={handleReviewIntroDone} initiallyDone={true} />
-          </div>
-        )}
-
-        {/* Regular conversation history (hidden during intro / review phases) */}
-        {state.phase !== "intro_narrator" && state.phase !== "intro_demo" && state.phase !== "review_intro" && (
+        {/* Conversation history */}
+        {state.phase !== "intro_narrator" && state.phase !== "intro_demo" && (
           <div className="py-4 space-y-2">
             {conversationHistory.map((entry, idx) => {
               if (entry.type === "teacher") {
@@ -669,6 +629,7 @@ const EnglishLessonSession: React.FC<EnglishLessonSessionProps> = ({ level, stag
                     subPhase={isActive ? state.teacherSubPhase : "question"}
                     onAudioComplete={handleTeacherAudioComplete}
                     isActive={isActive}
+                    demoPair={entry.demoPair}
                   />
                 );
               }
