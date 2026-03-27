@@ -40,13 +40,33 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
   const [useTTS, setUseTTS] = useState(false);
   const effectiveSrc = USE_SYSTEM_TTS_ONLY ? undefined : src;
 
+  const waitForVoices = useCallback(async (timeoutMs: number): Promise<void> => {
+    if (!("speechSynthesis" in window)) return;
+    if (window.speechSynthesis.getVoices().length > 0) return;
+
+    await new Promise<void>((resolve) => {
+      const timer = window.setTimeout(() => {
+        window.speechSynthesis.removeEventListener("voiceschanged", onVoicesChanged);
+        resolve();
+      }, timeoutMs);
+
+      const onVoicesChanged = () => {
+        window.clearTimeout(timer);
+        window.speechSynthesis.removeEventListener("voiceschanged", onVoicesChanged);
+        resolve();
+      };
+
+      window.speechSynthesis.addEventListener("voiceschanged", onVoicesChanged, { once: true });
+    });
+  }, []);
+
   // Determine if we should use browser TTS
   useEffect(() => {
     setUseTTS((!effectiveSrc && !!fallbackText) || USE_SYSTEM_TTS_ONLY);
   }, [effectiveSrc, fallbackText]);
 
   const playTTS = useCallback(
-    (text: string, lang: string) => {
+    async (text: string, lang: string) => {
       if (!("speechSynthesis" in window)) {
         // eslint-disable-next-line no-console
         console.warn("[AudioPlayer] SpeechSynthesis not supported");
@@ -56,6 +76,10 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
 
       // Cancel any ongoing speech
       window.speechSynthesis.cancel();
+
+      if (preferredVoiceNames.length > 0) {
+        await waitForVoices(1000);
+      }
 
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.lang = lang;
@@ -78,12 +102,12 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
 
       window.speechSynthesis.speak(utterance);
     },
-    [onEnded, preferredVoiceNames]
+    [onEnded, preferredVoiceNames, waitForVoices]
   );
 
   const play = useCallback(() => {
     if (useTTS && fallbackText) {
-      playTTS(fallbackText, fallbackLang);
+      void playTTS(fallbackText, fallbackLang);
     } else if (effectiveSrc && audioRef.current) {
       audioRef.current.currentTime = 0;
       audioRef.current.play().catch((err) => {
@@ -91,7 +115,7 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
         console.warn("[AudioPlayer] Playback failed:", err);
         // Try TTS fallback
         if (fallbackText) {
-          playTTS(fallbackText, fallbackLang);
+          void playTTS(fallbackText, fallbackLang);
         }
       });
     }

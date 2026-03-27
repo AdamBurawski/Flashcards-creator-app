@@ -11,5 +11,5 @@ export const USE_SYSTEM_TTS_ONLY = true;
 export const SYSTEM_TTS_VOICE_PREFERENCES = {
   enTeacher: ["Samantha", "Google US English", "Microsoft Aria", "Allison"],
   enPeer: ["Daniel", "Alex", "Google UK English Male", "Microsoft Ryan"],
-  plNarrator: ["Zosia", "Google polski", "Microsoft Paulina", "Microsoft Zofia"],
+  plNarrator: ["Agnieszka", "Google polski", "Microsoft Paulina", "Microsoft Zofia"],
 } as const;
