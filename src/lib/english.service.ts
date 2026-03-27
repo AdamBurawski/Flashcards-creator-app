@@ -175,15 +175,17 @@ export async function getLessons(
     });
   }
 
-  // 4. Build response
-  const lessons: LessonOverview[] = [...lessonMap.values()].map((entry) => ({
-    lesson: entry.lesson,
-    stage: entry.stage,
-    level,
-    dialogues: entry.dialogues,
-    total_dialogues: entry.dialogues.length,
-    completed_dialogues: entry.dialogues.filter((d) => d.completed).length,
-  }));
+  // 4. Build response — sort explicitly by stage then lesson to guarantee stable order
+  const lessons: LessonOverview[] = [...lessonMap.values()]
+    .sort((a, b) => (a.stage !== b.stage ? a.stage - b.stage : a.lesson - b.lesson))
+    .map((entry) => ({
+      lesson: entry.lesson,
+      stage: entry.stage,
+      level,
+      dialogues: entry.dialogues,
+      total_dialogues: entry.dialogues.length,
+      completed_dialogues: entry.dialogues.filter((d) => d.completed).length,
+    }));
 
   return { data: { lessons } };
 }
