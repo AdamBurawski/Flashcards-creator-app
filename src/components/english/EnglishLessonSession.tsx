@@ -114,12 +114,14 @@ interface EnglishLessonSessionProps {
   level: CEFRLevel;
   stage: number;
   lesson: number;
+  startDialogueId?: string;
 }
 
 type TeacherSubPhase = "question" | "repeat" | "hint";
 
 interface SessionState {
   dialogues: EnglishDialogue[];
+  initialDialogueIndex: number;
   currentDialogueIndex: number;
   currentTurnIndex: number;
   phase: LessonPhase;
@@ -150,9 +152,10 @@ interface ConversationEntry {
  * Main lesson session orchestrator component.
  * Manages the full conversation flow: teacher speaking → student answer → evaluation → feedback.
  */
-const EnglishLessonSession: React.FC<EnglishLessonSessionProps> = ({ level, stage, lesson }) => {
+const EnglishLessonSession: React.FC<EnglishLessonSessionProps> = ({ level, stage, lesson, startDialogueId }) => {
   const [state, setState] = useState<SessionState>({
     dialogues: [],
+    initialDialogueIndex: 0,
     currentDialogueIndex: 0,
     currentTurnIndex: 0,
     phase: "teacher_speaking",
@@ -194,14 +197,19 @@ const EnglishLessonSession: React.FC<EnglishLessonSessionProps> = ({ level, stag
 
         if (cancelled) return;
 
-        const firstDialogue = dialogues[0];
+        const requestedDialogueIndex = startDialogueId
+          ? dialogues.findIndex((dialogue) => dialogue.id === startDialogueId)
+          : 0;
+        const startIndex = requestedDialogueIndex >= 0 ? requestedDialogueIndex : 0;
+        const firstDialogue = dialogues[startIndex];
         const hasIntro = !!firstDialogue?.intro;
 
         setState((prev) => ({
           ...prev,
           dialogues,
+          initialDialogueIndex: startIndex,
           isLoading: false,
-          currentDialogueIndex: 0,
+          currentDialogueIndex: startIndex,
           currentTurnIndex: 0,
           phase: hasIntro ? "intro_narrator" : "teacher_speaking",
           teacherSubPhase: "question",
@@ -236,7 +244,7 @@ const EnglishLessonSession: React.FC<EnglishLessonSessionProps> = ({ level, stag
     return () => {
       cancelled = true;
     };
-  }, [level, stage, lesson]);
+  }, [level, stage, lesson, startDialogueId]);
 
   // ---------- CURRENT TURN HELPERS ----------
 
@@ -454,7 +462,7 @@ const EnglishLessonSession: React.FC<EnglishLessonSessionProps> = ({ level, stag
   const handleRetry = useCallback(() => {
     setConversationHistory([]);
     setState((prev) => {
-      const firstDialogue = prev.dialogues[0];
+      const firstDialogue = prev.dialogues[prev.initialDialogueIndex];
       if (!firstDialogue) return prev;
 
       const hasIntro = !!firstDialogue.intro;
@@ -478,7 +486,7 @@ const EnglishLessonSession: React.FC<EnglishLessonSessionProps> = ({ level, stag
 
       return {
         ...prev,
-        currentDialogueIndex: 0,
+        currentDialogueIndex: prev.initialDialogueIndex,
         currentTurnIndex: 0,
         phase: hasIntro ? "intro_narrator" : "teacher_speaking",
         teacherSubPhase: "question",

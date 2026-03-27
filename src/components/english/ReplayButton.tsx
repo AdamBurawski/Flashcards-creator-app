@@ -1,13 +1,16 @@
 import React, { useState, useCallback } from "react";
+import { USE_SYSTEM_TTS_ONLY } from "../../lib/audio-settings";
+import { resolvePreferredVoice } from "../../lib/system-tts";
 
 interface ReplayButtonProps {
   text: string;
   lang: string;
   audioSrc: string | null | undefined;
   label?: string;
+  preferredVoiceNames?: readonly string[];
 }
 
-const ReplayButton: React.FC<ReplayButtonProps> = ({ text, lang, audioSrc, label }) => {
+const ReplayButton: React.FC<ReplayButtonProps> = ({ text, lang, audioSrc, label, preferredVoiceNames = [] }) => {
   const [isPlaying, setIsPlaying] = useState(false);
 
   const speakTTS = useCallback((t: string, l: string) => {
@@ -16,15 +19,19 @@ const ReplayButton: React.FC<ReplayButtonProps> = ({ text, lang, audioSrc, label
     const utt = new SpeechSynthesisUtterance(t);
     utt.lang = l;
     utt.rate = 0.9;
+    const preferredVoice = resolvePreferredVoice(l, preferredVoiceNames);
+    if (preferredVoice) {
+      utt.voice = preferredVoice;
+    }
     setIsPlaying(true);
     utt.onend = () => setIsPlaying(false);
     utt.onerror = () => setIsPlaying(false);
     window.speechSynthesis.speak(utt);
-  }, []);
+  }, [preferredVoiceNames]);
 
   const play = useCallback(() => {
     if (isPlaying) return;
-    const src = audioSrc ?? undefined;
+    const src = USE_SYSTEM_TTS_ONLY ? undefined : (audioSrc ?? undefined);
     if (src) {
       const audio = new Audio(src);
       setIsPlaying(true);

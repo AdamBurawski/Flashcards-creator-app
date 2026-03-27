@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import AudioPlayer from "./AudioPlayer";
 import ReplayButton from "./ReplayButton";
 import type { IntroDemoTurn } from "../../types/english";
+import { SYSTEM_TTS_VOICE_PREFERENCES, USE_SYSTEM_TTS_ONLY } from "../../lib/audio-settings";
 
 interface TeacherBubbleProps {
   /** Teacher's question/statement text */
@@ -39,6 +40,7 @@ function resolveImageSrc(dialogueId?: string, imageUrl?: string): string | null 
 }
 
 async function fetchTeacherAudio(text: string): Promise<string | undefined> {
+  if (USE_SYSTEM_TTS_ONLY) return undefined;
   try {
     const res = await fetch("/api/english/teacher-audio", {
       method: "POST",
@@ -54,6 +56,7 @@ async function fetchTeacherAudio(text: string): Promise<string | undefined> {
 }
 
 async function fetchNarratorAudio(text: string): Promise<string | undefined> {
+  if (USE_SYSTEM_TTS_ONLY) return undefined;
   try {
     const res = await fetch("/api/english/narrator-audio", {
       method: "POST",
@@ -115,7 +118,15 @@ const DemoPairHint: React.FC<DemoPairHintProps> = ({ pair }) => {
               >
                 <p className="leading-snug">{turn.text}</p>
                 <div className={`mt-1 flex ${isTeacher ? "justify-start" : "justify-end"}`}>
-                  <ReplayButton text={turn.text} lang="en-US" audioSrc={enSrc} label="EN" />
+                  <ReplayButton
+                    text={turn.text}
+                    lang="en-US"
+                    audioSrc={enSrc}
+                    label="EN"
+                    preferredVoiceNames={
+                      isTeacher ? SYSTEM_TTS_VOICE_PREFERENCES.enTeacher : SYSTEM_TTS_VOICE_PREFERENCES.enPeer
+                    }
+                  />
                 </div>
               </div>
 
@@ -124,7 +135,13 @@ const DemoPairHint: React.FC<DemoPairHintProps> = ({ pair }) => {
                 <div className="rounded-xl px-3 py-1 text-xs bg-amber-50 border border-amber-100 text-amber-800">
                   <p className="italic leading-snug">{turn.translation_pl}</p>
                   <div className={`mt-1 flex ${isTeacher ? "justify-start" : "justify-end"}`}>
-                    <ReplayButton text={turn.translation_pl} lang="pl-PL" audioSrc={plSrc} label="PL" />
+                    <ReplayButton
+                      text={turn.translation_pl}
+                      lang="pl-PL"
+                      audioSrc={plSrc}
+                      label="PL"
+                      preferredVoiceNames={SYSTEM_TTS_VOICE_PREFERENCES.plNarrator}
+                    />
                   </div>
                 </div>
               )}
@@ -169,6 +186,12 @@ const TeacherBubble: React.FC<TeacherBubbleProps> = ({
 
   useEffect(() => {
     if (!isActive) return;
+
+    if (USE_SYSTEM_TTS_ONLY) {
+      setAudioReady(true);
+      setElAudio({});
+      return;
+    }
 
     // Pre-generated audio available — no need to fetch
     if (audio?.question) {
@@ -277,6 +300,7 @@ const TeacherBubble: React.FC<TeacherBubbleProps> = ({
                 src={resolvedSrc}
                 fallbackText={subPhase === "hint" && hint ? hint : text}
                 fallbackLang="en-US"
+                preferredVoiceNames={SYSTEM_TTS_VOICE_PREFERENCES.enTeacher}
                 autoPlay={true}
                 onEnded={onAudioComplete}
                 showControls={true}

@@ -2,6 +2,7 @@ import React, { useState, useCallback, useEffect, useRef } from "react";
 import AudioPlayer from "./AudioPlayer";
 import ReplayButton from "./ReplayButton";
 import type { IntroDemoTurn } from "../../types/english";
+import { SYSTEM_TTS_VOICE_PREFERENCES, USE_SYSTEM_TTS_ONLY } from "../../lib/audio-settings";
 
 interface IntroDemoProps {
   demo: IntroDemoTurn[];
@@ -18,6 +19,7 @@ interface IntroDemoProps {
 }
 
 async function fetchTeacherAudio(text: string): Promise<string | undefined> {
+  if (USE_SYSTEM_TTS_ONLY) return undefined;
   try {
     const res = await fetch("/api/english/teacher-audio", {
       method: "POST",
@@ -33,6 +35,7 @@ async function fetchTeacherAudio(text: string): Promise<string | undefined> {
 }
 
 async function fetchNarratorAudio(text: string): Promise<string | undefined> {
+  if (USE_SYSTEM_TTS_ONLY) return undefined;
   try {
     const res = await fetch("/api/english/narrator-audio", {
       method: "POST",
@@ -226,6 +229,9 @@ const IntroDemo: React.FC<IntroDemoProps> = ({ demo, onFinish, initiallyDone = f
                       src={enSrc}
                       fallbackText={turn.text}
                       fallbackLang="en-US"
+                      preferredVoiceNames={
+                        isTeacher ? SYSTEM_TTS_VOICE_PREFERENCES.enTeacher : SYSTEM_TTS_VOICE_PREFERENCES.enPeer
+                      }
                       autoPlay={true}
                       onEnded={handleEnAudioEnd}
                       showControls={false}
@@ -235,7 +241,15 @@ const IntroDemo: React.FC<IntroDemoProps> = ({ demo, onFinish, initiallyDone = f
                   {/* EN replay button — appears after EN audio has played */}
                   {canReplayEn && (
                     <div className={`mt-1.5 flex ${isTeacher ? "justify-start" : "justify-end"}`}>
-                      <ReplayButton text={turn.text} lang="en-US" audioSrc={enSrc} label="EN" />
+                      <ReplayButton
+                        text={turn.text}
+                        lang="en-US"
+                        audioSrc={enSrc}
+                        label="EN"
+                        preferredVoiceNames={
+                          isTeacher ? SYSTEM_TTS_VOICE_PREFERENCES.enTeacher : SYSTEM_TTS_VOICE_PREFERENCES.enPeer
+                        }
+                      />
                     </div>
                   )}
                 </div>
@@ -258,6 +272,7 @@ const IntroDemo: React.FC<IntroDemoProps> = ({ demo, onFinish, initiallyDone = f
                         src={plSrc}
                         fallbackText={turn.translation_pl ?? ""}
                         fallbackLang="pl-PL"
+                        preferredVoiceNames={SYSTEM_TTS_VOICE_PREFERENCES.plNarrator}
                         autoPlay={true}
                         onEnded={handlePlAudioEnd}
                         showControls={false}
@@ -267,7 +282,13 @@ const IntroDemo: React.FC<IntroDemoProps> = ({ demo, onFinish, initiallyDone = f
                     {/* PL replay button — appears after PL audio has played */}
                     {canReplayPl && (
                       <div className={`mt-1.5 flex ${isTeacher ? "justify-start" : "justify-end"}`}>
-                        <ReplayButton text={turn.translation_pl ?? ""} lang="pl-PL" audioSrc={plSrc} label="PL" />
+                        <ReplayButton
+                          text={turn.translation_pl ?? ""}
+                          lang="pl-PL"
+                          audioSrc={plSrc}
+                          label="PL"
+                          preferredVoiceNames={SYSTEM_TTS_VOICE_PREFERENCES.plNarrator}
+                        />
                       </div>
                     )}
                   </div>

@@ -162,7 +162,7 @@ interface DialogueRowProps {
 }
 
 function DialogueRow({ dialogue, level, stage, lesson }: DialogueRowProps) {
-  const lessonUrl = `/english/lesson/${level}/${stage}/${lesson}`;
+  const lessonUrl = `/english/lesson/${level}/${stage}/${lesson}?dialogueId=${encodeURIComponent(dialogue.id)}`;
 
   return (
     <a

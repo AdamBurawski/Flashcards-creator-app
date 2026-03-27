@@ -4,7 +4,7 @@ import { defineConfig } from "astro/config";
 import react from "@astrojs/react";
 import sitemap from "@astrojs/sitemap";
 import tailwindcss from "@tailwindcss/vite";
-import netlify from "@astrojs/netlify/functions";
+import netlify from "@astrojs/netlify";
 
 // Lepsze wsparcie dla zmiennych środowiskowych
 const supabaseUrl = process.env.PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || "";
