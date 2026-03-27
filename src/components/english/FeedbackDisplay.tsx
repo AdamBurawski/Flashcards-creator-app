@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import AudioPlayer from "./AudioPlayer";
 import type { EvaluationResult } from "../../types/english";
+import { SYSTEM_TTS_VOICE_PREFERENCES, USE_SYSTEM_TTS_ONLY } from "../../lib/audio-settings";
 
 interface FeedbackDisplayProps {
   /** Evaluation result from the API */
@@ -12,6 +13,7 @@ interface FeedbackDisplayProps {
 }
 
 async function fetchNarratorAudio(text: string): Promise<string | undefined> {
+  if (USE_SYSTEM_TTS_ONLY) return undefined;
   try {
     const res = await fetch("/api/english/narrator-audio", {
       method: "POST",
@@ -36,6 +38,12 @@ const FeedbackDisplay: React.FC<FeedbackDisplayProps> = ({ result, onNext, isLas
   const [audioReady, setAudioReady] = useState(!!result.feedback_audio_url);
 
   useEffect(() => {
+    if (USE_SYSTEM_TTS_ONLY) {
+      setAudioSrc(undefined);
+      setAudioReady(true);
+      return;
+    }
+
     if (result.feedback_audio_url) {
       setAudioSrc(result.feedback_audio_url);
       setAudioReady(true);
@@ -107,6 +115,7 @@ const FeedbackDisplay: React.FC<FeedbackDisplayProps> = ({ result, onNext, isLas
               src={audioSrc}
               fallbackText={result.feedback_text}
               fallbackLang="pl-PL"
+              preferredVoiceNames={SYSTEM_TTS_VOICE_PREFERENCES.plNarrator}
               autoPlay={true}
               showControls={true}
             />

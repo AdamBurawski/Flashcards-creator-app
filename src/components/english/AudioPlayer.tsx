@@ -1,4 +1,6 @@
 import React, { useRef, useState, useEffect, useCallback } from "react";
+import { USE_SYSTEM_TTS_ONLY } from "../../lib/audio-settings";
+import { resolvePreferredVoice } from "../../lib/system-tts";
 
 interface AudioPlayerProps {
   /** URL or base64 data URL of the audio to play */
@@ -7,6 +9,8 @@ interface AudioPlayerProps {
   fallbackText?: string;
   /** Language for browser TTS fallback */
   fallbackLang?: string;
+  /** Optional list of preferred system voice names */
+  preferredVoiceNames?: readonly string[];
   /** Called when audio finishes playing */
   onEnded?: () => void;
   /** Auto-play when src changes */
@@ -25,6 +29,7 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
   src,
   fallbackText,
   fallbackLang = "en-US",
+  preferredVoiceNames = [],
   onEnded,
   autoPlay = false,
   showControls = true,
@@ -33,11 +38,12 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
   const audioRef = useRef<HTMLAudioElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [useTTS, setUseTTS] = useState(false);
+  const effectiveSrc = USE_SYSTEM_TTS_ONLY ? undefined : src;
 
   // Determine if we should use browser TTS
   useEffect(() => {
-    setUseTTS(!src && !!fallbackText);
-  }, [src, fallbackText]);
+    setUseTTS((!effectiveSrc && !!fallbackText) || USE_SYSTEM_TTS_ONLY);
+  }, [effectiveSrc, fallbackText]);
 
   const playTTS = useCallback(
     (text: string, lang: string) => {
@@ -55,6 +61,10 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
       utterance.lang = lang;
       utterance.rate = 0.9;
       utterance.pitch = 1.0;
+      const preferredVoice = resolvePreferredVoice(lang, preferredVoiceNames);
+      if (preferredVoice) {
+        utterance.voice = preferredVoice;
+      }
 
       utterance.onstart = () => setIsPlaying(true);
       utterance.onend = () => {
@@ -68,13 +78,13 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
 
       window.speechSynthesis.speak(utterance);
     },
-    [onEnded]
+    [onEnded, preferredVoiceNames]
   );
 
   const play = useCallback(() => {
     if (useTTS && fallbackText) {
       playTTS(fallbackText, fallbackLang);
-    } else if (src && audioRef.current) {
+    } else if (effectiveSrc && audioRef.current) {
       audioRef.current.currentTime = 0;
       audioRef.current.play().catch((err) => {
         // eslint-disable-next-line no-console
@@ -85,7 +95,7 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
         }
       });
     }
-  }, [useTTS, fallbackText, fallbackLang, src, playTTS]);
+  }, [useTTS, fallbackText, fallbackLang, effectiveSrc, playTTS]);
 
   // Auto-play effect
   useEffect(() => {
@@ -106,19 +116,25 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
   const handleAudioPause = () => setIsPlaying(false);
 
   if (!showControls) {
-    return src ? (
+    return effectiveSrc ? (
       // eslint-disable-next-line jsx-a11y/media-has-caption
-      <audio ref={audioRef} src={src} onPlay={handleAudioPlay} onEnded={handleAudioEnded} onPause={handleAudioPause} />
+      <audio
+        ref={audioRef}
+        src={effectiveSrc}
+        onPlay={handleAudioPlay}
+        onEnded={handleAudioEnded}
+        onPause={handleAudioPause}
+      />
     ) : null;
   }
 
   return (
     <div className={`inline-flex items-center gap-2 ${className}`}>
-      {src && (
+      {effectiveSrc && (
         // eslint-disable-next-line jsx-a11y/media-has-caption
         <audio
           ref={audioRef}
-          src={src}
+          src={effectiveSrc}
           onPlay={handleAudioPlay}
           onEnded={handleAudioEnded}
           onPause={handleAudioPause}

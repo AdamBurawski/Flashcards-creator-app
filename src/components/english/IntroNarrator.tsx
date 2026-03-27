@@ -1,6 +1,7 @@
 import React, { useRef, useCallback, useEffect, useState } from "react";
 import AudioPlayer from "./AudioPlayer";
 import type { DialogueIntro } from "../../types/english";
+import { SYSTEM_TTS_VOICE_PREFERENCES, USE_SYSTEM_TTS_ONLY } from "../../lib/audio-settings";
 
 interface IntroNarratorProps {
   intro: DialogueIntro;
@@ -34,6 +35,12 @@ const IntroNarrator: React.FC<IntroNarratorProps> = ({ intro, imageUrl, dialogue
 
   // Fetch ElevenLabs narrator audio from server (unless pre-baked URL already exists)
   useEffect(() => {
+    if (USE_SYSTEM_TTS_ONLY) {
+      setAudioSrc(undefined);
+      setAudioReady(true);
+      return;
+    }
+
     if (intro.narrator_audio_url) {
       setAudioSrc(intro.narrator_audio_url);
       setAudioReady(true);
@@ -114,6 +121,7 @@ const IntroNarrator: React.FC<IntroNarratorProps> = ({ intro, imageUrl, dialogue
                 src={audioSrc}
                 fallbackText={intro.narrator_pl}
                 fallbackLang="pl-PL"
+                preferredVoiceNames={SYSTEM_TTS_VOICE_PREFERENCES.plNarrator}
                 autoPlay={true}
                 onEnded={handleComplete}
                 showControls={true}

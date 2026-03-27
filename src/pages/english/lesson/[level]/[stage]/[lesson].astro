@@ -29,8 +29,15 @@ if (
 const cefrLevel = level as CEFRLevel;
 const stageNum = Number(stage);
 const lessonNum = Number(lesson);
+const startDialogueId = Astro.url.searchParams.get("dialogueId") ?? undefined;
 ---
 
 <Layout title={`Lekcja ${lessonNum} | ${cefrLevel}`} hideHeader={true}>
-  <EnglishLessonSession level={cefrLevel} stage={stageNum} lesson={lessonNum} client:load />
+  <EnglishLessonSession
+    level={cefrLevel}
+    stage={stageNum}
+    lesson={lessonNum}
+    startDialogueId={startDialogueId}
+    client:load
+  />
 </Layout>
