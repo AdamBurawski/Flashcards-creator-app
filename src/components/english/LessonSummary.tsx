@@ -53,7 +53,7 @@ const LessonSummary: React.FC<LessonSummaryProps> = ({
   // Get score color and label
   const getScoreInfo = (pct: number) => {
     if (pct >= 80) return { color: "text-green-600", bg: "bg-green-50", label: "Świetny wynik! 🎉" };
-    if (pct >= 60) return { color: "text-yellow-600", bg: "bg-yellow-50", label: "Dobra robota! 👍" };
+    if (pct >= 60) return { color: "text-amber-600", bg: "bg-amber-50", label: "Dobra robota! 👍" };
     return { color: "text-orange-600", bg: "bg-orange-50", label: "Ćwicz dalej! 💪" };
   };
 
@@ -106,44 +106,44 @@ const LessonSummary: React.FC<LessonSummaryProps> = ({
   }, [dialogues, totalTurns, correctTurns, durationSeconds]);
 
   return (
-    <div className="max-w-lg mx-auto">
+    <div className="mx-auto max-w-lg rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-sm sm:p-8">
       {/* Header */}
-      <div className="text-center mb-8">
-        <div className={`inline-flex items-center justify-center w-20 h-20 rounded-full ${scoreInfo.bg} mb-4`}>
+      <div className="mb-8 text-center">
+        <div className={`mb-4 inline-flex h-20 w-20 items-center justify-center rounded-full ${scoreInfo.bg}`}>
           <span className={`text-4xl font-bold ${scoreInfo.color}`}>{score}%</span>
         </div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-1">Podsumowanie lekcji</h2>
+        <h2 className="mb-1 text-2xl font-bold text-slate-900">Podsumowanie lekcji</h2>
         <p className={`text-lg font-medium ${scoreInfo.color}`}>{scoreInfo.label}</p>
       </div>
 
       {/* Stats grid */}
-      <div className="grid grid-cols-3 gap-4 mb-6">
-        <div className="bg-white border border-gray-200 rounded-xl p-4 text-center">
-          <div className="text-2xl font-bold text-gray-900">
+      <div className="mb-6 grid grid-cols-3 gap-4">
+        <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4 text-center">
+          <div className="text-2xl font-bold text-slate-900">
             {correctTurns}/{totalTurns}
           </div>
-          <div className="text-xs text-gray-500 mt-1">Poprawne odpowiedzi</div>
+          <div className="mt-1 text-xs text-slate-500">Poprawne odpowiedzi</div>
         </div>
-        <div className="bg-white border border-gray-200 rounded-xl p-4 text-center">
-          <div className="text-2xl font-bold text-gray-900">{formatDuration(durationSeconds)}</div>
-          <div className="text-xs text-gray-500 mt-1">Czas sesji</div>
+        <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4 text-center">
+          <div className="text-2xl font-bold text-slate-900">{formatDuration(durationSeconds)}</div>
+          <div className="mt-1 text-xs text-slate-500">Czas sesji</div>
         </div>
-        <div className="bg-white border border-gray-200 rounded-xl p-4 text-center">
-          <div className="text-2xl font-bold text-gray-900">{dialogues.length}</div>
-          <div className="text-xs text-gray-500 mt-1">Dialogi</div>
+        <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4 text-center">
+          <div className="text-2xl font-bold text-slate-900">{dialogues.length}</div>
+          <div className="mt-1 text-xs text-slate-500">Dialogi</div>
         </div>
       </div>
 
       {/* Progress bar */}
       <div className="mb-6">
-        <div className="flex justify-between text-sm text-gray-600 mb-1">
+        <div className="mb-1 flex justify-between text-sm text-slate-600">
           <span>Postęp</span>
           <span>{score}%</span>
         </div>
-        <div className="w-full h-3 bg-gray-100 rounded-full overflow-hidden">
+        <div className="h-3 w-full overflow-hidden rounded-full bg-slate-200">
           <div
             className={`h-full rounded-full transition-all duration-1000 ${
-              score >= 80 ? "bg-green-500" : score >= 60 ? "bg-yellow-500" : "bg-orange-500"
+              score >= 80 ? "bg-green-500" : score >= 60 ? "bg-amber-500" : "bg-orange-500"
             }`}
             style={{ width: `${score}%` }}
           />
@@ -153,10 +153,10 @@ const LessonSummary: React.FC<LessonSummaryProps> = ({
       {/* Vocabulary list */}
       {allVocab.length > 0 && (
         <div className="mb-6">
-          <h3 className="text-sm font-semibold text-gray-700 mb-2">Przerobione słownictwo:</h3>
+          <h3 className="mb-2 text-sm font-semibold text-slate-700">Przerobione słownictwo:</h3>
           <div className="flex flex-wrap gap-2">
             {allVocab.map((word) => (
-              <span key={word} className="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm font-medium">
+              <span key={word} className="rounded-full bg-indigo-50 px-3 py-1 text-sm font-medium text-indigo-700">
                 {word}
               </span>
             ))}
@@ -165,29 +165,27 @@ const LessonSummary: React.FC<LessonSummaryProps> = ({
       )}
 
       {/* Save status */}
-      {isSaving && <div className="text-center text-sm text-gray-500 mb-4">Zapisywanie postępu...</div>}
-      {saveError && <div className="text-center text-sm text-red-600 mb-4">{saveError}</div>}
+      {isSaving && <div className="mb-4 text-center text-sm text-slate-500">Zapisywanie postępu...</div>}
+      {saveError && <div className="mb-4 text-center text-sm text-red-600">{saveError}</div>}
 
       {/* Navigation buttons */}
       <div className="flex flex-col gap-3">
         <button
           type="button"
           onClick={onRetry}
-          className="w-full py-3 bg-blue-600 text-white rounded-xl font-medium
-            hover:bg-blue-700 transition-colors"
+          className="w-full rounded-xl bg-indigo-600 py-3 font-medium text-white shadow-sm transition-colors hover:bg-indigo-700"
         >
           Powtórz lekcję
         </button>
         <a
           href={`/english/${level}`}
-          className="w-full py-3 bg-white border border-gray-300 text-gray-700 rounded-xl font-medium
-            hover:bg-gray-50 transition-colors text-center block"
+          className="block w-full rounded-xl border border-slate-300 bg-white py-3 text-center font-medium text-slate-700 transition-colors hover:bg-slate-50"
         >
           Wróć do listy lekcji
         </a>
         <a
           href="/english"
-          className="w-full py-3 text-gray-500 text-sm text-center hover:text-gray-700 transition-colors block"
+          className="block w-full py-3 text-center text-sm text-slate-500 transition-colors hover:text-slate-700"
         >
           Wybór poziomu
         </a>

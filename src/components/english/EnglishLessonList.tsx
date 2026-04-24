@@ -40,11 +40,11 @@ export default function EnglishLessonList({ level }: EnglishLessonListProps) {
     return (
       <div className="space-y-6">
         {[1, 2, 3].map((i) => (
-          <div key={i} className="border rounded-xl p-6 animate-pulse bg-gray-50">
-            <div className="h-6 bg-gray-200 rounded w-1/3 mb-4" />
+          <div key={i} className="animate-pulse rounded-2xl border border-slate-200 bg-white/80 p-6 shadow-sm">
+            <div className="mb-4 h-6 w-1/3 rounded bg-slate-200" />
             <div className="space-y-3">
-              <div className="h-16 bg-gray-200 rounded" />
-              <div className="h-16 bg-gray-200 rounded" />
+              <div className="h-16 rounded bg-slate-200" />
+              <div className="h-16 rounded bg-slate-200" />
             </div>
           </div>
         ))}
@@ -54,7 +54,7 @@ export default function EnglishLessonList({ level }: EnglishLessonListProps) {
 
   if (error) {
     return (
-      <div className="rounded-lg border border-red-200 bg-red-50 p-6 text-center">
+      <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-center shadow-sm">
         <p className="text-red-700 font-medium">{error}</p>
         <button
           onClick={() => window.location.reload()}
@@ -68,7 +68,7 @@ export default function EnglishLessonList({ level }: EnglishLessonListProps) {
 
   if (lessons.length === 0) {
     return (
-      <div className="rounded-lg border border-gray-200 bg-gray-50 p-10 text-center">
+      <div className="rounded-2xl border border-slate-200 bg-white/80 p-10 text-center shadow-sm">
         <p className="text-gray-500 text-lg">Brak dostępnych lekcji dla poziomu {level}</p>
         <a href="/english" className="mt-3 inline-block text-sm text-blue-600 underline hover:text-blue-800">
           Wróć do wyboru poziomu
@@ -101,15 +101,15 @@ function LessonCard({ lesson, level }: LessonCardProps) {
   const isFullyCompleted = lesson.completed_dialogues === lesson.total_dialogues && lesson.total_dialogues > 0;
 
   return (
-    <div className="border border-gray-200 rounded-xl bg-white shadow-sm overflow-hidden">
+    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white/95 shadow-sm">
       {/* Lesson header */}
-      <div className="px-6 py-4 border-b border-gray-100 bg-gray-50">
+      <div className="border-b border-slate-200/70 bg-slate-50/70 px-6 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <h2 className="text-lg font-semibold text-gray-900">
+            <h2 className="text-lg font-semibold text-slate-900">
               Lekcja {lesson.lesson}
               {lesson.stage > 1 && (
-                <span className="ml-2 text-sm font-normal text-gray-500">(Etap {lesson.stage})</span>
+                <span className="ml-2 text-sm font-normal text-slate-500">(Etap {lesson.stage})</span>
               )}
             </h2>
             {isFullyCompleted && (
@@ -118,14 +118,14 @@ function LessonCard({ lesson, level }: LessonCardProps) {
               </span>
             )}
           </div>
-          <span className="text-sm text-gray-500">
+          <span className="text-sm text-slate-500">
             {lesson.completed_dialogues}/{lesson.total_dialogues} dialogów
           </span>
         </div>
 
         {/* Progress bar */}
         {lesson.total_dialogues > 0 && (
-          <div className="mt-2 w-full h-1.5 bg-gray-200 rounded-full overflow-hidden">
+          <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-slate-200">
             <div
               className="h-full bg-blue-500 rounded-full transition-all duration-500"
               style={{ width: `${completionPercent}%` }}
@@ -135,7 +135,7 @@ function LessonCard({ lesson, level }: LessonCardProps) {
       </div>
 
       {/* Dialogues list */}
-      <div className="divide-y divide-gray-100">
+      <div className="divide-y divide-slate-100">
         {lesson.dialogues.map((dialogue) => (
           <DialogueRow
             key={dialogue.id}
@@ -167,7 +167,7 @@ function DialogueRow({ dialogue, level, stage, lesson }: DialogueRowProps) {
   return (
     <a
       href={lessonUrl}
-      className="flex items-center justify-between px-6 py-4 hover:bg-gray-50 transition-colors group"
+      className="group flex items-center justify-between px-6 py-4 transition-colors hover:bg-slate-50/70"
     >
       <div className="flex items-center gap-4 min-w-0">
         {/* Status icon */}
@@ -188,15 +188,15 @@ function DialogueRow({ dialogue, level, stage, lesson }: DialogueRowProps) {
 
         {/* Title and tags */}
         <div className="min-w-0">
-          <h3 className="text-sm font-medium text-gray-900 truncate">{dialogue.title}</h3>
+          <h3 className="truncate text-sm font-medium text-slate-900">{dialogue.title}</h3>
           {dialogue.tags.length > 0 && (
             <div className="flex flex-wrap gap-1 mt-1">
               {dialogue.tags.slice(0, 3).map((tag) => (
-                <span key={tag} className="inline-block px-1.5 py-0.5 bg-gray-100 text-gray-500 rounded text-xs">
+                <span key={tag} className="inline-block rounded bg-slate-100 px-1.5 py-0.5 text-xs text-slate-500">
                   {tag}
                 </span>
               ))}
-              {dialogue.tags.length > 3 && <span className="text-xs text-gray-400">+{dialogue.tags.length - 3}</span>}
+              {dialogue.tags.length > 3 && <span className="text-xs text-slate-400">+{dialogue.tags.length - 3}</span>}
             </div>
           )}
         </div>
@@ -210,10 +210,10 @@ function DialogueRow({ dialogue, level, stage, lesson }: DialogueRowProps) {
         )}
 
         {/* Estimated time */}
-        <span className="text-xs text-gray-400">{formatDuration(dialogue.estimated_duration_seconds)}</span>
+        <span className="text-xs text-slate-400">{formatDuration(dialogue.estimated_duration_seconds)}</span>
 
         {/* Arrow */}
-        <span className="text-gray-300 group-hover:text-gray-500 transition-colors">→</span>
+        <span className="text-slate-300 transition-colors group-hover:text-slate-500">→</span>
       </div>
     </a>
   );

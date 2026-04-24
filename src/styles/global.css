@@ -4,25 +4,25 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
+  --radius: 0.85rem;
+  --background: oklch(0.985 0.01 85);
+  --foreground: oklch(0.28 0.03 65);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
+  --card-foreground: oklch(0.28 0.03 65);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.28 0.03 65);
+  --primary: oklch(0.5 0.09 250);
+  --primary-foreground: oklch(0.99 0 0);
+  --secondary: oklch(0.96 0.015 85);
+  --secondary-foreground: oklch(0.34 0.03 70);
+  --muted: oklch(0.96 0.015 85);
+  --muted-foreground: oklch(0.53 0.03 70);
+  --accent: oklch(0.94 0.03 95);
+  --accent-foreground: oklch(0.36 0.04 80);
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
+  --border: oklch(0.9 0.02 85);
+  --input: oklch(0.9 0.02 85);
+  --ring: oklch(0.67 0.09 250);
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
@@ -115,27 +115,19 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
+    background-image:
+      radial-gradient(circle at 12% 0%, rgba(180, 140, 80, 0.08), transparent 34%),
+      radial-gradient(circle at 88% 8%, rgba(84, 116, 160, 0.06), transparent 30%);
+    min-height: 100vh;
   }
-}
-.relative.w-full.mx-auto.min-h-screen.bg-gradient-to-br.from-indigo-900.via-purple-900.to-blue-900.p-4.sm\:p-8.text-white {
-  background: black;
-}
-.w-full.p-4.bg-white.shadow-sm {
-  background: black;
-}
-a {
-  color: white;
-}
-.px-4.py-2.rounded.bg-gray-200.text-gray-800.hover\:bg-gray-300 {
-  background: green;
-}
-.mt-8.p-4.border.rounded-lg.bg-gray-50.max-w-lg.mx-auto {
-  /* background: black; */
-}
- .mt-4.flex.justify-between {
+
   a {
-    background: black;
+    @apply text-inherit;
   }
- 
+
+  ::selection {
+    background: rgba(99, 102, 241, 0.2);
+    color: inherit;
+  }
 }

@@ -66,15 +66,15 @@ const FeedbackDisplay: React.FC<FeedbackDisplayProps> = ({ result, onNext, isLas
     <div className="mb-4">
       {/* Feedback card */}
       <div
-        className={`rounded-2xl border-2 px-5 py-4 ${
-          result.is_correct ? "bg-green-50 border-green-200" : "bg-amber-50 border-amber-200"
+        className={`rounded-3xl border px-5 py-4 shadow-sm ${
+          result.is_correct ? "border-green-200 bg-green-50/70" : "border-amber-200 bg-amber-50/70"
         }`}
       >
         {/* Header with icon */}
         <div className="flex items-center gap-2 mb-2">
           {result.is_correct ? (
             <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-              <svg className="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="h-5 w-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
               </svg>
             </div>
@@ -89,13 +89,13 @@ const FeedbackDisplay: React.FC<FeedbackDisplayProps> = ({ result, onNext, isLas
         </div>
 
         {/* Feedback text (in Polish) */}
-        <p className="text-gray-700 text-base mb-3">{result.feedback_text}</p>
+        <p className="mb-3 text-base text-slate-700">{result.feedback_text}</p>
 
         {/* Show correct answer if wrong */}
         {!result.is_correct && result.correct_answer && (
-          <div className="bg-white/60 rounded-lg px-3 py-2 mb-3">
-            <span className="text-sm text-gray-500">Poprawna odpowiedź:</span>
-            <p className="text-gray-800 font-medium mt-0.5">{result.correct_answer}</p>
+          <div className="mb-3 rounded-lg border border-amber-100 bg-white/80 px-3 py-2">
+            <span className="text-sm text-slate-500">Poprawna odpowiedź:</span>
+            <p className="mt-0.5 font-medium text-slate-800">{result.correct_answer}</p>
           </div>
         )}
 
@@ -120,8 +120,8 @@ const FeedbackDisplay: React.FC<FeedbackDisplayProps> = ({ result, onNext, isLas
               showControls={true}
             />
           ) : (
-            <div className="flex items-center gap-2 text-xs text-gray-400 mt-1">
-              <div className="w-3 h-3 border-2 border-gray-300 border-t-transparent rounded-full animate-spin" />
+            <div className="mt-1 flex items-center gap-2 text-xs text-slate-400">
+              <div className="h-3 w-3 animate-spin rounded-full border-2 border-slate-300 border-t-transparent" />
               <span>Ładowanie audio...</span>
             </div>
           )}
@@ -133,8 +133,7 @@ const FeedbackDisplay: React.FC<FeedbackDisplayProps> = ({ result, onNext, isLas
         <button
           type="button"
           onClick={onNext}
-          className="px-6 py-2.5 bg-blue-600 text-white rounded-xl font-medium
-            hover:bg-blue-700 transition-colors flex items-center gap-2"
+          className="flex items-center gap-2 rounded-2xl bg-blue-700 px-6 py-2.5 font-semibold text-white shadow-sm transition-colors hover:bg-blue-800"
         >
           {isLastTurn ? "Zobacz podsumowanie" : "Dalej"}
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">

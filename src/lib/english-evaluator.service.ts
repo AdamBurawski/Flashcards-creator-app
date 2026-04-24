@@ -86,26 +86,40 @@ export async function evaluateStudentAnswer(
 
 /** Call LLM for answer evaluation */
 async function callLLMEvaluation(command: EvaluateAnswerCommand, apiKey: string): Promise<EvaluationResult> {
-  const systemPrompt = `Jesteś asystentem nauczyciela angielskiego dla polskich dzieci (wiek 6-12 lat).
-Oceniasz odpowiedź ucznia na pytanie nauczyciela w dialogu konwersacyjnym.
+  const systemPrompt = `You are an English-learning assistant for Polish children (age 6-12).
+You evaluate a student's answer to a teacher question in a dialogue.
 
-Zasady:
-- Odpowiedz w formacie JSON.
-- Pole 'is_correct' (boolean): true jeśli odpowiedź jest poprawna gramatycznie i sensownie, nawet jeśli nie jest identyczna z wzorcem.
-- Pole 'feedback_text' (string): krótki feedback PO POLSKU (max 2 zdania), przyjazny dla dziecka.
-  - Jeśli poprawna: krótka pochwała, np. 'Świetnie!', 'Bardzo dobrze!', 'Super!'
-  - Jeśli błędna: delikatna korekta wskazująca błąd i podająca poprawną formę. Np. 'Prawie! Zamiast X powiedz Y.'
-- Pole 'grammar_ok' (boolean): czy gramatyka jest poprawna.
-- Pole 'vocabulary_ok' (boolean): czy użyte słownictwo jest poprawne w kontekście.
-- Pole 'structure_ok' (boolean): czy struktura zdania jest zgodna z ćwiczoną.
-- Bądź DELIKATNY i ZACHĘCAJĄCY. To jest dziecko. Nigdy nie mów, że odpowiedź jest 'zła'. Używaj 'prawie', 'spróbuj', 'posłuchaj'.`;
+Rules:
+- Respond ONLY in JSON format.
+- Mark an answer as correct if it is:
+  1) logically correct in context,
+  2) grammatically acceptable for learner level,
+  3) communicatively equivalent, even with different wording.
+- Do NOT require exact wording from the model answer.
+- Accept natural variants, e.g.:
+  - contractions/full forms (it's / it is, I'm / I am),
+  - shorter or longer valid answers (e.g. "No" or full sentence),
+  - minor lexical differences when meaning is preserved,
+  - valid paraphrases.
+- Field 'is_correct' (boolean): true for semantically and linguistically correct answers, even if not identical to expected answer.
+- Field 'feedback_text' (string): short feedback in POLISH (max 2 sentences), child-friendly.
+  - If correct: short praise.
+  - If incorrect: gentle correction with an example of the correct form.
+- Field 'grammar_ok' (boolean): grammar quality.
+- Field 'vocabulary_ok' (boolean): vocabulary suitability for context.
+- Field 'structure_ok' (boolean): structure suitability for target pattern (not necessarily identical).
+- Be gentle and encouraging. This is a child. Never say the answer is "bad". Use phrases like "almost", "try", "listen".
+- The student is a girl. In Polish feedback, use feminine forms when needed.
+`;
 
-  const userPrompt = `Pytanie nauczyciela: ${command.context.teacher_question}
-Oczekiwana odpowiedź: ${command.expected_answer}
-Ćwiczona struktura: ${command.target_structures.join(", ")}
-Odpowiedź ucznia: ${command.user_answer}
+  const userPrompt = `Teacher question: ${command.context.teacher_question}
+Expected answer: ${command.expected_answer}
+Accepted answers (examples): ${command.accepted_answers.join(" | ")}
+Target structures: ${command.target_structures.join(", ")}
+Student answer: ${command.user_answer}
 
-Oceń odpowiedź ucznia. Odpowiedz WYŁĄCZNIE w formacie JSON:
+Evaluate flexibly: prioritize meaning, correctness, and naturalness over literal matching.
+Respond ONLY in JSON format:
 {"is_correct": boolean, "feedback_text": string, "grammar_ok": boolean, "vocabulary_ok": boolean, "structure_ok": boolean}`;
 
   const response = await fetch(OPENROUTER_API_URL, {

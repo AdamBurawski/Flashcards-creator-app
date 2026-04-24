@@ -13,21 +13,24 @@ interface ReplayButtonProps {
 const ReplayButton: React.FC<ReplayButtonProps> = ({ text, lang, audioSrc, label, preferredVoiceNames = [] }) => {
   const [isPlaying, setIsPlaying] = useState(false);
 
-  const speakTTS = useCallback((t: string, l: string) => {
-    if (!("speechSynthesis" in window)) return;
-    window.speechSynthesis.cancel();
-    const utt = new SpeechSynthesisUtterance(t);
-    utt.lang = l;
-    utt.rate = 0.9;
-    const preferredVoice = resolvePreferredVoice(l, preferredVoiceNames);
-    if (preferredVoice) {
-      utt.voice = preferredVoice;
-    }
-    setIsPlaying(true);
-    utt.onend = () => setIsPlaying(false);
-    utt.onerror = () => setIsPlaying(false);
-    window.speechSynthesis.speak(utt);
-  }, [preferredVoiceNames]);
+  const speakTTS = useCallback(
+    (t: string, l: string) => {
+      if (!("speechSynthesis" in window)) return;
+      window.speechSynthesis.cancel();
+      const utt = new SpeechSynthesisUtterance(t);
+      utt.lang = l;
+      utt.rate = 0.9;
+      const preferredVoice = resolvePreferredVoice(l, preferredVoiceNames);
+      if (preferredVoice) {
+        utt.voice = preferredVoice;
+      }
+      setIsPlaying(true);
+      utt.onend = () => setIsPlaying(false);
+      utt.onerror = () => setIsPlaying(false);
+      window.speechSynthesis.speak(utt);
+    },
+    [preferredVoiceNames]
+  );
 
   const play = useCallback(() => {
     if (isPlaying) return;
@@ -54,10 +57,10 @@ const ReplayButton: React.FC<ReplayButtonProps> = ({ text, lang, audioSrc, label
       type="button"
       onClick={play}
       disabled={isPlaying}
-      className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium transition-all ${
+      className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold shadow-sm transition-all ${
         isPlaying
-          ? "bg-blue-100 text-blue-600 animate-pulse cursor-default"
-          : "bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-700"
+          ? "cursor-default border-blue-200 bg-blue-100 text-blue-800 animate-pulse"
+          : "border-amber-200 bg-white text-slate-700 hover:border-amber-300 hover:bg-amber-50"
       }`}
       title="Odsłuchaj ponownie"
     >
