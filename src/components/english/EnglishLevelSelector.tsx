@@ -104,7 +104,7 @@ export default function EnglishLevelSelector() {
         }));
 
   return (
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6">
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6">
       {displayLevels.map((levelData) => {
         const config = LEVEL_CONFIG[levelData.level];
         const progressColor = PROGRESS_COLORS[levelData.level];
@@ -134,7 +134,9 @@ export default function EnglishLevelSelector() {
             </div>
 
             {/* Description */}
-            <p className={`mb-5 text-sm leading-relaxed ${hasContent ? "text-slate-600" : "text-slate-400"}`}>{config.description}</p>
+            <p className={`mb-5 text-sm leading-relaxed ${hasContent ? "text-slate-600" : "text-slate-400"}`}>
+              {config.description}
+            </p>
 
             {/* Progress bar */}
             <div className="mb-2 h-2 w-full overflow-hidden rounded-full bg-slate-200">
