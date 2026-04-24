@@ -65,3 +65,5 @@ auth-error.png
 import-success.png
 login-form-filled.png
 login-page.png
+# Local Netlify folder
+.netlify
