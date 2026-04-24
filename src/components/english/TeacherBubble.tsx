@@ -36,8 +36,9 @@ interface TeacherBubbleProps {
 
 /** Resolve image source: explicit URL takes priority, then local asset by dialogue ID */
 function resolveImageSrc(dialogueId?: string, imageUrl?: string): string | null {
-  if (imageUrl) return imageUrl;
+  // Prefer local asset mapped by dialogue ID to avoid DB placeholder URLs.
   if (dialogueId) return `/images/english/${dialogueId}.webp`;
+  if (imageUrl && !imageUrl.includes("placehold.co")) return imageUrl;
   return null;
 }
 
@@ -100,7 +101,7 @@ const DemoPairHint: React.FC<DemoPairHintProps> = ({ pair }) => {
   }, [pair]);
 
   return (
-    <div className="mt-2 space-y-2.5 rounded-2xl border border-violet-200 bg-gradient-to-b from-violet-50/70 to-white px-3 py-2.5">
+    <div className="mt-2 space-y-2.5 rounded-2xl border border-amber-200 bg-amber-50/40 px-3 py-2.5">
       {pair.map((turn, idx) => {
         const isTeacher = turn.role === "teacher";
         const enSrc = turn.audio_url ?? enAudioCache[idx] ?? undefined;
@@ -114,8 +115,8 @@ const DemoPairHint: React.FC<DemoPairHintProps> = ({ pair }) => {
               <div
                 className={`rounded-xl px-3 py-1.5 text-sm ${
                   isTeacher
-                    ? "rounded-bl-sm border border-violet-200 bg-violet-100 text-violet-900"
-                    : "rounded-br-sm border border-blue-200 bg-blue-100 text-blue-900"
+                    ? "rounded-bl-sm border border-blue-200 bg-blue-100 text-blue-900"
+                    : "rounded-br-sm border border-amber-200 bg-amber-100 text-amber-900"
                 }`}
               >
                 <p className="leading-snug">{turn.text}</p>
@@ -238,7 +239,7 @@ const TeacherBubble: React.FC<TeacherBubbleProps> = ({
   return (
     <div className={`mb-4 flex items-start gap-3 transition-opacity ${isActive ? "opacity-100" : "opacity-80"}`}>
       {/* Teacher avatar */}
-      <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full border border-indigo-100 bg-indigo-50 shadow-sm">
+      <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full border border-amber-200 bg-amber-50 shadow-sm">
         <span className="text-lg" role="img" aria-label="Nauczyciel">
           🎓
         </span>
@@ -246,7 +247,7 @@ const TeacherBubble: React.FC<TeacherBubbleProps> = ({
 
       {/* Bubble content */}
       <div className="flex-1 max-w-4xl">
-        <div className="rounded-3xl rounded-tl-sm border border-violet-200 bg-gradient-to-b from-violet-50/60 to-white px-4 py-3 shadow-sm">
+        <div className="rounded-3xl rounded-tl-sm border border-amber-200 bg-white px-4 py-3 shadow-sm">
           {/* Dialogue image — visual context */}
           {showImage && imageSrc && !imageError && (
             <div className="-mx-1 -mt-1 mb-3 flex justify-center">
@@ -262,18 +263,18 @@ const TeacherBubble: React.FC<TeacherBubbleProps> = ({
 
           <p className="text-base leading-relaxed text-slate-800">{text}</p>
 
-          {showHint && <p className="mt-2 border-t border-violet-200 pt-2 text-sm italic text-violet-700">💡 {hint}</p>}
+          {showHint && <p className="mt-2 border-t border-amber-200 pt-2 text-sm italic text-amber-800">💡 {hint}</p>}
 
           {/* "Przypomnij" toggle button */}
           {demoPair && demoPair.length > 0 && (
-            <div className="mt-2.5 border-t border-violet-200 pt-2">
+            <div className="mt-2.5 border-t border-amber-200 pt-2">
               <button
                 type="button"
                 onClick={handleToggleDemoHint}
                 className={`inline-flex items-center gap-1.5 rounded-xl px-2.5 py-1 text-xs font-semibold shadow-sm transition-all ${
                   showDemoHint
-                    ? "border border-violet-200 bg-violet-100 text-violet-700 hover:bg-violet-200"
-                    : "border border-violet-200 bg-white text-violet-600 hover:-translate-y-px hover:bg-violet-50"
+                    ? "border border-amber-200 bg-amber-100 text-amber-800 hover:bg-amber-200"
+                    : "border border-amber-200 bg-white text-slate-700 hover:bg-amber-50"
                 }`}
               >
                 <span>{showDemoHint ? "✕" : "💡"}</span>

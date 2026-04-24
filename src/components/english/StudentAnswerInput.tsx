@@ -187,7 +187,7 @@ const StudentAnswerInput: React.FC<StudentAnswerInputProps> = ({
   };
 
   return (
-    <div className="space-y-3 rounded-2xl border border-indigo-100 bg-gradient-to-b from-indigo-50/50 to-white p-3">
+    <div className="space-y-3 rounded-2xl border border-amber-200 bg-amber-50/35 p-3">
       {/* Recording / Input area */}
       <div className="flex items-end gap-3">
         {/* Microphone button */}
@@ -198,7 +198,7 @@ const StudentAnswerInput: React.FC<StudentAnswerInputProps> = ({
           className={`flex-shrink-0 rounded-full p-3 transition-all ${
             isRecording
               ? "animate-pulse bg-rose-500 text-white shadow-lg shadow-rose-200"
-              : "border-2 border-violet-200 bg-white text-violet-600 shadow-sm hover:-translate-y-px hover:bg-violet-50"
+              : "border-2 border-amber-200 bg-white text-slate-700 shadow-sm hover:bg-amber-50"
           } disabled:opacity-50 disabled:cursor-not-allowed`}
           aria-label={isRecording ? "Zatrzymaj nagrywanie" : "Nagraj odpowiedź"}
         >
@@ -226,8 +226,8 @@ const StudentAnswerInput: React.FC<StudentAnswerInputProps> = ({
             disabled={disabled || isRecording || isTranscribing}
             placeholder={isRecording ? "Nagrywanie..." : isTranscribing ? "Transkrypcja..." : placeholder}
             rows={2}
-            className="w-full resize-none rounded-2xl border-2 border-indigo-100 bg-white px-4 py-3 text-base
-              shadow-sm transition focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200
+            className="w-full resize-none rounded-2xl border-2 border-amber-200 bg-white px-4 py-3 text-base
+              shadow-sm transition focus:border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-200
               disabled:bg-slate-50 disabled:text-slate-500"
           />
         </div>
@@ -237,11 +237,11 @@ const StudentAnswerInput: React.FC<StudentAnswerInputProps> = ({
           type="button"
           onClick={onSubmit}
           disabled={disabled || isRecording || isTranscribing || !value.trim()}
-          className="flex-shrink-0 rounded-2xl bg-gradient-to-r from-violet-500 to-indigo-500 px-5 py-3 font-semibold text-white shadow-md
-            transition-all hover:-translate-y-px hover:from-violet-600 hover:to-indigo-600
-            disabled:cursor-not-allowed disabled:from-slate-300 disabled:to-slate-300 disabled:text-slate-500"
+          className="flex-shrink-0 rounded-2xl bg-blue-700 px-5 py-3 font-semibold text-white shadow-sm
+            transition-colors hover:bg-blue-800
+            disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500"
         >
-          Wyślij ✨
+          Wyślij
         </button>
       </div>
 

@@ -180,9 +180,9 @@ const IntroDemo: React.FC<IntroDemoProps> = ({ demo, onFinish, initiallyDone = f
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-4 px-4 py-6">
       {/* Label */}
       <div className="flex justify-center">
-        <div className="flex items-center gap-2 rounded-full bg-violet-50 px-3 py-1.5">
+        <div className="flex items-center gap-2 rounded-full bg-amber-50 px-3 py-1.5">
           <span className="text-xl">🎬</span>
-          <span className="text-sm font-semibold uppercase tracking-wider text-indigo-600">Przykładowa rozmowa</span>
+          <span className="text-sm font-semibold uppercase tracking-wider text-amber-800">Przykładowa rozmowa</span>
         </div>
       </div>
 
@@ -219,8 +219,8 @@ const IntroDemo: React.FC<IntroDemoProps> = ({ demo, onFinish, initiallyDone = f
                   className={`max-w-sm rounded-3xl px-4 py-2.5 shadow-sm
                     ${
                       isTeacher
-                        ? "rounded-bl-sm border border-violet-200 bg-gradient-to-b from-violet-50 to-white"
-                        : "rounded-br-sm border border-blue-200 bg-gradient-to-b from-blue-50 to-white"
+                        ? "rounded-bl-sm border border-blue-200 bg-blue-50/55"
+                        : "rounded-br-sm border border-amber-200 bg-amber-50/55"
                     }`}
                 >
                   <p className="text-base leading-snug text-slate-800">{turn.text}</p>
@@ -258,7 +258,7 @@ const IntroDemo: React.FC<IntroDemoProps> = ({ demo, onFinish, initiallyDone = f
 
                 {/* PL translation row — fades in after EN plays */}
                 {showPl && (
-                  <div className="max-w-sm animate-[fadeIn_0.4s_ease-in] rounded-2xl border border-amber-200 bg-gradient-to-b from-amber-50 to-white px-4 py-1.5">
+                  <div className="max-w-sm animate-[fadeIn_0.4s_ease-in] rounded-2xl border border-amber-200 bg-amber-50 px-4 py-1.5">
                     <p className="text-amber-800 text-sm italic leading-snug">{turn.translation_pl}</p>
 
                     {/* PL loading spinner while fetching narrator audio */}
@@ -330,8 +330,8 @@ const IntroDemo: React.FC<IntroDemoProps> = ({ demo, onFinish, initiallyDone = f
           <button
             type="button"
             onClick={onFinish}
-            className="rounded-2xl bg-gradient-to-r from-violet-500 to-indigo-500 px-10 py-3.5 text-lg font-bold text-white
-              shadow-md transition-all hover:-translate-y-px hover:from-violet-600 hover:to-indigo-600
+            className="rounded-2xl bg-blue-700 px-10 py-3.5 text-lg font-semibold text-white
+              shadow-sm transition-colors hover:bg-blue-800
               animate-[fadeIn_0.4s_ease-in]"
           >
             {finishLabel ?? "Zaczynamy! 🚀"}

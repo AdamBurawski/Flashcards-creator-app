@@ -658,7 +658,7 @@ const EnglishLessonSession: React.FC<EnglishLessonSessionProps> = ({ level, stag
                 if (entry.type === "student") {
                   return (
                     <div key={`conv-${idx}`} className="mb-4 flex justify-end">
-                      <div className="max-w-lg rounded-3xl rounded-tr-sm border border-indigo-300 bg-gradient-to-b from-indigo-500 to-violet-500 px-4 py-3 text-white shadow-md">
+                      <div className="max-w-lg rounded-3xl rounded-tr-sm border border-blue-300 bg-blue-700 px-4 py-3 text-white shadow-sm">
                         <p className="text-base">{entry.text}</p>
                       </div>
                     </div>
@@ -710,7 +710,7 @@ const EnglishLessonSession: React.FC<EnglishLessonSessionProps> = ({ level, stag
       {/* Input area */}
       {state.phase === "student_turn" && (
         <div className="border-t border-slate-200/70 bg-white/85 px-4 py-4 backdrop-blur">
-          <div className="mx-auto w-full max-w-5xl rounded-3xl border border-indigo-200 bg-gradient-to-b from-indigo-50/60 to-white p-4 shadow-sm">
+          <div className="mx-auto w-full max-w-5xl rounded-3xl border border-amber-200 bg-amber-50/45 p-4 shadow-sm">
             {state.error && (
               <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
                 {state.error}

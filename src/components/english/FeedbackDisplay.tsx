@@ -67,9 +67,7 @@ const FeedbackDisplay: React.FC<FeedbackDisplayProps> = ({ result, onNext, isLas
       {/* Feedback card */}
       <div
         className={`rounded-3xl border px-5 py-4 shadow-sm ${
-          result.is_correct
-            ? "border-green-200 bg-gradient-to-b from-green-50 to-white"
-            : "border-amber-200 bg-gradient-to-b from-amber-50 to-white"
+          result.is_correct ? "border-green-200 bg-green-50/70" : "border-amber-200 bg-amber-50/70"
         }`}
       >
         {/* Header with icon */}
@@ -135,7 +133,7 @@ const FeedbackDisplay: React.FC<FeedbackDisplayProps> = ({ result, onNext, isLas
         <button
           type="button"
           onClick={onNext}
-          className="flex items-center gap-2 rounded-2xl bg-gradient-to-r from-violet-500 to-indigo-500 px-6 py-2.5 font-semibold text-white shadow-md transition-all hover:-translate-y-px hover:from-violet-600 hover:to-indigo-600"
+          className="flex items-center gap-2 rounded-2xl bg-blue-700 px-6 py-2.5 font-semibold text-white shadow-sm transition-colors hover:bg-blue-800"
         >
           {isLastTurn ? "Zobacz podsumowanie" : "Dalej"}
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">

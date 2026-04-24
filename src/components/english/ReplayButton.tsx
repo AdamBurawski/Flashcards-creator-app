@@ -56,8 +56,8 @@ const ReplayButton: React.FC<ReplayButtonProps> = ({ text, lang, audioSrc, label
       disabled={isPlaying}
       className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold shadow-sm transition-all ${
         isPlaying
-          ? "cursor-default border-indigo-200 bg-indigo-100 text-indigo-700 animate-pulse"
-          : "border-violet-200 bg-white text-violet-600 hover:-translate-y-px hover:border-violet-300 hover:bg-violet-50"
+          ? "cursor-default border-blue-200 bg-blue-100 text-blue-800 animate-pulse"
+          : "border-amber-200 bg-white text-slate-700 hover:border-amber-300 hover:bg-amber-50"
       }`}
       title="Odsłuchaj ponownie"
     >
