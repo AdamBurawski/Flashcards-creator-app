@@ -13,6 +13,8 @@ interface TeacherBubbleProps {
   dialogueId?: string;
   /** Optional override image URL (e.g. from DB or external source) */
   imageUrl?: string;
+  /** Whether dialogue image should be rendered in this bubble */
+  showImage?: boolean;
   /** Audio URLs for the teacher's turn */
   audio?: {
     question?: string;
@@ -98,7 +100,7 @@ const DemoPairHint: React.FC<DemoPairHintProps> = ({ pair }) => {
   }, [pair]);
 
   return (
-    <div className="mt-2 rounded-xl border border-indigo-100 bg-white/80 px-3 py-2.5 space-y-2.5">
+    <div className="mt-2 space-y-2.5 rounded-2xl border border-violet-200 bg-gradient-to-b from-violet-50/70 to-white px-3 py-2.5">
       {pair.map((turn, idx) => {
         const isTeacher = turn.role === "teacher";
         const enSrc = turn.audio_url ?? enAudioCache[idx] ?? undefined;
@@ -112,8 +114,8 @@ const DemoPairHint: React.FC<DemoPairHintProps> = ({ pair }) => {
               <div
                 className={`rounded-xl px-3 py-1.5 text-sm ${
                   isTeacher
-                    ? "bg-indigo-100 text-indigo-900 rounded-bl-sm"
-                    : "bg-green-100 text-green-900 rounded-br-sm"
+                    ? "rounded-bl-sm border border-violet-200 bg-violet-100 text-violet-900"
+                    : "rounded-br-sm border border-blue-200 bg-blue-100 text-blue-900"
                 }`}
               >
                 <p className="leading-snug">{turn.text}</p>
@@ -132,7 +134,7 @@ const DemoPairHint: React.FC<DemoPairHintProps> = ({ pair }) => {
 
               {/* PL translation */}
               {turn.translation_pl && (
-                <div className="rounded-xl px-3 py-1 text-xs bg-amber-50 border border-amber-100 text-amber-800">
+                <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-1 text-xs text-amber-800">
                   <p className="italic leading-snug">{turn.translation_pl}</p>
                   <div className={`mt-1 flex ${isTeacher ? "justify-start" : "justify-end"}`}>
                     <ReplayButton
@@ -167,6 +169,7 @@ const TeacherBubble: React.FC<TeacherBubbleProps> = ({
   hint,
   dialogueId,
   imageUrl,
+  showImage = true,
   audio,
   subPhase,
   onAudioComplete,
@@ -233,44 +236,44 @@ const TeacherBubble: React.FC<TeacherBubbleProps> = ({
   };
 
   return (
-    <div className={`flex items-start gap-3 mb-4 ${isActive ? "opacity-100" : "opacity-70"}`}>
+    <div className={`mb-4 flex items-start gap-3 transition-opacity ${isActive ? "opacity-100" : "opacity-80"}`}>
       {/* Teacher avatar */}
-      <div className="flex-shrink-0 w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center">
+      <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full border border-indigo-100 bg-indigo-50 shadow-sm">
         <span className="text-lg" role="img" aria-label="Nauczyciel">
           🎓
         </span>
       </div>
 
       {/* Bubble content */}
-      <div className="flex-1 max-w-lg">
-        <div className="bg-indigo-50 border border-indigo-100 rounded-2xl rounded-tl-sm px-4 py-3">
+      <div className="flex-1 max-w-4xl">
+        <div className="rounded-3xl rounded-tl-sm border border-violet-200 bg-gradient-to-b from-violet-50/60 to-white px-4 py-3 shadow-sm">
           {/* Dialogue image — visual context */}
-          {imageSrc && !imageError && (
-            <div className="mb-3 -mx-1 -mt-1">
+          {showImage && imageSrc && !imageError && (
+            <div className="-mx-1 -mt-1 mb-3 flex justify-center">
               <img
                 src={imageSrc}
                 alt="Kontekst wizualny dialogu"
-                className="w-full max-h-48 object-contain rounded-xl bg-white"
+                className="max-h-[520px] w-full max-w-3xl rounded-xl border border-slate-200 bg-slate-50 object-contain"
                 onError={() => setImageError(true)}
                 loading="lazy"
               />
             </div>
           )}
 
-          <p className="text-gray-800 text-base leading-relaxed">{text}</p>
+          <p className="text-base leading-relaxed text-slate-800">{text}</p>
 
-          {showHint && <p className="mt-2 text-indigo-600 text-sm italic border-t border-indigo-100 pt-2">💡 {hint}</p>}
+          {showHint && <p className="mt-2 border-t border-violet-200 pt-2 text-sm italic text-violet-700">💡 {hint}</p>}
 
           {/* "Przypomnij" toggle button */}
           {demoPair && demoPair.length > 0 && (
-            <div className="mt-2.5 pt-2 border-t border-indigo-100">
+            <div className="mt-2.5 border-t border-violet-200 pt-2">
               <button
                 type="button"
                 onClick={handleToggleDemoHint}
-                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${
+                className={`inline-flex items-center gap-1.5 rounded-xl px-2.5 py-1 text-xs font-semibold shadow-sm transition-all ${
                   showDemoHint
-                    ? "bg-indigo-100 text-indigo-700 hover:bg-indigo-200"
-                    : "bg-white text-indigo-500 hover:bg-indigo-50 border border-indigo-100"
+                    ? "border border-violet-200 bg-violet-100 text-violet-700 hover:bg-violet-200"
+                    : "border border-violet-200 bg-white text-violet-600 hover:-translate-y-px hover:bg-violet-50"
                 }`}
               >
                 <span>{showDemoHint ? "✕" : "💡"}</span>
@@ -292,8 +295,8 @@ const TeacherBubble: React.FC<TeacherBubbleProps> = ({
           <div className="mt-1 ml-1">
             {!audioReady ? (
               <div className="flex items-center gap-2 py-1">
-                <div className="w-3 h-3 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin" />
-                <span className="text-xs text-gray-400">Przygotowuję audio...</span>
+                <div className="h-3 w-3 animate-spin rounded-full border-2 border-indigo-400 border-t-transparent" />
+                <span className="text-xs text-slate-400">Przygotowuję audio...</span>
               </div>
             ) : (
               <AudioPlayer
@@ -312,7 +315,7 @@ const TeacherBubble: React.FC<TeacherBubbleProps> = ({
         {/* Phase indicator */}
         {isActive && audioReady && (
           <div className="mt-1 ml-1">
-            <span className="text-xs text-gray-400">
+            <span className="text-xs text-slate-400">
               {subPhase === "question" && "Posłuchaj pytania..."}
               {subPhase === "repeat" && "Posłuchaj raz jeszcze..."}
               {subPhase === "hint" && "Podpowiedź:"}

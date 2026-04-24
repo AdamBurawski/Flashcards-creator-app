@@ -177,15 +177,17 @@ const IntroDemo: React.FC<IntroDemoProps> = ({ demo, onFinish, initiallyDone = f
   const allVisible = visibleCount >= demo.length;
 
   return (
-    <div className="flex flex-col gap-4 py-6 px-4 max-w-lg mx-auto w-full">
+    <div className="mx-auto flex w-full max-w-3xl flex-col gap-4 px-4 py-6">
       {/* Label */}
-      <div className="flex items-center gap-2 justify-center">
-        <span className="text-xl">🎬</span>
-        <span className="text-sm font-semibold text-indigo-600 uppercase tracking-wider">Przykładowa rozmowa</span>
+      <div className="flex justify-center">
+        <div className="flex items-center gap-2 rounded-full bg-violet-50 px-3 py-1.5">
+          <span className="text-xl">🎬</span>
+          <span className="text-sm font-semibold uppercase tracking-wider text-indigo-600">Przykładowa rozmowa</span>
+        </div>
       </div>
 
       {/* Animated turn bubbles */}
-      <div className="space-y-3 min-h-[120px]">
+      <div className="min-h-[120px] space-y-3">
         {demo.slice(0, visibleCount).map((turn, idx) => {
           const isTeacher = turn.role === "teacher";
           const isActive = idx === activeIdx && !isAllDone;
@@ -214,14 +216,14 @@ const IntroDemo: React.FC<IntroDemoProps> = ({ demo, onFinish, initiallyDone = f
               <div className={`flex flex-col gap-1 ${isTeacher ? "items-start" : "items-end"}`}>
                 {/* EN bubble */}
                 <div
-                  className={`max-w-xs rounded-2xl px-4 py-2.5 shadow-sm
+                  className={`max-w-sm rounded-3xl px-4 py-2.5 shadow-sm
                     ${
                       isTeacher
-                        ? "bg-indigo-50 border border-indigo-100 rounded-bl-sm"
-                        : "bg-green-50 border border-green-100 rounded-br-sm"
+                        ? "rounded-bl-sm border border-violet-200 bg-gradient-to-b from-violet-50 to-white"
+                        : "rounded-br-sm border border-blue-200 bg-gradient-to-b from-blue-50 to-white"
                     }`}
                 >
-                  <p className="text-gray-800 text-base leading-snug">{turn.text}</p>
+                  <p className="text-base leading-snug text-slate-800">{turn.text}</p>
 
                   {/* EN AudioPlayer — auto-plays for active turn in "en" phase */}
                   {isActive && activePhase === "en" && enAudioReady && (
@@ -256,7 +258,7 @@ const IntroDemo: React.FC<IntroDemoProps> = ({ demo, onFinish, initiallyDone = f
 
                 {/* PL translation row — fades in after EN plays */}
                 {showPl && (
-                  <div className="max-w-xs rounded-xl px-4 py-1.5 bg-amber-50 border border-amber-100 animate-[fadeIn_0.4s_ease-in]">
+                  <div className="max-w-sm animate-[fadeIn_0.4s_ease-in] rounded-2xl border border-amber-200 bg-gradient-to-b from-amber-50 to-white px-4 py-1.5">
                     <p className="text-amber-800 text-sm italic leading-snug">{turn.translation_pl}</p>
 
                     {/* PL loading spinner while fetching narrator audio */}
@@ -303,19 +305,19 @@ const IntroDemo: React.FC<IntroDemoProps> = ({ demo, onFinish, initiallyDone = f
           <div
             className={`flex items-center gap-2 ${demo[visibleCount]?.role !== "teacher" ? "flex-row-reverse" : ""}`}
           >
-            <div className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
+            <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-slate-100">
               <span className="text-base">{demo[visibleCount]?.role === "teacher" ? "🎓" : "👦"}</span>
             </div>
             {!enAudioReady ? (
-              <div className="bg-gray-100 rounded-2xl px-4 py-3 flex items-center gap-2">
-                <div className="w-3 h-3 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin" />
-                <span className="text-xs text-gray-400">...</span>
+              <div className="flex items-center gap-2 rounded-2xl bg-slate-100 px-4 py-3">
+                <div className="h-3 w-3 animate-spin rounded-full border-2 border-indigo-400 border-t-transparent" />
+                <span className="text-xs text-slate-400">...</span>
               </div>
             ) : (
-              <div className="bg-gray-100 rounded-2xl px-4 py-3 flex gap-1 items-center">
-                <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce [animation-delay:0ms]" />
-                <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce [animation-delay:150ms]" />
-                <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce [animation-delay:300ms]" />
+              <div className="flex items-center gap-1 rounded-2xl bg-slate-100 px-4 py-3">
+                <span className="h-2 w-2 animate-bounce rounded-full bg-slate-400 [animation-delay:0ms]" />
+                <span className="h-2 w-2 animate-bounce rounded-full bg-slate-400 [animation-delay:150ms]" />
+                <span className="h-2 w-2 animate-bounce rounded-full bg-slate-400 [animation-delay:300ms]" />
               </div>
             )}
           </div>
@@ -328,8 +330,8 @@ const IntroDemo: React.FC<IntroDemoProps> = ({ demo, onFinish, initiallyDone = f
           <button
             type="button"
             onClick={onFinish}
-            className="px-10 py-3.5 bg-green-600 text-white font-bold text-lg rounded-2xl
-              hover:bg-green-700 active:bg-green-800 transition-colors shadow-md
+            className="rounded-2xl bg-gradient-to-r from-violet-500 to-indigo-500 px-10 py-3.5 text-lg font-bold text-white
+              shadow-md transition-all hover:-translate-y-px hover:from-violet-600 hover:to-indigo-600
               animate-[fadeIn_0.4s_ease-in]"
           >
             {finishLabel ?? "Zaczynamy! 🚀"}

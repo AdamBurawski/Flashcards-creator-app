@@ -7,25 +7,25 @@ const LEVEL_CONFIG: Record<CEFRLevel, { label: string; description: string; colo
     label: "A1 – Beginner",
     description: "Podstawowe zwroty, powitania, proste pytania",
     color: "text-emerald-700",
-    bgColor: "bg-emerald-50 border-emerald-200 hover:border-emerald-400",
+    bgColor: "border-emerald-200/70 bg-gradient-to-br from-white to-emerald-50/60 hover:border-emerald-300",
   },
   A2: {
     label: "A2 – Elementary",
     description: "Codzienne sytuacje, zakupy, podróże",
     color: "text-blue-700",
-    bgColor: "bg-blue-50 border-blue-200 hover:border-blue-400",
+    bgColor: "border-blue-200/70 bg-gradient-to-br from-white to-blue-50/60 hover:border-blue-300",
   },
   B1: {
     label: "B1 – Intermediate",
     description: "Opinie, plany, doświadczenia",
     color: "text-violet-700",
-    bgColor: "bg-violet-50 border-violet-200 hover:border-violet-400",
+    bgColor: "border-violet-200/70 bg-gradient-to-br from-white to-violet-50/60 hover:border-violet-300",
   },
   B2: {
     label: "B2 – Upper-Intermediate",
     description: "Dyskusje, argumentacja, złożone tematy",
     color: "text-orange-700",
-    bgColor: "bg-orange-50 border-orange-200 hover:border-orange-400",
+    bgColor: "border-orange-200/70 bg-gradient-to-br from-white to-orange-50/60 hover:border-orange-300",
   },
 };
 
@@ -64,13 +64,13 @@ export default function EnglishLevelSelector() {
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6">
         {(["A1", "A2", "B1", "B2"] as CEFRLevel[]).map((level) => (
-          <div key={level} className="border rounded-xl p-6 animate-pulse bg-gray-50">
-            <div className="h-6 bg-gray-200 rounded w-1/2 mb-3" />
-            <div className="h-4 bg-gray-200 rounded w-3/4 mb-4" />
-            <div className="h-2 bg-gray-200 rounded w-full mb-2" />
-            <div className="h-4 bg-gray-200 rounded w-1/3" />
+          <div key={level} className="animate-pulse rounded-2xl border border-slate-200 bg-white/80 p-6 shadow-sm">
+            <div className="mb-3 h-6 w-1/2 rounded bg-slate-200" />
+            <div className="mb-5 h-4 w-3/4 rounded bg-slate-200" />
+            <div className="mb-2 h-2 w-full rounded bg-slate-200" />
+            <div className="h-4 w-1/3 rounded bg-slate-200" />
           </div>
         ))}
       </div>
@@ -79,7 +79,7 @@ export default function EnglishLevelSelector() {
 
   if (error) {
     return (
-      <div className="rounded-lg border border-red-200 bg-red-50 p-6 text-center">
+      <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-center shadow-sm">
         <p className="text-red-700 font-medium">{error}</p>
         <button
           onClick={() => window.location.reload()}
@@ -104,7 +104,7 @@ export default function EnglishLevelSelector() {
         }));
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6">
       {displayLevels.map((levelData) => {
         const config = LEVEL_CONFIG[levelData.level];
         const progressColor = PROGRESS_COLORS[levelData.level];
@@ -114,17 +114,17 @@ export default function EnglishLevelSelector() {
           <a
             key={levelData.level}
             href={hasContent ? `/english/${levelData.level}` : undefined}
-            className={`block border rounded-xl p-6 transition-all duration-200 ${
+            className={`group block rounded-2xl border p-6 shadow-sm transition-all duration-200 ${
               hasContent
-                ? `${config.bgColor} cursor-pointer shadow-sm hover:shadow-md`
-                : "bg-gray-50 border-gray-200 opacity-60 cursor-not-allowed"
+                ? `${config.bgColor} cursor-pointer hover:-translate-y-0.5 hover:shadow-md`
+                : "cursor-not-allowed border-slate-200 bg-slate-50 opacity-70"
             }`}
             onClick={(e) => {
               if (!hasContent) e.preventDefault();
             }}
           >
             {/* Level badge and title */}
-            <div className="flex items-center justify-between mb-2">
+            <div className="mb-2 flex items-center justify-between">
               <h2 className={`text-xl font-bold ${hasContent ? config.color : "text-gray-400"}`}>{config.label}</h2>
               {levelData.completion_percent === 100 && levelData.total_dialogues > 0 && (
                 <span className="text-green-600 text-lg" title="Ukończono">
@@ -134,18 +134,18 @@ export default function EnglishLevelSelector() {
             </div>
 
             {/* Description */}
-            <p className={`text-sm mb-4 ${hasContent ? "text-gray-600" : "text-gray-400"}`}>{config.description}</p>
+            <p className={`mb-5 text-sm leading-relaxed ${hasContent ? "text-slate-600" : "text-slate-400"}`}>{config.description}</p>
 
             {/* Progress bar */}
-            <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden mb-2">
+            <div className="mb-2 h-2 w-full overflow-hidden rounded-full bg-slate-200">
               <div
-                className={`h-full rounded-full transition-all duration-500 ${progressColor}`}
+                className={`h-full rounded-full transition-all duration-500 ${progressColor} group-hover:brightness-105`}
                 style={{ width: `${levelData.completion_percent}%` }}
               />
             </div>
 
             {/* Stats */}
-            <div className="flex justify-between text-xs text-gray-500">
+            <div className="flex justify-between text-xs text-slate-500">
               <span>
                 {levelData.completed_dialogues} / {levelData.total_dialogues} dialogów
               </span>
@@ -153,10 +153,10 @@ export default function EnglishLevelSelector() {
             </div>
 
             {/* Lesson count */}
-            {hasContent && <p className="mt-3 text-xs text-gray-500">{levelData.total_lessons} lekcji dostępnych</p>}
+            {hasContent && <p className="mt-3 text-xs text-slate-500">{levelData.total_lessons} lekcji dostępnych</p>}
 
             {/* Empty state */}
-            {!hasContent && <p className="mt-3 text-xs text-gray-400 italic">Brak dostępnych lekcji</p>}
+            {!hasContent && <p className="mt-3 text-xs italic text-slate-400">Brak dostępnych lekcji</p>}
           </a>
         );
       })}

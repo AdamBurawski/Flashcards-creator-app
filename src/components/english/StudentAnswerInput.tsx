@@ -187,7 +187,7 @@ const StudentAnswerInput: React.FC<StudentAnswerInputProps> = ({
   };
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3 rounded-2xl border border-indigo-100 bg-gradient-to-b from-indigo-50/50 to-white p-3">
       {/* Recording / Input area */}
       <div className="flex items-end gap-3">
         {/* Microphone button */}
@@ -195,10 +195,10 @@ const StudentAnswerInput: React.FC<StudentAnswerInputProps> = ({
           type="button"
           onClick={toggleRecording}
           disabled={disabled || isTranscribing}
-          className={`flex-shrink-0 p-3 rounded-full transition-all ${
+          className={`flex-shrink-0 rounded-full p-3 transition-all ${
             isRecording
-              ? "bg-red-500 text-white animate-pulse shadow-lg shadow-red-200"
-              : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+              ? "animate-pulse bg-rose-500 text-white shadow-lg shadow-rose-200"
+              : "border-2 border-violet-200 bg-white text-violet-600 shadow-sm hover:-translate-y-px hover:bg-violet-50"
           } disabled:opacity-50 disabled:cursor-not-allowed`}
           aria-label={isRecording ? "Zatrzymaj nagrywanie" : "Nagraj odpowiedź"}
         >
@@ -226,9 +226,9 @@ const StudentAnswerInput: React.FC<StudentAnswerInputProps> = ({
             disabled={disabled || isRecording || isTranscribing}
             placeholder={isRecording ? "Nagrywanie..." : isTranscribing ? "Transkrypcja..." : placeholder}
             rows={2}
-            className="w-full px-4 py-3 border border-gray-300 rounded-xl text-base resize-none
-              focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
-              disabled:bg-gray-50 disabled:text-gray-500"
+            className="w-full resize-none rounded-2xl border-2 border-indigo-100 bg-white px-4 py-3 text-base
+              shadow-sm transition focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200
+              disabled:bg-slate-50 disabled:text-slate-500"
           />
         </div>
 
@@ -237,25 +237,25 @@ const StudentAnswerInput: React.FC<StudentAnswerInputProps> = ({
           type="button"
           onClick={onSubmit}
           disabled={disabled || isRecording || isTranscribing || !value.trim()}
-          className="flex-shrink-0 px-5 py-3 bg-blue-600 text-white rounded-xl font-medium
-            hover:bg-blue-700 transition-colors
-            disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed"
+          className="flex-shrink-0 rounded-2xl bg-gradient-to-r from-violet-500 to-indigo-500 px-5 py-3 font-semibold text-white shadow-md
+            transition-all hover:-translate-y-px hover:from-violet-600 hover:to-indigo-600
+            disabled:cursor-not-allowed disabled:from-slate-300 disabled:to-slate-300 disabled:text-slate-500"
         >
-          Wyślij
+          Wyślij ✨
         </button>
       </div>
 
       {/* Status indicators */}
       <div className="flex items-center gap-3 min-h-[1.5rem]">
         {isRecording && (
-          <span className="text-sm text-red-600 flex items-center gap-1">
-            <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+          <span className="flex items-center gap-1 text-sm text-red-600">
+            <span className="h-2 w-2 animate-pulse rounded-full bg-red-500" />
             Nagrywanie... {formatDuration(recordingDuration)}
           </span>
         )}
 
         {isTranscribing && (
-          <span className="text-sm text-blue-600 flex items-center gap-2">
+          <span className="flex items-center gap-2 text-sm text-indigo-600">
             <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />

@@ -167,8 +167,10 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
       <button
         type="button"
         onClick={handlePlay}
-        className={`p-2 rounded-full transition-colors ${
-          isPlaying ? "bg-blue-100 text-blue-600 animate-pulse" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+        className={`rounded-full border p-2.5 shadow-sm transition-all ${
+          isPlaying
+            ? "animate-pulse border-indigo-200 bg-indigo-100 text-indigo-700"
+            : "border-violet-200 bg-white text-violet-600 hover:-translate-y-px hover:border-violet-300 hover:bg-violet-50"
         }`}
         aria-label={isPlaying ? "Odtwarzanie..." : "Odtwórz"}
         disabled={isPlaying}

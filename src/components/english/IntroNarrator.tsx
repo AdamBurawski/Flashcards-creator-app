@@ -80,20 +80,20 @@ const IntroNarrator: React.FC<IntroNarratorProps> = ({ intro, imageUrl, dialogue
   const imageSrc = resolveImageSrc(dialogueId, imageUrl);
 
   return (
-    <div className="flex flex-col items-center gap-5 py-8 px-4 max-w-lg mx-auto w-full">
+    <div className="mx-auto flex w-full max-w-5xl flex-col items-center gap-5 px-4 py-8">
       {/* Label */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 rounded-full bg-indigo-50 px-3 py-1.5">
         <span className="text-xl">📖</span>
-        <span className="text-sm font-semibold text-amber-700 uppercase tracking-wider">Wstęp do ćwiczenia</span>
+        <span className="text-sm font-semibold uppercase tracking-wider text-indigo-700">Wstęp do ćwiczenia</span>
       </div>
 
       {/* Context image */}
       {imageSrc && !imageError && (
-        <div className="w-full rounded-2xl overflow-hidden border border-gray-200 bg-white shadow-sm">
+        <div className="w-full max-w-4xl overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
           <img
             src={imageSrc}
             alt="Kontekst wizualny"
-            className="w-full max-h-56 object-contain"
+            className="mx-auto max-h-[560px] w-full object-contain"
             onError={() => setImageError(true)}
             loading="lazy"
           />
@@ -101,18 +101,18 @@ const IntroNarrator: React.FC<IntroNarratorProps> = ({ intro, imageUrl, dialogue
       )}
 
       {/* Narration bubble */}
-      <div className="w-full bg-amber-50 border-2 border-amber-200 rounded-2xl px-5 py-4">
+      <div className="w-full rounded-3xl border border-amber-200 bg-gradient-to-b from-amber-50/80 to-white px-5 py-4 shadow-sm">
         <div className="flex items-start gap-3">
           <span className="text-2xl flex-shrink-0" role="img" aria-label="Narrator">
             🎙️
           </span>
-          <p className="text-gray-800 text-base leading-relaxed">{intro.narrator_pl}</p>
+          <p className="text-base leading-relaxed text-slate-800">{intro.narrator_pl}</p>
         </div>
 
         <div className="mt-3 ml-10">
           {!audioReady ? (
-            <div className="flex items-center gap-2 text-amber-600 text-xs">
-              <div className="w-3 h-3 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" />
+            <div className="flex items-center gap-2 text-xs text-indigo-600">
+              <div className="h-3 w-3 animate-spin rounded-full border-2 border-indigo-400 border-t-transparent" />
               Przygotowuję narrację...
             </div>
           ) : (
@@ -126,7 +126,7 @@ const IntroNarrator: React.FC<IntroNarratorProps> = ({ intro, imageUrl, dialogue
                 onEnded={handleComplete}
                 showControls={true}
               />
-              <p className="text-xs text-amber-600 mt-1">Posłuchaj opisu sytuacji...</p>
+              <p className="mt-1 text-xs text-indigo-600">Posłuchaj opisu sytuacji...</p>
             </>
           )}
         </div>
@@ -136,10 +136,9 @@ const IntroNarrator: React.FC<IntroNarratorProps> = ({ intro, imageUrl, dialogue
       <button
         type="button"
         onClick={handleComplete}
-        className="px-8 py-3 bg-amber-500 text-white font-semibold rounded-xl
-          hover:bg-amber-600 active:bg-amber-700 transition-colors shadow-sm"
+        className="rounded-2xl bg-gradient-to-r from-amber-400 to-orange-400 px-8 py-3 font-bold text-white shadow-md transition-all hover:-translate-y-px hover:from-amber-500 hover:to-orange-500 active:from-amber-600 active:to-orange-600"
       >
-        Dalej →
+        Dalej 🚀
       </button>
     </div>
   );
