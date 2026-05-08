@@ -12,7 +12,9 @@ const querySchema = z.object({
 
 function countStudentTurns(turns: unknown): number {
   if (!Array.isArray(turns)) return 0;
-  return turns.filter((turn) => turn && typeof turn === "object" && "role" in turn && (turn as { role?: string }).role === "student").length;
+  return turns.filter(
+    (turn) => turn && typeof turn === "object" && "role" in turn && (turn as { role?: string }).role === "student"
+  ).length;
 }
 
 export const GET: APIRoute = async ({ params, request, locals }) => {
@@ -64,7 +66,9 @@ export const GET: APIRoute = async ({ params, request, locals }) => {
 
     const { data: dialogues, error: dialoguesError } = await locals.supabase
       .from("english_dialogues")
-      .select("id, stage, lesson, level, title, tags, target_vocab, target_structures, turns, revision_from, estimated_duration_seconds, sort_order, image_url, intro")
+      .select(
+        "id, stage, lesson, level, title, tags, target_vocab, target_structures, turns, revision_from, estimated_duration_seconds, sort_order, image_url, intro"
+      )
       .eq("lesson", lessonId)
       .eq("stage", stage)
       .eq("level", level)
