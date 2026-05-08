@@ -99,6 +99,7 @@ function LessonCard({ lesson, level }: LessonCardProps) {
   const completionPercent =
     lesson.total_dialogues > 0 ? (lesson.completed_dialogues / lesson.total_dialogues) * 100 : 0;
   const isFullyCompleted = lesson.completed_dialogues === lesson.total_dialogues && lesson.total_dialogues > 0;
+  const summaryUrl = `/english/summary/${level}/${lesson.stage}/${lesson.lesson}`;
 
   return (
     <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white/95 shadow-sm">
@@ -116,6 +117,15 @@ function LessonCard({ lesson, level }: LessonCardProps) {
               <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">
                 ✓ Ukończona
               </span>
+            )}
+            {isFullyCompleted && (
+              <a
+                href={summaryUrl}
+                className="inline-flex items-center gap-1 rounded-full border border-indigo-200 bg-white px-2.5 py-1 text-xs font-medium text-indigo-700 transition-colors hover:bg-indigo-50"
+              >
+                <span aria-hidden="true">📊</span>
+                Podsumowanie
+              </a>
             )}
           </div>
           <span className="text-sm text-slate-500">

@@ -18,6 +18,8 @@ interface LessonSummaryProps {
   lesson: number;
   /** Called when user wants to retry */
   onRetry: () => void;
+  /** Whether summary should save progress on mount */
+  saveProgressOnMount?: boolean;
 }
 
 /**
@@ -33,6 +35,7 @@ const LessonSummary: React.FC<LessonSummaryProps> = ({
   stage: _stage,
   lesson: _lesson,
   onRetry,
+  saveProgressOnMount = true,
 }) => {
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -61,6 +64,7 @@ const LessonSummary: React.FC<LessonSummaryProps> = ({
 
   // Save progress on mount
   useEffect(() => {
+    if (!saveProgressOnMount) return;
     let cancelled = false;
 
     async function doSaveProgress() {
@@ -103,7 +107,7 @@ const LessonSummary: React.FC<LessonSummaryProps> = ({
     return () => {
       cancelled = true;
     };
-  }, [dialogues, totalTurns, correctTurns, durationSeconds]);
+  }, [dialogues, totalTurns, correctTurns, durationSeconds, saveProgressOnMount]);
 
   return (
     <div className="mx-auto max-w-lg rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-sm sm:p-8">
