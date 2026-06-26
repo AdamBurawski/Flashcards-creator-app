@@ -10,6 +10,7 @@ const DEFAULT_MODEL_ID = "eleven_multilingual_v2";
 interface TTSOptions {
   stability?: number;
   similarity_boost?: number;
+  speed?: number;
   model_id?: string;
 }
 
@@ -47,6 +48,7 @@ export async function generateSpeechBase64(
         voice_settings: {
           stability: options.stability ?? 0.5,
           similarity_boost: options.similarity_boost ?? 0.75,
+          speed: options.speed ?? 1,
         },
       }),
     });

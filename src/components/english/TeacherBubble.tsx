@@ -84,20 +84,33 @@ const DemoPairHint: React.FC<DemoPairHintProps> = ({ pair }) => {
   const [enAudioCache, setEnAudioCache] = useState<Record<number, string | null>>({});
   const [plAudioCache, setPlAudioCache] = useState<Record<number, string | null>>({});
 
-  // Fetch all audio on first mount
+  // Fetch demo audio sequentially to avoid ElevenLabs concurrent_limit_exceeded (429).
   useEffect(() => {
-    pair.forEach((turn, idx) => {
-      if (!turn.audio_url) {
-        fetchTeacherAudio(turn.text).then((url) => {
-          setEnAudioCache((prev) => ({ ...prev, [idx]: url ?? null }));
-        });
+    let cancelled = false;
+
+    async function preloadDemoAudioSequentially() {
+      for (const [idx, turn] of pair.entries()) {
+        if (cancelled) return;
+
+        if (!turn.audio_url) {
+          const enUrl = await fetchTeacherAudio(turn.text);
+          if (cancelled) return;
+          setEnAudioCache((prev) => ({ ...prev, [idx]: enUrl ?? null }));
+        }
+
+        if (turn.translation_pl && !turn.translation_audio_url) {
+          const plUrl = await fetchNarratorAudio(turn.translation_pl);
+          if (cancelled) return;
+          setPlAudioCache((prev) => ({ ...prev, [idx]: plUrl ?? null }));
+        }
       }
-      if (turn.translation_pl && !turn.translation_audio_url) {
-        fetchNarratorAudio(turn.translation_pl).then((url) => {
-          setPlAudioCache((prev) => ({ ...prev, [idx]: url ?? null }));
-        });
-      }
-    });
+    }
+
+    void preloadDemoAudioSequentially();
+
+    return () => {
+      cancelled = true;
+    };
   }, [pair]);
 
   return (

@@ -2,7 +2,7 @@
  * Temporary audio mode switch.
  * When true, the app uses browser/system SpeechSynthesis only.
  */
-export const USE_SYSTEM_TTS_ONLY = true;
+export const USE_SYSTEM_TTS_ONLY = false;
 
 /**
  * Preferred browser/system TTS voice names.

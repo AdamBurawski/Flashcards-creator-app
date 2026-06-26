@@ -83,21 +83,35 @@ const IntroDemo: React.FC<IntroDemoProps> = ({ demo, onFinish, initiallyDone = f
     };
   }, [showNext, initiallyDone]);
 
-  // Pre-fetch all audio in the background when opening in initiallyDone mode
+  // Pre-fetch all audio sequentially to stay under ElevenLabs concurrency limits.
   useEffect(() => {
     if (!initiallyDone) return;
-    demo.forEach((turn, idx) => {
-      if (!turn.audio_url) {
-        fetchTeacherAudio(turn.text).then((url) => {
-          setEnAudioCache((prev) => ({ ...prev, [idx]: url ?? null }));
-        });
+
+    let cancelled = false;
+
+    async function preloadAllAudioSequentially() {
+      for (const [idx, turn] of demo.entries()) {
+        if (cancelled) return;
+
+        if (!turn.audio_url) {
+          const enUrl = await fetchTeacherAudio(turn.text);
+          if (cancelled) return;
+          setEnAudioCache((prev) => ({ ...prev, [idx]: enUrl ?? null }));
+        }
+
+        if (turn.translation_pl && !turn.translation_audio_url) {
+          const plUrl = await fetchNarratorAudio(turn.translation_pl);
+          if (cancelled) return;
+          setPlAudioCache((prev) => ({ ...prev, [idx]: plUrl ?? null }));
+        }
       }
-      if (turn.translation_pl && !turn.translation_audio_url) {
-        fetchNarratorAudio(turn.translation_pl).then((url) => {
-          setPlAudioCache((prev) => ({ ...prev, [idx]: url ?? null }));
-        });
-      }
-    });
+    }
+
+    void preloadAllAudioSequentially();
+
+    return () => {
+      cancelled = true;
+    };
   }, [initiallyDone, demo]);
 
   // Fetch EN audio when a new turn becomes visible

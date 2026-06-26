@@ -53,6 +53,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
     const audioUrl = await generateSpeechBase64(parsed.data.text, voiceId, {
       stability: 0.45,
       similarity_boost: 0.75,
+      speed: 0.9,
     });
 
     if (!audioUrl) {
