@@ -39,6 +39,7 @@ export async function generateConversationReply(
     }
     return result;
   } catch (error) {
+    // eslint-disable-next-line no-console
     console.error("[english-conversation] LLM conversation failed:", error);
     return createFallbackReply(command);
   }
@@ -146,9 +147,7 @@ ${command.question}
 
 function createFallbackReply(command: GenerateConversationReplyCommand): ConversationReplyResult {
   const answer = buildFallbackAnswer(command.question);
-  const teacherQuestion = shouldAskFollowUp(command)
-    ? buildVocabFollowUpQuestion(command)
-    : undefined;
+  const teacherQuestion = shouldAskFollowUp(command) ? buildVocabFollowUpQuestion(command) : undefined;
 
   return {
     correction_text: undefined,
@@ -158,10 +157,7 @@ function createFallbackReply(command: GenerateConversationReplyCommand): Convers
   };
 }
 
-function normalizeTeacherQuestion(
-  question: string,
-  command: GenerateConversationReplyCommand
-): string | undefined {
+function normalizeTeacherQuestion(question: string, command: GenerateConversationReplyCommand): string | undefined {
   const cleaned = question.replace(/\s+/g, " ").trim();
   if (cleaned.length > 0 && isQuestionRelevantToLesson(cleaned, command)) {
     return cleaned;
@@ -174,10 +170,7 @@ function normalizeTeacherQuestion(
   return buildVocabFollowUpQuestion(command);
 }
 
-function normalizeSuggestions(
-  suggestions: string[],
-  command: GenerateConversationReplyCommand
-): string[] {
+function normalizeSuggestions(suggestions: string[], command: GenerateConversationReplyCommand): string[] {
   const cleaned = suggestions
     .map((item) => item.replace(/\s+/g, " ").trim())
     .filter((item) => item.length > 0 && isQuestionRelevantToLesson(item, command))
@@ -191,16 +184,9 @@ function normalizeSuggestions(
     .filter((word) => typeof word === "string" && word.trim().length > 0)
     .slice(0, 3);
 
-  const fallbackFromVocab = vocabSeed.flatMap((word) => [
-    `What is ${word}?`,
-    `Can you say ${word} in a sentence?`,
-  ]);
+  const fallbackFromVocab = vocabSeed.flatMap((word) => [`What is ${word}?`, `Can you say ${word} in a sentence?`]);
 
-  const genericFallback = [
-    "Where is the chair?",
-    "What can you see?",
-    "Can you ask me another question?",
-  ];
+  const genericFallback = ["Where is the chair?", "What can you see?", "Can you ask me another question?"];
 
   const merged = [...cleaned, ...fallbackFromVocab, ...genericFallback];
   const unique = Array.from(new Set(merged));
