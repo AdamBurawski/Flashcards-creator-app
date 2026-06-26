@@ -210,6 +210,7 @@ export type LessonPhase =
   | "student_turn"
   | "evaluating"
   | "feedback"
+  | "free_conversation"
   | "summary";
 
 /** State of the lesson session component */

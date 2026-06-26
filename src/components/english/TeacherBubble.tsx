@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import AudioPlayer from "./AudioPlayer";
 import ReplayButton from "./ReplayButton";
+import ImageVocabularyHotspots from "./ImageVocabularyHotspots";
 import type { IntroDemoTurn } from "../../types/english";
 import { SYSTEM_TTS_VOICE_PREFERENCES, USE_SYSTEM_TTS_ONLY } from "../../lib/audio-settings";
 
@@ -84,20 +85,33 @@ const DemoPairHint: React.FC<DemoPairHintProps> = ({ pair }) => {
   const [enAudioCache, setEnAudioCache] = useState<Record<number, string | null>>({});
   const [plAudioCache, setPlAudioCache] = useState<Record<number, string | null>>({});
 
-  // Fetch all audio on first mount
+  // Fetch demo audio sequentially to avoid ElevenLabs concurrent_limit_exceeded (429).
   useEffect(() => {
-    pair.forEach((turn, idx) => {
-      if (!turn.audio_url) {
-        fetchTeacherAudio(turn.text).then((url) => {
-          setEnAudioCache((prev) => ({ ...prev, [idx]: url ?? null }));
-        });
+    let cancelled = false;
+
+    async function preloadDemoAudioSequentially() {
+      for (const [idx, turn] of pair.entries()) {
+        if (cancelled) return;
+
+        if (!turn.audio_url) {
+          const enUrl = await fetchTeacherAudio(turn.text);
+          if (cancelled) return;
+          setEnAudioCache((prev) => ({ ...prev, [idx]: enUrl ?? null }));
+        }
+
+        if (turn.translation_pl && !turn.translation_audio_url) {
+          const plUrl = await fetchNarratorAudio(turn.translation_pl);
+          if (cancelled) return;
+          setPlAudioCache((prev) => ({ ...prev, [idx]: plUrl ?? null }));
+        }
       }
-      if (turn.translation_pl && !turn.translation_audio_url) {
-        fetchNarratorAudio(turn.translation_pl).then((url) => {
-          setPlAudioCache((prev) => ({ ...prev, [idx]: url ?? null }));
-        });
-      }
-    });
+    }
+
+    void preloadDemoAudioSequentially();
+
+    return () => {
+      cancelled = true;
+    };
   }, [pair]);
 
   return (
@@ -251,13 +265,16 @@ const TeacherBubble: React.FC<TeacherBubbleProps> = ({
           {/* Dialogue image — visual context */}
           {showImage && imageSrc && !imageError && (
             <div className="-mx-1 -mt-1 mb-3 flex justify-center">
-              <img
-                src={imageSrc}
-                alt="Kontekst wizualny dialogu"
-                className="max-h-[520px] w-full max-w-3xl rounded-xl border border-slate-200 bg-slate-50 object-contain"
-                onError={() => setImageError(true)}
-                loading="lazy"
-              />
+              <div className="relative w-full max-w-3xl">
+                <img
+                  src={imageSrc}
+                  alt="Kontekst wizualny dialogu"
+                  className="max-h-[520px] w-full rounded-xl border border-slate-200 bg-slate-50 object-contain"
+                  onError={() => setImageError(true)}
+                  loading="lazy"
+                />
+                <ImageVocabularyHotspots dialogueId={dialogueId} />
+              </div>
             </div>
           )}
 

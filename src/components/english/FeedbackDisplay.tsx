@@ -8,6 +8,8 @@ interface FeedbackDisplayProps {
   result: EvaluationResult;
   /** Called when user clicks "Next" */
   onNext: () => void;
+  /** Called when user starts free conversation mode */
+  onStartFreeConversation?: () => void;
   /** Whether this is the last turn in the dialogue */
   isLastTurn: boolean;
 }
@@ -33,9 +35,10 @@ async function fetchNarratorAudio(text: string): Promise<string | undefined> {
  * Shows correctness, Polish feedback text, correct answer, and plays TTS audio.
  * Fetches narrator PL audio on demand if no pre-baked URL is provided.
  */
-const FeedbackDisplay: React.FC<FeedbackDisplayProps> = ({ result, onNext, isLastTurn }) => {
+const FeedbackDisplay: React.FC<FeedbackDisplayProps> = ({ result, onNext, onStartFreeConversation, isLastTurn }) => {
   const [audioSrc, setAudioSrc] = useState<string | undefined>(result.feedback_audio_url);
   const [audioReady, setAudioReady] = useState(!!result.feedback_audio_url);
+  const hasFreeConversationOption = Boolean(onStartFreeConversation);
 
   useEffect(() => {
     if (USE_SYSTEM_TTS_ONLY) {
@@ -128,8 +131,24 @@ const FeedbackDisplay: React.FC<FeedbackDisplayProps> = ({ result, onNext, isLas
         </div>
       </div>
 
+      {hasFreeConversationOption && (
+        <div className="mt-3 rounded-xl border border-indigo-200 bg-indigo-50/70 px-3 py-2 text-sm text-indigo-800">
+          <span className="font-semibold">🎓 Lektor:</span> Masz ochotę teraz porozmawiać swobodnie po angielsku?
+        </div>
+      )}
+
       {/* Next button */}
-      <div className="mt-3 flex justify-end">
+      <div className="mt-3 flex flex-wrap items-center justify-end gap-2">
+        {onStartFreeConversation && (
+          <button
+            type="button"
+            onClick={onStartFreeConversation}
+            className="flex items-center gap-2 rounded-2xl border border-indigo-200 bg-indigo-50 px-4 py-2.5 text-sm font-semibold text-indigo-700 shadow-sm transition-colors hover:bg-indigo-100"
+          >
+            Luźna rozmowa z lektorem
+            <span aria-hidden="true">💬</span>
+          </button>
+        )}
         <button
           type="button"
           onClick={onNext}

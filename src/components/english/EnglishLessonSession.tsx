@@ -15,6 +15,7 @@ import FeedbackDisplay from "./FeedbackDisplay";
 import LessonSummary from "./LessonSummary";
 import IntroNarrator from "./IntroNarrator";
 import IntroDemo from "./IntroDemo";
+import FreeConversationPanel from "./FreeConversationPanel";
 
 // ---------- PURE HELPER FUNCTIONS (outside component) ----------
 
@@ -115,6 +116,7 @@ interface EnglishLessonSessionProps {
   stage: number;
   lesson: number;
   startDialogueId?: string;
+  startMode?: "lesson" | "conversation";
 }
 
 type TeacherSubPhase = "question" | "repeat" | "hint";
@@ -154,7 +156,13 @@ interface ConversationEntry {
  * Main lesson session orchestrator component.
  * Manages the full conversation flow: teacher speaking → student answer → evaluation → feedback.
  */
-const EnglishLessonSession: React.FC<EnglishLessonSessionProps> = ({ level, stage, lesson, startDialogueId }) => {
+const EnglishLessonSession: React.FC<EnglishLessonSessionProps> = ({
+  level,
+  stage,
+  lesson,
+  startDialogueId,
+  startMode = "lesson",
+}) => {
   const [state, setState] = useState<SessionState>({
     dialogues: [],
     initialDialogueIndex: 0,
@@ -213,13 +221,13 @@ const EnglishLessonSession: React.FC<EnglishLessonSessionProps> = ({ level, stag
           isLoading: false,
           currentDialogueIndex: startIndex,
           currentTurnIndex: 0,
-          phase: hasIntro ? "intro_narrator" : "teacher_speaking",
+          phase: startMode === "conversation" ? "free_conversation" : hasIntro ? "intro_narrator" : "teacher_speaking",
           teacherSubPhase: "question",
           sessionStartTime: Date.now(),
         }));
 
         // Add first teacher turn to history only when there is no intro
-        if (!hasIntro) {
+        if (!hasIntro && startMode !== "conversation") {
           const firstTurn = firstDialogue?.turns[0];
           if (firstTurn && firstTurn.role === "teacher") {
             const demo = firstDialogue.intro?.demo;
@@ -247,7 +255,7 @@ const EnglishLessonSession: React.FC<EnglishLessonSessionProps> = ({ level, stag
     return () => {
       cancelled = true;
     };
-  }, [level, stage, lesson, startDialogueId]);
+  }, [level, stage, lesson, startDialogueId, startMode]);
 
   // ---------- CURRENT TURN HELPERS ----------
 
@@ -287,6 +295,12 @@ const EnglishLessonSession: React.FC<EnglishLessonSessionProps> = ({ level, stag
     const isLastDlg = state.currentDialogueIndex >= state.dialogues.length - 1;
     return isLast && isLastDlg;
   }, [getCurrentDialogue, state.currentTurnIndex, state.currentDialogueIndex, state.dialogues.length]);
+
+  const isLastTurnInCurrentDialogue = useCallback((): boolean => {
+    const dialogue = getCurrentDialogue();
+    if (!dialogue) return true;
+    return state.currentTurnIndex >= dialogue.turns.length - 1;
+  }, [getCurrentDialogue, state.currentTurnIndex]);
 
   // ---------- PHASE TRANSITIONS ----------
 
@@ -506,6 +520,14 @@ const EnglishLessonSession: React.FC<EnglishLessonSessionProps> = ({ level, stag
     });
   }, []);
 
+  const handleStartFreeConversation = useCallback(() => {
+    setState((prev) => ({ ...prev, phase: "free_conversation", error: null }));
+  }, []);
+
+  const handleFinishFreeConversation = useCallback(() => {
+    setState((prev) => advanceToNextTurn(prev));
+  }, []);
+
   // ---------- AUTO-SCROLL ----------
 
   useEffect(() => {
@@ -560,6 +582,39 @@ const EnglishLessonSession: React.FC<EnglishLessonSessionProps> = ({ level, stag
           stage={stage}
           lesson={lesson}
           onRetry={handleRetry}
+        />
+      </div>
+    );
+  }
+
+  if (state.phase === "free_conversation") {
+    const dialogueForConversation = getCurrentDialogue() ?? state.dialogues[state.dialogues.length - 1];
+    if (!dialogueForConversation) {
+      return (
+        <div className="min-h-screen px-4 py-8">
+          <LessonSummary
+            correctTurns={state.sessionScore.correct}
+            totalTurns={state.sessionScore.total || getTotalStudentTurns()}
+            durationSeconds={Math.round((Date.now() - state.sessionStartTime) / 1000)}
+            dialogues={state.dialogues}
+            level={level}
+            stage={stage}
+            lesson={lesson}
+            onRetry={handleRetry}
+          />
+        </div>
+      );
+    }
+
+    return (
+      <div className="min-h-screen px-4 py-6">
+        <FreeConversationPanel
+          level={level}
+          dialogue={dialogueForConversation}
+          onFinish={handleFinishFreeConversation}
+          finishLabel={
+            isLastTurnInSession() ? "Zakończ rozmowę i zobacz podsumowanie" : "Zakończ rozmowę i przejdź dalej"
+          }
         />
       </div>
     );
@@ -674,6 +729,9 @@ const EnglishLessonSession: React.FC<EnglishLessonSessionProps> = ({ level, stag
                         key={`conv-${idx}`}
                         result={entry.evaluationResult}
                         onNext={handleNextAfterFeedback}
+                        onStartFreeConversation={
+                          isLastTurnInCurrentDialogue() ? handleStartFreeConversation : undefined
+                        }
                         isLastTurn={isLastTurnInSession()}
                       />
                     );
