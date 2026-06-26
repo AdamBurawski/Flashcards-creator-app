@@ -205,7 +205,9 @@ function DialogueRow({ dialogue, level, stage, lesson }: DialogueRowProps) {
                     {tag}
                   </span>
                 ))}
-                {dialogue.tags.length > 3 && <span className="text-xs text-slate-400">+{dialogue.tags.length - 3}</span>}
+                {dialogue.tags.length > 3 && (
+                  <span className="text-xs text-slate-400">+{dialogue.tags.length - 3}</span>
+                )}
               </div>
             )}
           </div>
