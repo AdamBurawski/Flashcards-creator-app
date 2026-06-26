@@ -116,6 +116,7 @@ interface EnglishLessonSessionProps {
   stage: number;
   lesson: number;
   startDialogueId?: string;
+  startMode?: "lesson" | "conversation";
 }
 
 type TeacherSubPhase = "question" | "repeat" | "hint";
@@ -155,7 +156,13 @@ interface ConversationEntry {
  * Main lesson session orchestrator component.
  * Manages the full conversation flow: teacher speaking → student answer → evaluation → feedback.
  */
-const EnglishLessonSession: React.FC<EnglishLessonSessionProps> = ({ level, stage, lesson, startDialogueId }) => {
+const EnglishLessonSession: React.FC<EnglishLessonSessionProps> = ({
+  level,
+  stage,
+  lesson,
+  startDialogueId,
+  startMode = "lesson",
+}) => {
   const [state, setState] = useState<SessionState>({
     dialogues: [],
     initialDialogueIndex: 0,
@@ -214,13 +221,13 @@ const EnglishLessonSession: React.FC<EnglishLessonSessionProps> = ({ level, stag
           isLoading: false,
           currentDialogueIndex: startIndex,
           currentTurnIndex: 0,
-          phase: hasIntro ? "intro_narrator" : "teacher_speaking",
+          phase: startMode === "conversation" ? "free_conversation" : hasIntro ? "intro_narrator" : "teacher_speaking",
           teacherSubPhase: "question",
           sessionStartTime: Date.now(),
         }));
 
         // Add first teacher turn to history only when there is no intro
-        if (!hasIntro) {
+        if (!hasIntro && startMode !== "conversation") {
           const firstTurn = firstDialogue?.turns[0];
           if (firstTurn && firstTurn.role === "teacher") {
             const demo = firstDialogue.intro?.demo;
@@ -248,7 +255,7 @@ const EnglishLessonSession: React.FC<EnglishLessonSessionProps> = ({ level, stag
     return () => {
       cancelled = true;
     };
-  }, [level, stage, lesson, startDialogueId]);
+  }, [level, stage, lesson, startDialogueId, startMode]);
 
   // ---------- CURRENT TURN HELPERS ----------
 

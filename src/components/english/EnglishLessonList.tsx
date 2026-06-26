@@ -173,58 +173,70 @@ interface DialogueRowProps {
 
 function DialogueRow({ dialogue, level, stage, lesson }: DialogueRowProps) {
   const lessonUrl = `/english/lesson/${level}/${stage}/${lesson}?dialogueId=${encodeURIComponent(dialogue.id)}`;
+  const conversationUrl = `/english/lesson/${level}/${stage}/${lesson}?dialogueId=${encodeURIComponent(dialogue.id)}&mode=conversation`;
 
   return (
-    <a
-      href={lessonUrl}
-      className="group flex items-center justify-between px-6 py-4 transition-colors hover:bg-slate-50/70"
-    >
-      <div className="flex items-center gap-4 min-w-0">
-        {/* Status icon */}
-        <div className="flex-shrink-0">
-          {dialogue.completed ? (
-            <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center" title="Ukończony">
-              <span className="text-green-600 text-sm">✓</span>
-            </div>
-          ) : (
-            <div
-              className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center group-hover:bg-blue-100"
-              title="Do wykonania"
-            >
-              <span className="text-gray-400 group-hover:text-blue-500 text-sm">▶</span>
-            </div>
-          )}
-        </div>
+    <div className="px-6 py-4 transition-colors hover:bg-slate-50/70">
+      <div className="group flex items-center justify-between">
+        <a href={lessonUrl} className="flex min-w-0 flex-1 items-center gap-4">
+          {/* Status icon */}
+          <div className="flex-shrink-0">
+            {dialogue.completed ? (
+              <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center" title="Ukończony">
+                <span className="text-green-600 text-sm">✓</span>
+              </div>
+            ) : (
+              <div
+                className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center group-hover:bg-blue-100"
+                title="Do wykonania"
+              >
+                <span className="text-gray-400 group-hover:text-blue-500 text-sm">▶</span>
+              </div>
+            )}
+          </div>
 
-        {/* Title and tags */}
-        <div className="min-w-0">
-          <h3 className="truncate text-sm font-medium text-slate-900">{dialogue.title}</h3>
-          {dialogue.tags.length > 0 && (
-            <div className="flex flex-wrap gap-1 mt-1">
-              {dialogue.tags.slice(0, 3).map((tag) => (
-                <span key={tag} className="inline-block rounded bg-slate-100 px-1.5 py-0.5 text-xs text-slate-500">
-                  {tag}
-                </span>
-              ))}
-              {dialogue.tags.length > 3 && <span className="text-xs text-slate-400">+{dialogue.tags.length - 3}</span>}
-            </div>
+          {/* Title and tags */}
+          <div className="min-w-0">
+            <h3 className="truncate text-sm font-medium text-slate-900">{dialogue.title}</h3>
+            {dialogue.tags.length > 0 && (
+              <div className="flex flex-wrap gap-1 mt-1">
+                {dialogue.tags.slice(0, 3).map((tag) => (
+                  <span key={tag} className="inline-block rounded bg-slate-100 px-1.5 py-0.5 text-xs text-slate-500">
+                    {tag}
+                  </span>
+                ))}
+                {dialogue.tags.length > 3 && <span className="text-xs text-slate-400">+{dialogue.tags.length - 3}</span>}
+              </div>
+            )}
+          </div>
+        </a>
+
+        {/* Right side: duration & score */}
+        <div className="flex items-center gap-4 flex-shrink-0 ml-4">
+          {/* Best score */}
+          {dialogue.best_score !== null && (
+            <span className="text-sm font-medium text-green-600">{Math.round(dialogue.best_score)}%</span>
           )}
+
+          {/* Estimated time */}
+          <span className="text-xs text-slate-400">{formatDuration(dialogue.estimated_duration_seconds)}</span>
+
+          {/* Arrow */}
+          <a href={lessonUrl} className="text-slate-300 transition-colors group-hover:text-slate-500">
+            →
+          </a>
         </div>
       </div>
 
-      {/* Right side: duration & score */}
-      <div className="flex items-center gap-4 flex-shrink-0 ml-4">
-        {/* Best score */}
-        {dialogue.best_score !== null && (
-          <span className="text-sm font-medium text-green-600">{Math.round(dialogue.best_score)}%</span>
-        )}
-
-        {/* Estimated time */}
-        <span className="text-xs text-slate-400">{formatDuration(dialogue.estimated_duration_seconds)}</span>
-
-        {/* Arrow */}
-        <span className="text-slate-300 transition-colors group-hover:text-slate-500">→</span>
+      <div className="mt-2.5 ml-12">
+        <a
+          href={conversationUrl}
+          className="inline-flex items-center gap-1.5 rounded-full border border-indigo-200 bg-indigo-50 px-2.5 py-1 text-xs font-medium text-indigo-700 transition-colors hover:bg-indigo-100"
+        >
+          <span aria-hidden="true">💬</span>
+          Luźna rozmowa
+        </a>
       </div>
-    </a>
+    </div>
   );
 }
