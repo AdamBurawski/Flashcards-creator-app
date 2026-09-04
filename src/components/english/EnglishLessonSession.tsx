@@ -27,6 +27,11 @@ function isStudentTurn(turn: DialogueTurn): turn is StudentTurn {
   return turn.role === "student";
 }
 
+function shouldUseRepeatPhase(turn: TeacherTurn): boolean {
+  if (!turn.repeat) return false;
+  return Boolean(turn.audio?.question_repeat);
+}
+
 /** Advance state to the next turn/dialogue or summary (pure function) */
 function advanceToNextTurn(prev: SessionState): SessionState {
   const dialogue = prev.dialogues[prev.currentDialogueIndex];
@@ -352,7 +357,7 @@ const EnglishLessonSession: React.FC<EnglishLessonSessionProps> = ({
       if (!currentTurn || !isTeacherTurn(currentTurn)) return prev;
 
       // Transition: question → repeat → hint → student_turn
-      if (prev.teacherSubPhase === "question" && currentTurn.repeat) {
+      if (prev.teacherSubPhase === "question" && shouldUseRepeatPhase(currentTurn)) {
         return { ...prev, teacherSubPhase: "repeat" };
       }
 
