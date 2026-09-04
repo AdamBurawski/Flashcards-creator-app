@@ -676,7 +676,8 @@ const EnglishLessonSession: React.FC<EnglishLessonSessionProps> = ({
     }
     return -1;
   })();
-  const activeExchange = latestTeacherIndexInDialogue >= 0 ? currentDialogueHistory.slice(latestTeacherIndexInDialogue) : [];
+  const activeExchange =
+    latestTeacherIndexInDialogue >= 0 ? currentDialogueHistory.slice(latestTeacherIndexInDialogue) : [];
   const latestTeacherEntry = activeExchange.find((entry) => entry.type === "teacher");
   const latestStudentEntry = activeExchange.find((entry) => entry.type === "student");
   const latestFeedbackEntry = activeExchange.find((entry) => entry.type === "feedback" && entry.evaluationResult);
@@ -758,54 +759,54 @@ const EnglishLessonSession: React.FC<EnglishLessonSessionProps> = ({
             <div className="w-full max-w-xl">
               <AnimatedSlot slotKey={activeSlotKey}>
                 <div className="space-y-3">
-                {state.phase === "intro_narrator" && currentDialogue?.intro && (
-                  <IntroNarrator intro={currentDialogue.intro} onComplete={handleIntroNarratorComplete} />
-                )}
+                  {state.phase === "intro_narrator" && currentDialogue?.intro && (
+                    <IntroNarrator intro={currentDialogue.intro} onComplete={handleIntroNarratorComplete} />
+                  )}
 
-                {state.phase === "intro_demo" && currentDialogue?.intro?.demo && (
-                  <IntroDemo demo={currentDialogue.intro.demo} onFinish={handleIntroDemoComplete} />
-                )}
+                  {state.phase === "intro_demo" && currentDialogue?.intro?.demo && (
+                    <IntroDemo demo={currentDialogue.intro.demo} onFinish={handleIntroDemoComplete} />
+                  )}
 
-                {state.phase !== "intro_narrator" && state.phase !== "intro_demo" && latestTeacherEntry && (
-                  <TeacherBubble
-                    text={latestTeacherEntry.text}
-                    hint={latestTeacherEntry.hint}
-                    dialogueId={latestTeacherEntry.dialogueId}
-                    imageUrl={latestTeacherEntry.imageUrl}
-                    showImage={false}
-                    audio={state.phase === "teacher_speaking" ? currentTeacherTurn?.audio : undefined}
-                    subPhase={state.phase === "teacher_speaking" ? state.teacherSubPhase : "question"}
-                    onAudioComplete={handleTeacherAudioComplete}
-                    isActive={state.phase === "teacher_speaking"}
-                    demoPair={latestTeacherEntry.demoPair}
-                  />
-                )}
+                  {state.phase !== "intro_narrator" && state.phase !== "intro_demo" && latestTeacherEntry && (
+                    <TeacherBubble
+                      text={latestTeacherEntry.text}
+                      hint={latestTeacherEntry.hint}
+                      dialogueId={latestTeacherEntry.dialogueId}
+                      imageUrl={latestTeacherEntry.imageUrl}
+                      showImage={false}
+                      audio={state.phase === "teacher_speaking" ? currentTeacherTurn?.audio : undefined}
+                      subPhase={state.phase === "teacher_speaking" ? state.teacherSubPhase : "question"}
+                      onAudioComplete={handleTeacherAudioComplete}
+                      isActive={state.phase === "teacher_speaking"}
+                      demoPair={latestTeacherEntry.demoPair}
+                    />
+                  )}
 
-                {(state.phase === "evaluating" || state.phase === "feedback") && latestStudentEntry && (
-                  <div>
-                    <div className="mb-2 flex justify-end">
-                      <div className="max-w-md rounded-3xl rounded-tr-sm border border-blue-300 bg-blue-700 px-4 py-3 text-white shadow-sm">
-                        <p className="text-base">{latestStudentEntry.text}</p>
+                  {(state.phase === "evaluating" || state.phase === "feedback") && latestStudentEntry && (
+                    <div>
+                      <div className="mb-2 flex justify-end">
+                        <div className="max-w-md rounded-3xl rounded-tr-sm border border-blue-300 bg-blue-700 px-4 py-3 text-white shadow-sm">
+                          <p className="text-base">{latestStudentEntry.text}</p>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
-                {state.phase === "feedback" && latestFeedbackEntry?.evaluationResult && (
-                  <FeedbackDisplay
-                    result={latestFeedbackEntry.evaluationResult}
-                    onNext={handleNextAfterFeedback}
-                    onStartFreeConversation={isLastTurnInCurrentDialogue() ? handleStartFreeConversation : undefined}
-                    isLastTurn={isLastTurnInSession()}
-                  />
-                )}
+                  {state.phase === "feedback" && latestFeedbackEntry?.evaluationResult && (
+                    <FeedbackDisplay
+                      result={latestFeedbackEntry.evaluationResult}
+                      onNext={handleNextAfterFeedback}
+                      onStartFreeConversation={isLastTurnInCurrentDialogue() ? handleStartFreeConversation : undefined}
+                      isLastTurn={isLastTurnInSession()}
+                    />
+                  )}
 
-                {state.phase === "evaluating" && (
-                  <div className="mb-2 flex items-center gap-3 rounded-xl bg-white px-3 py-3 shadow-sm">
-                    <div className="h-6 w-6 animate-spin rounded-full border-2 border-indigo-500 border-t-transparent" />
-                    <span className="text-sm text-slate-500">Sprawdzam odpowiedź...</span>
-                  </div>
-                )}
+                  {state.phase === "evaluating" && (
+                    <div className="mb-2 flex items-center gap-3 rounded-xl bg-white px-3 py-3 shadow-sm">
+                      <div className="h-6 w-6 animate-spin rounded-full border-2 border-indigo-500 border-t-transparent" />
+                      <span className="text-sm text-slate-500">Sprawdzam odpowiedź...</span>
+                    </div>
+                  )}
                 </div>
               </AnimatedSlot>
             </div>
