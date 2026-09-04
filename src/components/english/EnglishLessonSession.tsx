@@ -109,6 +109,46 @@ function findDemoPair(demo: IntroDemoTurn[], teacherText: string): IntroDemoTurn
   return pair;
 }
 
+function resolveDialogueImageSrc(dialogueId?: string, imageUrl?: string): string | null {
+  if (dialogueId) return `/images/english/${dialogueId}.webp`;
+  if (imageUrl && !imageUrl.includes("placehold.co")) return imageUrl;
+  return null;
+}
+
+function AnimatedSlot({ slotKey, children }: { slotKey: string; children: React.ReactNode }) {
+  const [displayed, setDisplayed] = useState(children);
+  const [isVisible, setIsVisible] = useState(true);
+  const prevKeyRef = useRef(slotKey);
+
+  useEffect(() => {
+    if (prevKeyRef.current === slotKey) {
+      setDisplayed(children);
+      return;
+    }
+
+    setIsVisible(false);
+    const timeoutId = window.setTimeout(() => {
+      setDisplayed(children);
+      prevKeyRef.current = slotKey;
+      setIsVisible(true);
+    }, 140);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [slotKey, children]);
+
+  return (
+    <div
+      className={`transform-gpu transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+        isVisible ? "translate-y-0 scale-100 opacity-100" : "-translate-y-2 scale-[0.985] opacity-0"
+      }`}
+    >
+      {displayed}
+    </div>
+  );
+}
+
 // ---------- TYPES ----------
 
 interface EnglishLessonSessionProps {
@@ -179,7 +219,6 @@ const EnglishLessonSession: React.FC<EnglishLessonSessionProps> = ({
     sessionStartTime: Date.now(),
   });
 
-  const chatContainerRef = useRef<HTMLDivElement>(null);
   const [conversationHistory, setConversationHistory] = useState<ConversationEntry[]>([]);
 
   // ---------- DATA LOADING ----------
@@ -528,14 +567,6 @@ const EnglishLessonSession: React.FC<EnglishLessonSessionProps> = ({
     setState((prev) => advanceToNextTurn(prev));
   }, []);
 
-  // ---------- AUTO-SCROLL ----------
-
-  useEffect(() => {
-    if (chatContainerRef.current) {
-      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
-    }
-  }, [conversationHistory, state.phase]);
-
   // ---------- RENDER ----------
 
   if (state.isLoading) {
@@ -622,9 +653,41 @@ const EnglishLessonSession: React.FC<EnglishLessonSessionProps> = ({
 
   const currentDialogue = getCurrentDialogue();
   const currentTurn = getCurrentTurn();
+  const currentTeacherTurn = currentTurn && isTeacherTurn(currentTurn) ? currentTurn : getLastTeacherTurn();
+  const currentDialogueImageSrc = resolveDialogueImageSrc(currentDialogue?.id, currentDialogue?.image_url);
+  const currentDialogueStartIndex = (() => {
+    for (let i = conversationHistory.length - 1; i >= 0; i--) {
+      const entry = conversationHistory[i];
+      if (entry.type === "teacher" && entry.showImage && entry.dialogueId === currentDialogue?.id) {
+        return i;
+      }
+    }
+    return 0;
+  })();
+  const currentDialogueHistory = conversationHistory.slice(currentDialogueStartIndex);
+  const latestTeacherIndexInDialogue = (() => {
+    for (let i = currentDialogueHistory.length - 1; i >= 0; i--) {
+      if (currentDialogueHistory[i]?.type === "teacher") return i;
+    }
+    return -1;
+  })();
+  const activeExchange = latestTeacherIndexInDialogue >= 0 ? currentDialogueHistory.slice(latestTeacherIndexInDialogue) : [];
+  const latestTeacherEntry = activeExchange.find((entry) => entry.type === "teacher");
+  const latestStudentEntry = activeExchange.find((entry) => entry.type === "student");
+  const latestFeedbackEntry = activeExchange.find((entry) => entry.type === "feedback" && entry.evaluationResult);
+  const activeSlotKey = [
+    state.phase,
+    state.currentDialogueIndex,
+    state.currentTurnIndex,
+    state.teacherSubPhase,
+    state.sessionScore.total,
+    latestTeacherEntry?.text ?? "no-teacher",
+    latestStudentEntry?.text ?? "no-student",
+    latestFeedbackEntry?.text ?? "no-feedback",
+  ].join("|");
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex h-screen flex-col overflow-hidden">
       {/* Header bar */}
       <div className="sticky top-0 z-30 border-b border-slate-200/70 bg-white/90 px-4 py-3 backdrop-blur-lg">
         <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-2">
@@ -668,122 +731,103 @@ const EnglishLessonSession: React.FC<EnglishLessonSessionProps> = ({
         </div>
       </div>
 
-      {/* Chat area */}
-      <div ref={chatContainerRef} className="flex-1 overflow-y-auto px-4 py-5 sm:py-6">
-        <div className="mx-auto w-full max-w-5xl">
-          {/* Intro phases — shown before the dialogue exercise starts */}
-          {state.phase === "intro_narrator" && currentDialogue?.intro && (
-            <IntroNarrator
-              intro={currentDialogue.intro}
-              imageUrl={currentDialogue.image_url}
-              dialogueId={currentDialogue.id}
-              onComplete={handleIntroNarratorComplete}
-            />
-          )}
-
-          {state.phase === "intro_demo" && currentDialogue?.intro?.demo && (
-            <IntroDemo demo={currentDialogue.intro.demo} onFinish={handleIntroDemoComplete} />
-          )}
-
-          {/* Conversation history */}
-          {state.phase !== "intro_narrator" && state.phase !== "intro_demo" && (
-            <div className="space-y-2 py-4">
-              {conversationHistory.map((entry, idx) => {
-                if (entry.type === "teacher") {
-                  const isActive = state.phase === "teacher_speaking" && idx === conversationHistory.length - 1;
-                  const teacherTurnData = isActive ? (currentTurn as TeacherTurn) : null;
-
-                  return (
-                    <TeacherBubble
-                      key={`conv-${idx}`}
-                      text={entry.text}
-                      hint={entry.hint}
-                      dialogueId={entry.dialogueId}
-                      imageUrl={entry.imageUrl}
-                      showImage={entry.showImage}
-                      audio={teacherTurnData?.audio}
-                      subPhase={isActive ? state.teacherSubPhase : "question"}
-                      onAudioComplete={handleTeacherAudioComplete}
-                      isActive={isActive}
-                      demoPair={entry.demoPair}
-                    />
-                  );
-                }
-
-                if (entry.type === "student") {
-                  return (
-                    <div key={`conv-${idx}`} className="mb-4 flex justify-end">
-                      <div className="max-w-lg rounded-3xl rounded-tr-sm border border-blue-300 bg-blue-700 px-4 py-3 text-white shadow-sm">
-                        <p className="text-base">{entry.text}</p>
-                      </div>
-                    </div>
-                  );
-                }
-
-                if (entry.type === "feedback" && entry.evaluationResult) {
-                  const isActive = state.phase === "feedback" && idx === conversationHistory.length - 1;
-
-                  if (isActive) {
-                    return (
-                      <FeedbackDisplay
-                        key={`conv-${idx}`}
-                        result={entry.evaluationResult}
-                        onNext={handleNextAfterFeedback}
-                        onStartFreeConversation={
-                          isLastTurnInCurrentDialogue() ? handleStartFreeConversation : undefined
-                        }
-                        isLastTurn={isLastTurnInSession()}
-                      />
-                    );
-                  }
-
-                  return (
-                    <div
-                      key={`conv-${idx}`}
-                      className={`mb-2 rounded-lg px-3 py-2 text-sm ${
-                        entry.evaluationResult.is_correct
-                          ? "border border-green-100 bg-green-50 text-green-700"
-                          : "border border-amber-100 bg-amber-50 text-amber-700"
-                      }`}
-                    >
-                      {entry.evaluationResult.is_correct ? "✓" : "✗"} {entry.text}
-                    </div>
-                  );
-                }
-
-                return null;
-              })}
-
-              {state.phase === "evaluating" && (
-                <div className="mb-4 flex items-center gap-3 rounded-xl border border-slate-200 bg-white/80 px-3 py-3">
-                  <div className="h-6 w-6 animate-spin rounded-full border-2 border-indigo-500 border-t-transparent" />
-                  <span className="text-sm text-slate-500">Sprawdzam odpowiedź...</span>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Input area */}
-      {state.phase === "student_turn" && (
-        <div className="border-t border-slate-200/70 bg-white/85 px-4 py-4 backdrop-blur">
-          <div className="mx-auto w-full max-w-5xl rounded-3xl border border-amber-200 bg-amber-50/45 p-4 shadow-sm">
-            {state.error && (
-              <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-                {state.error}
+      {/* Scene area */}
+      <div className="flex-1 overflow-hidden px-4 py-4">
+        <div className="mx-auto grid h-full w-full max-w-6xl items-center gap-6 md:grid-cols-[1.1fr_1fr]">
+          <div className="flex h-full items-center justify-center">
+            {currentDialogueImageSrc ? (
+              <img
+                src={currentDialogueImageSrc}
+                alt="Ilustracja aktualnej sceny"
+                className="max-h-[78vh] w-full rounded-2xl object-contain"
+                loading="lazy"
+              />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center rounded-2xl bg-slate-50 text-sm text-slate-500">
+                Brak ilustracji dla tej sceny
               </div>
             )}
-            <StudentAnswerInput
-              value={state.userAnswer}
-              onChange={(val) => setState((prev) => ({ ...prev, userAnswer: val }))}
-              onSubmit={handleSubmitAnswer}
-              isRecording={state.isRecording}
-              disabled={state.phase !== "student_turn"}
-            />
+          </div>
+
+          <div className="flex h-full min-h-0 flex-col items-center justify-center gap-4">
+            <div className="w-full max-w-xl">
+              <AnimatedSlot slotKey={activeSlotKey}>
+                <div className="space-y-3">
+                {state.phase === "intro_narrator" && currentDialogue?.intro && (
+                  <IntroNarrator intro={currentDialogue.intro} onComplete={handleIntroNarratorComplete} />
+                )}
+
+                {state.phase === "intro_demo" && currentDialogue?.intro?.demo && (
+                  <IntroDemo demo={currentDialogue.intro.demo} onFinish={handleIntroDemoComplete} />
+                )}
+
+                {state.phase !== "intro_narrator" && state.phase !== "intro_demo" && latestTeacherEntry && (
+                  <TeacherBubble
+                    text={latestTeacherEntry.text}
+                    hint={latestTeacherEntry.hint}
+                    dialogueId={latestTeacherEntry.dialogueId}
+                    imageUrl={latestTeacherEntry.imageUrl}
+                    showImage={false}
+                    audio={state.phase === "teacher_speaking" ? currentTeacherTurn?.audio : undefined}
+                    subPhase={state.phase === "teacher_speaking" ? state.teacherSubPhase : "question"}
+                    onAudioComplete={handleTeacherAudioComplete}
+                    isActive={state.phase === "teacher_speaking"}
+                    demoPair={latestTeacherEntry.demoPair}
+                  />
+                )}
+
+                {(state.phase === "evaluating" || state.phase === "feedback") && latestStudentEntry && (
+                  <div>
+                    <div className="mb-2 flex justify-end">
+                      <div className="max-w-md rounded-3xl rounded-tr-sm border border-blue-300 bg-blue-700 px-4 py-3 text-white shadow-sm">
+                        <p className="text-base">{latestStudentEntry.text}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {state.phase === "feedback" && latestFeedbackEntry?.evaluationResult && (
+                  <FeedbackDisplay
+                    result={latestFeedbackEntry.evaluationResult}
+                    onNext={handleNextAfterFeedback}
+                    onStartFreeConversation={isLastTurnInCurrentDialogue() ? handleStartFreeConversation : undefined}
+                    isLastTurn={isLastTurnInSession()}
+                  />
+                )}
+
+                {state.phase === "evaluating" && (
+                  <div className="mb-2 flex items-center gap-3 rounded-xl bg-white px-3 py-3 shadow-sm">
+                    <div className="h-6 w-6 animate-spin rounded-full border-2 border-indigo-500 border-t-transparent" />
+                    <span className="text-sm text-slate-500">Sprawdzam odpowiedź...</span>
+                  </div>
+                )}
+                </div>
+              </AnimatedSlot>
+            </div>
+
+            {state.phase === "student_turn" && (
+              <div className="w-full max-w-xl">
+                <AnimatedSlot slotKey={`input-${state.currentDialogueIndex}-${state.currentTurnIndex}-${state.phase}`}>
+                  <div className="rounded-2xl bg-white/90 p-2.5 shadow-sm">
+                    {state.error && (
+                      <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                        {state.error}
+                      </div>
+                    )}
+                    <StudentAnswerInput
+                      value={state.userAnswer}
+                      onChange={(val) => setState((prev) => ({ ...prev, userAnswer: val }))}
+                      onSubmit={handleSubmitAnswer}
+                      isRecording={state.isRecording}
+                      disabled={state.phase !== "student_turn"}
+                    />
+                  </div>
+                </AnimatedSlot>
+              </div>
+            )}
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 };
