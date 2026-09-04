@@ -38,6 +38,10 @@ function getRandomPraise(): string {
   return PRAISE_PHRASES[Math.floor(Math.random() * PRAISE_PHRASES.length)];
 }
 
+function buildIncorrectFeedback(expectedAnswer: string): string {
+  return `Prawie dobrze! Możesz powiedzieć: "${expectedAnswer}"`;
+}
+
 /**
  * Evaluate a student's answer using exact match and LLM fallback.
  * Returns evaluation result with Polish feedback text and optional audio.
@@ -153,10 +157,12 @@ Respond ONLY in JSON format:
   }
 
   const parsed = JSON.parse(content);
+  const isCorrect = Boolean(parsed.is_correct);
+  const parsedFeedbackText = String(parsed.feedback_text || "");
 
   return {
-    is_correct: Boolean(parsed.is_correct),
-    feedback_text: String(parsed.feedback_text || ""),
+    is_correct: isCorrect,
+    feedback_text: isCorrect ? parsedFeedbackText : buildIncorrectFeedback(command.expected_answer),
     correct_answer: command.expected_answer,
     correction_details: {
       grammar_ok: Boolean(parsed.grammar_ok),
@@ -177,8 +183,8 @@ function createBasicFeedback(command: EvaluateAnswerCommand): EvaluationResult {
   return {
     is_correct: false,
     feedback_text: isClose
-      ? `Prawie dobrze! Poprawna odpowiedź to: "${command.expected_answer}"`
-      : `Spróbuj jeszcze raz. Poprawna odpowiedź to: "${command.expected_answer}"`,
+      ? buildIncorrectFeedback(command.expected_answer)
+      : `Spróbuj jeszcze raz. Możesz powiedzieć: "${command.expected_answer}"`,
     correct_answer: command.expected_answer,
     correction_details: {
       grammar_ok: false,
