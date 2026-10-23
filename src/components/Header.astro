@@ -5,6 +5,15 @@ import AuthMenu from "./auth/AuthMenu";
 // Pobierz dane użytkownika z locals (przyda się tylko dla początkowego renderowania)
 const { user } = Astro.locals;
 const isAuthenticated = !!user;
+const pathname = Astro.url.pathname;
+const homeHref = isAuthenticated ? "/dashboard" : "/";
+const isHomeActive = isAuthenticated ? pathname.startsWith("/dashboard") : pathname === "/";
+
+function navLinkClass(isActive: boolean): string {
+  return isActive
+    ? "rounded-lg bg-indigo-50 px-3 py-2 text-sm font-medium text-indigo-700 transition hover:bg-indigo-100"
+    : "rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-900";
+}
 ---
 
 <header class="sticky top-0 z-40 w-full border-b border-white/60 bg-white/75 backdrop-blur-lg">
@@ -18,18 +27,10 @@ const isAuthenticated = !!user;
     </a>
 
     <nav class="flex items-center gap-1 sm:gap-2">
-      <a
-        href="/"
-        class="rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-900"
-      >
-        Strona główna
-      </a>
+      <a href={homeHref} class={navLinkClass(isHomeActive)}> Strona główna </a>
       {
         isAuthenticated && (
-          <a
-            href="/generate"
-            class="rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-900"
-          >
+          <a href="/generate" class={navLinkClass(pathname.startsWith("/generate"))}>
             Generowanie
           </a>
         )
@@ -38,7 +39,7 @@ const isAuthenticated = !!user;
         isAuthenticated && (
           <a
             href="/collections"
-            class="rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-900"
+            class={navLinkClass(pathname.startsWith("/collections") || pathname.startsWith("/learn/collection"))}
           >
             Kolekcje
           </a>
@@ -46,10 +47,7 @@ const isAuthenticated = !!user;
       }
       {
         isAuthenticated && (
-          <a
-            href="/english"
-            class="rounded-lg bg-indigo-50 px-3 py-2 text-sm font-medium text-indigo-700 transition hover:bg-indigo-100"
-          >
+          <a href="/english" class={navLinkClass(pathname.startsWith("/english"))}>
             🇬🇧 Angielski
           </a>
         )

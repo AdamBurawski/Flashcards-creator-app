@@ -2,10 +2,13 @@ import type { MiddlewareHandler } from "astro";
 
 // Lista chronionych tras
 const protectedRoutes = [
+  "/dashboard",
+  "/subjects",
   "/collections",
   "/collections/create",
   "/collections/edit",
   "/collections/delete",
+  "/learn/collection",
   "/generate",
   "/english",
 ];

@@ -5,7 +5,7 @@ import AuthLayout from "../../layouts/AuthLayout.astro";
 import RegisterForm from "../../components/auth/RegisterForm";
 
 // Pobranie parametru returnUrl, jeśli istnieje
-const returnUrl = Astro.url.searchParams.get("returnUrl") || "/";
+const returnUrl = Astro.url.searchParams.get("returnUrl") || "/dashboard";
 ---
 
 <AuthLayout title="Rejestracja | Flashcards Creator">

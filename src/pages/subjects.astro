@@ -1,0 +1,211 @@
+---
+export const prerender = false;
+
+import Layout from "../layouts/Layout.astro";
+
+const { user, supabase } = Astro.locals;
+
+if (!user) {
+  return Astro.redirect("/auth/login?returnUrl=/subjects");
+}
+
+const childName = "Tereska";
+const childAge = "8 lat";
+const parentLabel = user.email ?? "Rodzic";
+
+let englishTotalDialogues = 0;
+let englishCompletedDialogues = 0;
+
+try {
+  const [dialoguesResponse, progressResponse] = await Promise.all([
+    supabase.from("english_dialogues").select("id"),
+    supabase.from("english_progress").select("dialogue_id, score").eq("user_id", user.id),
+  ]);
+
+  const dialogues = dialoguesResponse.data ?? [];
+  const progress = progressResponse.data ?? [];
+
+  englishTotalDialogues = dialogues.length;
+
+  const bestScores = new Map<string, number>();
+  for (const row of progress) {
+    const prev = bestScores.get(row.dialogue_id) ?? -1;
+    if (row.score > prev) {
+      bestScores.set(row.dialogue_id, row.score);
+    }
+  }
+
+  let completed = 0;
+  for (const score of bestScores.values()) {
+    if (score >= 50) {
+      completed++;
+    }
+  }
+  englishCompletedDialogues = completed;
+} catch (_error) {
+  englishTotalDialogues = 0;
+  englishCompletedDialogues = 0;
+}
+
+const englishPercent =
+  englishTotalDialogues > 0 ? Math.round((englishCompletedDialogues / englishTotalDialogues) * 100) : 0;
+
+const mainNav = [
+  { label: "Strona główna", icon: "🏠", href: "/dashboard", isActive: false },
+  { label: "Plan nauki", icon: "🗓️", href: "/dashboard#plan", isActive: false },
+  { label: "Przedmioty", icon: "📚", href: "/subjects", isActive: true },
+  { label: "Postępy", icon: "📊", href: "/dashboard#postepy", isActive: false },
+  { label: "Zadania", icon: "✅", href: "/dashboard#dzis", isActive: false },
+  { label: "Materiały", icon: "🗂️", href: "/dashboard#materialy", isActive: false },
+  { label: "Biblioteka", icon: "💡", href: "/dashboard#biblioteka", isActive: false },
+  { label: "Ustawienia", icon: "⚙️", href: "/dashboard#ustawienia", isActive: false },
+];
+---
+
+<Layout title="Przedmioty | Dashboard nauki" hideHeader={true}>
+  <div class="min-h-screen bg-gradient-to-b from-sky-50/60 via-white to-amber-50/40 text-slate-800">
+    <div class="mx-auto flex w-full max-w-[1500px] gap-4 px-3 py-4 sm:px-5 sm:py-5">
+      <aside
+        class="hidden w-64 shrink-0 rounded-3xl border border-slate-200 bg-white/90 p-4 shadow-sm lg:flex lg:flex-col"
+      >
+        <a
+          href="/dashboard"
+          class="mb-5 block rounded-2xl border border-sky-100 bg-gradient-to-r from-sky-50 to-indigo-50 px-3 py-3 transition hover:shadow-sm"
+        >
+          <p class="text-lg font-bold text-slate-900">EduDom</p>
+          <p class="text-xs text-slate-500">Nauka. Razem. Na całe życie.</p>
+        </a>
+
+        <nav class="space-y-1.5">
+          {
+            mainNav.map((item) => (
+              <a
+                href={item.href}
+                class={`flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium transition ${
+                  item.isActive
+                    ? "bg-blue-50 text-blue-700 shadow-sm ring-1 ring-blue-100"
+                    : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                }`}
+              >
+                <span aria-hidden="true">{item.icon}</span>
+                {item.label}
+              </a>
+            ))
+          }
+        </nav>
+
+        <div class="mt-auto rounded-2xl border border-emerald-100 bg-emerald-50/70 p-3 text-xs text-emerald-800">
+          Widok przedmiotów. Kolejne moduły będą dodawane stopniowo.
+        </div>
+      </aside>
+
+      <main class="min-w-0 flex-1">
+        <header class="mb-5 rounded-3xl border border-slate-200 bg-white/95 px-4 py-3 shadow-sm sm:px-5">
+          <div class="flex flex-wrap items-center gap-3 xl:flex-nowrap">
+            <div
+              class="inline-flex min-w-[180px] items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50/80 px-3 py-2"
+            >
+              <div
+                class="grid h-9 w-9 place-items-center rounded-full bg-white text-xs font-bold text-slate-600 ring-1 ring-slate-200"
+              >
+                Z
+              </div>
+              <div class="leading-tight">
+                <p class="text-sm font-semibold text-slate-900">{childName}</p>
+                <p class="text-xs text-slate-500">
+                  {childAge} • uprawnienia: user
+                </p>
+              </div>
+            </div>
+
+            <div class="grow text-center">
+              <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Przedmioty</p>
+              <p class="text-sm font-semibold text-slate-900">Aktywny moduł: English</p>
+            </div>
+
+            <button
+              type="button"
+              disabled
+              class="inline-flex min-w-[120px] items-center justify-center gap-1 rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-800"
+            >
+              🔔 Powiadomienia
+              <span class="rounded-full bg-rose-500 px-1.5 py-0.5 text-[10px] font-bold text-white">3</span>
+            </button>
+
+            <div
+              class="inline-flex min-w-[220px] items-center gap-2 rounded-2xl border border-indigo-100 bg-indigo-50/80 px-3 py-2"
+            >
+              <div
+                class="grid h-9 w-9 place-items-center rounded-full bg-white text-xs font-bold text-indigo-700 ring-1 ring-indigo-200"
+              >
+                A
+              </div>
+              <div class="leading-tight">
+                <p class="text-sm font-semibold text-slate-900">Rodzic</p>
+                <p class="text-xs text-slate-500">uprawnienia: administrator</p>
+              </div>
+              <span class="ml-auto rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-semibold text-indigo-700">
+                {parentLabel}
+              </span>
+            </div>
+          </div>
+        </header>
+
+        <div
+          class="rounded-3xl border border-sky-100 bg-gradient-to-r from-white via-sky-50/70 to-emerald-50/60 p-5 shadow-sm sm:p-6"
+        >
+          <p
+            class="inline-flex rounded-full bg-white/80 px-3 py-1 text-xs font-semibold text-slate-600 shadow-sm ring-1 ring-slate-200"
+          >
+            Sekcja przedmiotów
+          </p>
+          <h1 class="mt-3 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">Przedmioty</h1>
+          <p class="mt-2 max-w-2xl text-sm text-slate-600 sm:text-base">
+            Tutaj będziemy dodawać kolejne przedmioty. Na ten moment aktywny jest moduł English.
+          </p>
+        </div>
+
+        <section class="mt-6 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+          <a
+            href="/english"
+            class="rounded-3xl border border-emerald-200 bg-emerald-50/80 p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+          >
+            <div class="mb-3 flex items-start justify-between">
+              <span
+                class="rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200"
+                >Aktywny</span
+              >
+              <span class="text-2xl" aria-hidden="true">🇬🇧</span>
+            </div>
+            <h2 class="text-lg font-semibold text-slate-900">English</h2>
+            <p class="mt-1 text-sm text-slate-600">Dialogi, lekcje i postęp językowy.</p>
+            <div class="mt-4">
+              <p class="text-xs text-slate-500">Ukończone dialogi</p>
+              <p class="text-2xl font-bold text-slate-900">
+                {englishCompletedDialogues}
+                <span class="text-base font-medium text-slate-500"> / {englishTotalDialogues}</span>
+              </p>
+              <p class="mt-1 text-xs font-semibold text-emerald-700">Postęp: {englishPercent}%</p>
+            </div>
+          </a>
+
+          <div class="rounded-3xl border border-sky-200 bg-sky-50/70 p-5 shadow-sm">
+            <span class="rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-sky-700 ring-1 ring-sky-200"
+              >Wkrótce</span
+            >
+            <h2 class="mt-3 text-lg font-semibold text-slate-900">Matematyka</h2>
+            <p class="mt-1 text-sm text-slate-600">Planowany moduł ćwiczeń i postępów.</p>
+          </div>
+
+          <div class="rounded-3xl border border-amber-200 bg-amber-50/70 p-5 shadow-sm">
+            <span class="rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-amber-700 ring-1 ring-amber-200"
+              >Wkrótce</span
+            >
+            <h2 class="mt-3 text-lg font-semibold text-slate-900">Język polski</h2>
+            <p class="mt-1 text-sm text-slate-600">Planowany moduł czytania i pisania.</p>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+</Layout>

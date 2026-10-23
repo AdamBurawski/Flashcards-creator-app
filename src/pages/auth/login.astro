@@ -3,7 +3,7 @@ import AuthLayout from "../../layouts/AuthLayout.astro";
 import LoginForm from "../../components/auth/LoginForm";
 
 // Pobranie parametru returnUrl, jeśli istnieje
-const returnUrl = Astro.url.searchParams.get("returnUrl") || "/";
+const returnUrl = Astro.url.searchParams.get("returnUrl") || "/dashboard";
 ---
 
 <AuthLayout title="Logowanie | Flashcards Creator">
