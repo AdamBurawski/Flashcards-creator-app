@@ -1,0 +1,608 @@
+---
+export const prerender = false;
+
+import Layout from "../layouts/Layout.astro";
+
+const { user, supabase } = Astro.locals;
+
+if (!user) {
+  return Astro.redirect("/auth/login?returnUrl=/dashboard");
+}
+
+type WeeklyStatus = "done" | "planned" | "upcoming";
+
+interface WeeklyItem {
+  id: string;
+  title: string;
+  module: string;
+  dayKey: string;
+  dayLabel: string;
+  dateLabel: string;
+  timeLabel: string;
+  status: WeeklyStatus;
+  href?: string;
+  isMock?: boolean;
+}
+
+const now = new Date();
+const rawWeekOffset = Number.parseInt(Astro.url.searchParams.get("weekOffset") ?? "0", 10);
+const weekOffset = Number.isFinite(rawWeekOffset) ? Math.max(-52, Math.min(52, rawWeekOffset)) : 0;
+
+const weekDay = now.getDay();
+const mondayOffset = weekDay === 0 ? -6 : 1 - weekDay;
+const monday = new Date(now);
+monday.setHours(0, 0, 0, 0);
+monday.setDate(now.getDate() + mondayOffset + weekOffset * 7);
+
+const weekDates = Array.from({ length: 7 }).map((_, index) => {
+  const date = new Date(monday);
+  date.setDate(monday.getDate() + index);
+  return date;
+});
+
+const weekLabel = `${weekDates[0]?.toLocaleDateString("pl-PL", {
+  day: "numeric",
+  month: "long",
+})} - ${weekDates[6]?.toLocaleDateString("pl-PL", { day: "numeric", month: "long", year: "numeric" })}`;
+
+const todayKey = now.toISOString().slice(0, 10);
+const dashboardUrlBase = "/dashboard";
+const prevWeekOffset = weekOffset - 1;
+const nextWeekOffset = weekOffset + 1;
+const weekPrevHref = `${dashboardUrlBase}?weekOffset=${prevWeekOffset}`;
+const weekNextHref = `${dashboardUrlBase}?weekOffset=${nextWeekOffset}`;
+const weekCurrentHref = `${dashboardUrlBase}?weekOffset=0`;
+
+let collectionsCount = 0;
+let englishTotalDialogues = 0;
+let englishCompletedDialogues = 0;
+let recentEnglishAvg = 0;
+
+let weeklyItems: WeeklyItem[] = [];
+
+try {
+  const [collectionsResponse, dialoguesResponse, progressResponse] = await Promise.all([
+    supabase.from("collections").select("id", { count: "exact", head: true }).eq("user_id", user.id),
+    supabase
+      .from("english_dialogues")
+      .select("id, title, level, stage, lesson, estimated_duration_seconds, sort_order")
+      .order("stage", { ascending: true })
+      .order("lesson", { ascending: true })
+      .order("sort_order", { ascending: true }),
+    supabase
+      .from("english_progress")
+      .select("dialogue_id, score, completed_at")
+      .eq("user_id", user.id)
+      .order("completed_at", { ascending: false }),
+  ]);
+
+  collectionsCount = collectionsResponse.count ?? 0;
+
+  const dialogues = dialoguesResponse.data ?? [];
+  const progress = progressResponse.data ?? [];
+
+  englishTotalDialogues = dialogues.length;
+
+  const bestScores = new Map<string, number>();
+  for (const row of progress) {
+    const prev = bestScores.get(row.dialogue_id) ?? -1;
+    if (row.score > prev) {
+      bestScores.set(row.dialogue_id, row.score);
+    }
+  }
+
+  const completedDialogueIds = new Set<string>();
+  for (const [dialogueId, score] of bestScores) {
+    if (score >= 50) {
+      completedDialogueIds.add(dialogueId);
+    }
+  }
+
+  englishCompletedDialogues = completedDialogueIds.size;
+
+  const recentScores = progress.slice(0, 10).map((row) => row.score);
+  recentEnglishAvg =
+    recentScores.length > 0
+      ? Math.round(recentScores.reduce((sum, current) => sum + current, 0) / recentScores.length)
+      : 0;
+
+  const upcomingEnglish = dialogues.filter((dialogue) => !completedDialogueIds.has(dialogue.id)).slice(0, 8);
+
+  const englishSlots = ["09:00", "10:00", "11:00", "13:00", "15:00"];
+
+  const englishPlanItems: WeeklyItem[] = upcomingEnglish.map((dialogue, index) => {
+    const dayIndex = index % 5;
+    const date = weekDates[dayIndex];
+    const dayKey = date.toISOString().slice(0, 10);
+
+    return {
+      id: `english-${dialogue.id}`,
+      title: `${dialogue.title}`,
+      module: "English",
+      dayKey,
+      dayLabel: date.toLocaleDateString("pl-PL", { weekday: "short" }),
+      dateLabel: date.toLocaleDateString("pl-PL", { day: "numeric", month: "short" }),
+      timeLabel: englishSlots[index % englishSlots.length] ?? "09:00",
+      status: "planned",
+      href: `/english/lesson/${dialogue.level}/${dialogue.stage}/${dialogue.lesson}?dialogueId=${encodeURIComponent(dialogue.id)}`,
+    };
+  });
+
+  const mockPlanItems: WeeklyItem[] = [
+    {
+      id: "mock-reading",
+      title: "Czytanie ze zrozumieniem",
+      module: "Język polski",
+      dayKey: weekDates[1].toISOString().slice(0, 10),
+      dayLabel: weekDates[1].toLocaleDateString("pl-PL", { weekday: "short" }),
+      dateLabel: weekDates[1].toLocaleDateString("pl-PL", { day: "numeric", month: "short" }),
+      timeLabel: "12:00",
+      status: "upcoming",
+      isMock: true,
+    },
+    {
+      id: "mock-math",
+      title: "Ułamki i procenty",
+      module: "Matematyka",
+      dayKey: weekDates[2].toISOString().slice(0, 10),
+      dayLabel: weekDates[2].toLocaleDateString("pl-PL", { weekday: "short" }),
+      dateLabel: weekDates[2].toLocaleDateString("pl-PL", { day: "numeric", month: "short" }),
+      timeLabel: "14:00",
+      status: "planned",
+      isMock: true,
+    },
+    {
+      id: "mock-science",
+      title: "Przyroda: ekosystemy",
+      module: "Przyroda",
+      dayKey: weekDates[4].toISOString().slice(0, 10),
+      dayLabel: weekDates[4].toLocaleDateString("pl-PL", { weekday: "short" }),
+      dateLabel: weekDates[4].toLocaleDateString("pl-PL", { day: "numeric", month: "short" }),
+      timeLabel: "16:00",
+      status: "upcoming",
+      isMock: true,
+    },
+  ];
+
+  weeklyItems = [...englishPlanItems, ...mockPlanItems];
+} catch (_error) {
+  collectionsCount = 0;
+  englishTotalDialogues = 0;
+  englishCompletedDialogues = 0;
+  recentEnglishAvg = 0;
+  weeklyItems = [];
+}
+
+const overallPlannedTopics = Math.max(englishTotalDialogues + 24, 40);
+const overallCompletedTopics = Math.min(
+  overallPlannedTopics,
+  englishCompletedDialogues + Math.max(0, Math.round(collectionsCount * 1.5))
+);
+const overallPercent = overallPlannedTopics > 0 ? Math.round((overallCompletedTopics / overallPlannedTopics) * 100) : 0;
+const englishPercent =
+  englishTotalDialogues > 0 ? Math.round((englishCompletedDialogues / englishTotalDialogues) * 100) : 0;
+
+const itemsByDay = weekDates.map((date) => {
+  const dayKey = date.toISOString().slice(0, 10);
+  return {
+    dayKey,
+    dayLabel: date.toLocaleDateString("pl-PL", { weekday: "short" }),
+    dateLabel: date.toLocaleDateString("pl-PL", { day: "numeric", month: "short" }),
+    isToday: dayKey === todayKey,
+    items: weeklyItems.filter((item) => item.dayKey === dayKey).sort((a, b) => a.timeLabel.localeCompare(b.timeLabel)),
+  };
+});
+
+const todayTasks = weeklyItems
+  .filter((item) => item.dayKey === todayKey)
+  .sort((a, b) => a.timeLabel.localeCompare(b.timeLabel));
+const backlogTasks = weeklyItems.filter((item) => item.status === "upcoming").slice(0, 4);
+
+const moduleCards = [
+  {
+    title: "English",
+    subtitle: "Aktywny moduł",
+    value: `${englishPercent}%`,
+    href: "/english",
+    color: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  },
+  {
+    title: "Matematyka",
+    subtitle: "W przygotowaniu",
+    value: "mock",
+    href: "#",
+    color: "bg-sky-50 text-sky-700 border-sky-200",
+  },
+  {
+    title: "Język polski",
+    subtitle: "W przygotowaniu",
+    value: "mock",
+    href: "#",
+    color: "bg-rose-50 text-rose-700 border-rose-200",
+  },
+  {
+    title: "Przyroda",
+    subtitle: "W przygotowaniu",
+    value: "mock",
+    href: "#",
+    color: "bg-amber-50 text-amber-700 border-amber-200",
+  },
+];
+
+function statusBadgeClass(status: WeeklyStatus): string {
+  if (status === "done") return "bg-emerald-100 text-emerald-700";
+  if (status === "planned") return "bg-blue-100 text-blue-700";
+  return "bg-amber-100 text-amber-700";
+}
+
+const mainNav = [
+  { label: "Strona główna", icon: "🏠", href: "/dashboard", isActive: true },
+  { label: "Plan nauki", icon: "🗓️", href: "/dashboard#plan", isActive: false },
+  { label: "Przedmioty", icon: "📚", href: "/subjects", isActive: false },
+  { label: "Postępy", icon: "📊", href: "/dashboard#postepy", isActive: false },
+  { label: "Zadania", icon: "✅", href: "/dashboard#dzis", isActive: false },
+  { label: "Materiały", icon: "🗂️", href: "/dashboard#materialy", isActive: false },
+  { label: "Biblioteka", icon: "💡", href: "/dashboard#biblioteka", isActive: false },
+  { label: "Ustawienia", icon: "⚙️", href: "/dashboard#ustawienia", isActive: false },
+];
+
+const childName = "Tereska";
+const childAge = "8 lat";
+const parentLabel = user.email ?? "Rodzic";
+---
+
+<Layout title="Dashboard nauki | Flashcards Creator" hideHeader={true}>
+  <div class="min-h-screen bg-gradient-to-b from-sky-50/60 via-white to-amber-50/40 text-slate-800">
+    <div class="mx-auto flex w-full max-w-[1500px] gap-4 px-3 py-4 sm:px-5 sm:py-5">
+      <aside
+        class="hidden w-64 shrink-0 rounded-3xl border border-slate-200 bg-white/90 p-4 shadow-sm lg:flex lg:flex-col"
+      >
+        <a
+          href="/dashboard"
+          class="mb-5 block rounded-2xl border border-sky-100 bg-gradient-to-r from-sky-50 to-indigo-50 px-3 py-3 transition hover:shadow-sm"
+        >
+          <p class="text-lg font-bold text-slate-900">EduDom</p>
+          <p class="text-xs text-slate-500">Nauka. Razem. Na całe życie.</p>
+        </a>
+
+        <nav class="space-y-1.5">
+          {
+            mainNav.map((item) => (
+              <a
+                href={item.href}
+                class={`flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium transition ${
+                  item.isActive
+                    ? "bg-blue-50 text-blue-700 shadow-sm ring-1 ring-blue-100"
+                    : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                }`}
+              >
+                <span aria-hidden="true">{item.icon}</span>
+                {item.label}
+              </a>
+            ))
+          }
+        </nav>
+
+        <div class="mt-auto rounded-2xl border border-emerald-100 bg-emerald-50/70 p-3 text-xs text-emerald-800">
+          Tryb ucznia aktywny. Funkcje administracyjne są dostępne z konta rodzica.
+        </div>
+      </aside>
+
+      <main class="min-w-0 flex-1">
+        <header class="mb-5 rounded-3xl border border-slate-200 bg-white/95 px-4 py-3 shadow-sm sm:px-5">
+          <div class="flex flex-wrap items-center gap-3 xl:flex-nowrap">
+            <div
+              class="inline-flex min-w-[180px] items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50/80 px-3 py-2"
+            >
+              <div
+                class="grid h-9 w-9 place-items-center rounded-full bg-white text-xs font-bold text-slate-600 ring-1 ring-slate-200"
+              >
+                Z
+              </div>
+              <div class="leading-tight">
+                <p class="text-sm font-semibold text-slate-900">{childName}</p>
+                <p class="text-xs text-slate-500">
+                  {childAge} • uprawnienia: user
+                </p>
+              </div>
+            </div>
+
+            <div class="flex grow items-center justify-center">
+              <div
+                class="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2 shadow-sm"
+              >
+                <a
+                  href={weekPrevHref}
+                  class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-slate-600 transition hover:bg-slate-200"
+                  aria-label="Poprzedni tydzień"
+                >
+                  ←
+                </a>
+                <div class="text-center">
+                  <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Bieżący okres</p>
+                  <p class="text-sm font-semibold text-slate-900">Tydzień: {weekLabel}</p>
+                </div>
+                <a
+                  href={weekNextHref}
+                  class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-slate-600 transition hover:bg-slate-200"
+                  aria-label="Następny tydzień"
+                >
+                  →
+                </a>
+                {
+                  weekOffset !== 0 && (
+                    <a
+                      href={weekCurrentHref}
+                      class="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700 hover:bg-blue-100"
+                    >
+                      Dziś
+                    </a>
+                  )
+                }
+              </div>
+            </div>
+
+            <button
+              type="button"
+              disabled
+              class="inline-flex min-w-[120px] items-center justify-center gap-1 rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-800"
+              title="Powiadomienia zostaną podłączone w kolejnej iteracji"
+            >
+              🔔 Powiadomienia
+              <span class="rounded-full bg-rose-500 px-1.5 py-0.5 text-[10px] font-bold text-white">3</span>
+            </button>
+
+            <div
+              class="inline-flex min-w-[220px] items-center gap-2 rounded-2xl border border-indigo-100 bg-indigo-50/80 px-3 py-2"
+            >
+              <div
+                class="grid h-9 w-9 place-items-center rounded-full bg-white text-xs font-bold text-indigo-700 ring-1 ring-indigo-200"
+              >
+                A
+              </div>
+              <div class="leading-tight">
+                <p class="text-sm font-semibold text-slate-900">Rodzic</p>
+                <p class="text-xs text-slate-500">uprawnienia: administrator</p>
+              </div>
+              <span class="ml-auto rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-semibold text-indigo-700">
+                {parentLabel}
+              </span>
+            </div>
+          </div>
+        </header>
+
+        <div
+          class="mb-5 rounded-3xl border border-sky-100 bg-gradient-to-r from-white via-sky-50/70 to-emerald-50/60 p-5 shadow-sm sm:p-6"
+        >
+          <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <p
+                class="inline-flex rounded-full bg-white/80 px-3 py-1 text-xs font-semibold text-slate-600 shadow-sm ring-1 ring-slate-200"
+              >
+                Dashboard nauki
+              </p>
+              <h1 class="mt-3 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
+                Dobrego tygodnia, {childName}!
+              </h1>
+              <p class="mt-2 max-w-2xl text-sm text-slate-600 sm:text-base">
+                Plan tygodnia jest centrum panelu. English działa już produkcyjnie, kolejne moduły możesz dokładać
+                stopniowo.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid gap-6 xl:grid-cols-[1.7fr_1fr]">
+          <div class="space-y-6">
+            <section id="plan" class="rounded-3xl border border-slate-200 bg-white/95 p-4 shadow-sm sm:p-5">
+              <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <h2 class="text-xl font-semibold text-slate-900">Plan nauki - ten tydzień</h2>
+                  <p class="text-sm text-slate-500">
+                    Najważniejszy widok planu. Wkrótce z dwukierunkowym Google Calendar.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  disabled
+                  class="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-500"
+                  title="Integracja zostanie podłączona w kolejnej iteracji"
+                >
+                  Sync Google Calendar - wkrótce
+                </button>
+              </div>
+
+              <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-7">
+                {
+                  itemsByDay.map((day) => (
+                    <div
+                      class={`rounded-2xl border p-3 ${day.isToday ? "border-blue-200 bg-blue-50/60" : "border-slate-200 bg-slate-50/50"}`}
+                    >
+                      <div class="mb-2 border-b border-slate-200 pb-2">
+                        <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">{day.dayLabel}</p>
+                        <p class="text-sm font-semibold text-slate-800">{day.dateLabel}</p>
+                      </div>
+                      <div class="space-y-2">
+                        {day.items.length === 0 ? (
+                          <p class="text-xs text-slate-400">Brak zadań</p>
+                        ) : (
+                          day.items.map((item) => (
+                            <div class="rounded-xl border border-white bg-white p-2 shadow-sm">
+                              <p class="text-[11px] font-semibold text-slate-500">{item.timeLabel}</p>
+                              {item.href ? (
+                                <a
+                                  href={item.href}
+                                  class="mt-0.5 block text-xs font-semibold text-slate-800 hover:text-blue-700"
+                                >
+                                  {item.title}
+                                </a>
+                              ) : (
+                                <p class="mt-0.5 text-xs font-semibold text-slate-800">{item.title}</p>
+                              )}
+                              <div class="mt-1.5 flex items-center justify-between gap-1">
+                                <span
+                                  class={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${statusBadgeClass(item.status)}`}
+                                >
+                                  {item.status === "planned"
+                                    ? "Zaplanowane"
+                                    : item.status === "done"
+                                      ? "Wykonane"
+                                      : "Nadchodzi"}
+                                </span>
+                                <span class="text-[10px] text-slate-500">{item.module}</span>
+                              </div>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  ))
+                }
+              </div>
+            </section>
+
+            <div class="grid gap-6 lg:grid-cols-2">
+              <section id="dzis" class="rounded-3xl border border-slate-200 bg-white/95 p-5 shadow-sm">
+                <div class="mb-3 flex items-center justify-between">
+                  <h3 class="text-lg font-semibold text-slate-900">Dziś do zrobienia</h3>
+                  <span class="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700"
+                    >{todayTasks.length}</span
+                  >
+                </div>
+                <div class="space-y-2">
+                  {
+                    todayTasks.length === 0 ? (
+                      <p class="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-500">
+                        Na dzisiaj nie ma zadań. Dodaj pozycję przez plan tygodnia.
+                      </p>
+                    ) : (
+                      todayTasks.map((task) => (
+                        <div class="flex items-start justify-between gap-2 rounded-xl border border-slate-200 bg-slate-50/70 px-3 py-2">
+                          <div>
+                            <p class="text-sm font-semibold text-slate-800">{task.title}</p>
+                            <p class="text-xs text-slate-500">
+                              {task.timeLabel} - {task.module}
+                            </p>
+                          </div>
+                          <span
+                            class={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${statusBadgeClass(task.status)}`}
+                          >
+                            {task.status === "planned" ? "Plan" : task.status === "done" ? "Done" : "Soon"}
+                          </span>
+                        </div>
+                      ))
+                    )
+                  }
+                </div>
+              </section>
+
+              <section class="rounded-3xl border border-slate-200 bg-white/95 p-5 shadow-sm">
+                <div class="mb-3 flex items-center justify-between">
+                  <h3 class="text-lg font-semibold text-slate-900">Zaległości i priorytety</h3>
+                  <span class="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700"
+                    >{backlogTasks.length}</span
+                  >
+                </div>
+                <div class="space-y-2">
+                  {
+                    backlogTasks.length === 0 ? (
+                      <p class="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-500">
+                        Brak zaległości. Świetne tempo!
+                      </p>
+                    ) : (
+                      backlogTasks.map((task) => (
+                        <div class="flex items-start justify-between gap-2 rounded-xl border border-amber-100 bg-amber-50/60 px-3 py-2">
+                          <div>
+                            <p class="text-sm font-semibold text-slate-800">{task.title}</p>
+                            <p class="text-xs text-slate-500">
+                              {task.dayLabel}, {task.timeLabel}
+                            </p>
+                          </div>
+                          <span class="rounded-full bg-white px-2 py-0.5 text-[10px] font-semibold text-amber-700 ring-1 ring-amber-200">
+                            {task.isMock ? "Mock" : "English"}
+                          </span>
+                        </div>
+                      ))
+                    )
+                  }
+                </div>
+              </section>
+            </div>
+          </div>
+
+          <aside class="space-y-6">
+            <section id="postepy" class="rounded-3xl border border-slate-200 bg-white/95 p-5 shadow-sm">
+              <h3 class="text-xl font-semibold text-slate-900">Postęp ogólny</h3>
+              <div class="mt-4 flex items-center gap-4">
+                <div
+                  class="grid h-24 w-24 place-items-center rounded-full bg-slate-100 text-center"
+                  style={`background: conic-gradient(#34d399 ${overallPercent}%, #e5e7eb ${overallPercent}%);`}
+                >
+                  <div class="grid h-16 w-16 place-items-center rounded-full bg-white text-sm font-bold text-slate-800">
+                    {overallPercent}%
+                  </div>
+                </div>
+                <div>
+                  <p class="text-sm text-slate-500">Przerobione tematy</p>
+                  <p class="text-2xl font-bold text-slate-900">
+                    {overallCompletedTopics}
+                    <span class="text-base font-medium text-slate-500">/ {overallPlannedTopics}</span>
+                  </p>
+                  <p class="mt-1 text-xs text-emerald-600">Małe kroki budują regularność.</p>
+                </div>
+              </div>
+            </section>
+
+            <section id="moduly" class="rounded-3xl border border-slate-200 bg-white/95 p-5 shadow-sm">
+              <h3 class="text-lg font-semibold text-slate-900">Postępy w modułach</h3>
+              <div class="mt-3 space-y-2.5">
+                {
+                  moduleCards.map((module) => (
+                    <a
+                      href={module.href}
+                      class={`block rounded-2xl border p-3 transition hover:shadow-sm ${module.color}`}
+                    >
+                      <div class="flex items-center justify-between">
+                        <div>
+                          <p class="text-sm font-semibold">{module.title}</p>
+                          <p class="text-xs opacity-80">{module.subtitle}</p>
+                        </div>
+                        <span class="rounded-full bg-white/90 px-2 py-0.5 text-xs font-bold">{module.value}</span>
+                      </div>
+                    </a>
+                  ))
+                }
+              </div>
+            </section>
+
+            <section class="rounded-3xl border border-slate-200 bg-white/95 p-5 shadow-sm">
+              <h3 class="text-lg font-semibold text-slate-900">English - szybki podgląd</h3>
+              <div class="mt-3 space-y-2 text-sm text-slate-600">
+                <p class="flex items-center justify-between">
+                  <span>Ukończone dialogi</span>
+                  <strong class="text-slate-900">
+                    {englishCompletedDialogues}/{englishTotalDialogues}
+                  </strong>
+                </p>
+                <p class="flex items-center justify-between">
+                  <span>Średni wynik (ostatnie sesje)</span>
+                  <strong class="text-slate-900">{recentEnglishAvg}%</strong>
+                </p>
+                <p class="flex items-center justify-between">
+                  <span>Kolekcje fiszek</span>
+                  <strong class="text-slate-900">{collectionsCount}</strong>
+                </p>
+              </div>
+              <a
+                href="/english"
+                class="mt-4 inline-flex items-center rounded-full bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700"
+              >
+                Przejdź do English
+              </a>
+            </section>
+          </aside>
+        </div>
+      </main>
+    </div>
+  </div>
+</Layout>
