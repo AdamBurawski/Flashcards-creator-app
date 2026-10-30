@@ -2,6 +2,7 @@ import type { APIRoute } from "astro";
 import { z } from "zod";
 import { ErrorSource, logError } from "../../../lib/error-logger.service";
 import { saveProgress } from "../../../lib/english.service";
+import { loadSessionContext } from "../../../lib/household";
 
 export const prerender = false;
 
@@ -52,8 +53,9 @@ export const POST: APIRoute = async ({ request, locals }) => {
       );
     }
 
-    // 3. Save progress
-    const result = await saveProgress(locals.supabase, locals.user.id, validationResult.data);
+    // 3. Save progress for the active learner (child when parent is viewing them)
+    const session = await loadSessionContext(locals.supabase, locals.user.id, locals.user.email ?? null);
+    const result = await saveProgress(locals.supabase, session.activeLearnerId, validationResult.data);
 
     if (result.error) {
       return new Response(JSON.stringify({ error: result.error }), {

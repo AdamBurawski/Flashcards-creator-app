@@ -2,6 +2,8 @@
 export const prerender = false;
 
 import Layout from "../layouts/Layout.astro";
+import { isAppNavActive } from "../lib/app-nav";
+import { avatarLetter, loadSessionContext, navItemsForRole } from "../lib/household";
 
 const { user, supabase } = Astro.locals;
 
@@ -9,9 +11,12 @@ if (!user) {
   return Astro.redirect("/auth/login?returnUrl=/subjects");
 }
 
-const childName = "Tereska";
-const childAge = "8 lat";
-const parentLabel = user.email ?? "Rodzic";
+const session = await loadSessionContext(supabase, user.id, user.email ?? null);
+const child = session.activeChild;
+const childName = child?.displayName ?? "Brak dziecka";
+const childAge = child?.ageLabel ?? null;
+const parentLabel =
+  session.viewer.displayName !== "Bez imienia" ? session.viewer.displayName : (user.email ?? "Rodzic");
 
 let englishTotalDialogues = 0;
 let englishCompletedDialogues = 0;
@@ -19,7 +24,7 @@ let englishCompletedDialogues = 0;
 try {
   const [dialoguesResponse, progressResponse] = await Promise.all([
     supabase.from("english_dialogues").select("id"),
-    supabase.from("english_progress").select("dialogue_id, score").eq("user_id", user.id),
+    supabase.from("english_progress").select("dialogue_id, score").eq("user_id", session.activeLearnerId),
   ]);
 
   const dialogues = dialoguesResponse.data ?? [];
@@ -50,23 +55,17 @@ try {
 const englishPercent =
   englishTotalDialogues > 0 ? Math.round((englishCompletedDialogues / englishTotalDialogues) * 100) : 0;
 
-const mainNav = [
-  { label: "Strona główna", icon: "🏠", href: "/dashboard", isActive: false },
-  { label: "Plan nauki", icon: "🗓️", href: "/dashboard#plan", isActive: false },
-  { label: "Przedmioty", icon: "📚", href: "/subjects", isActive: true },
-  { label: "Postępy", icon: "📊", href: "/dashboard#postepy", isActive: false },
-  { label: "Zadania", icon: "✅", href: "/dashboard#dzis", isActive: false },
-  { label: "Materiały", icon: "🗂️", href: "/dashboard#materialy", isActive: false },
-  { label: "Biblioteka", icon: "💡", href: "/dashboard#biblioteka", isActive: false },
-  { label: "Ustawienia", icon: "⚙️", href: "/dashboard#ustawienia", isActive: false },
-];
+const mainNav = navItemsForRole(session.role).map((item) => ({
+  ...item,
+  isActive: isAppNavActive(item.href, Astro.url.pathname),
+}));
 ---
 
 <Layout title="Przedmioty | Dashboard nauki" hideHeader={true}>
   <div class="min-h-screen bg-gradient-to-b from-sky-50/60 via-white to-amber-50/40 text-slate-800">
     <div class="mx-auto flex w-full max-w-[1500px] gap-4 px-3 py-4 sm:px-5 sm:py-5">
       <aside
-        class="hidden w-64 shrink-0 rounded-3xl border border-slate-200 bg-white/90 p-4 shadow-sm lg:flex lg:flex-col"
+        class="hidden w-72 shrink-0 rounded-3xl border border-slate-200 bg-white/90 p-4 shadow-sm lg:flex lg:flex-col"
       >
         <a
           href="/dashboard"
@@ -105,15 +104,19 @@ const mainNav = [
             <div
               class="inline-flex min-w-[180px] items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50/80 px-3 py-2"
             >
-              <div
-                class="grid h-9 w-9 place-items-center rounded-full bg-white text-xs font-bold text-slate-600 ring-1 ring-slate-200"
-              >
-                Z
-              </div>
+              {
+                child?.avatarUrl ? (
+                  <img src={child.avatarUrl} alt="" class="h-9 w-9 rounded-full object-cover ring-1 ring-slate-200" />
+                ) : (
+                  <div class="grid h-9 w-9 place-items-center rounded-full bg-white text-xs font-bold text-slate-600 ring-1 ring-slate-200">
+                    {avatarLetter(childName)}
+                  </div>
+                )
+              }
               <div class="leading-tight">
                 <p class="text-sm font-semibold text-slate-900">{childName}</p>
                 <p class="text-xs text-slate-500">
-                  {childAge} • uprawnienia: user
+                  {[childAge, "uprawnienia: user"].filter(Boolean).join(" • ")}
                 </p>
               </div>
             </div>
@@ -132,22 +135,30 @@ const mainNav = [
               <span class="rounded-full bg-rose-500 px-1.5 py-0.5 text-[10px] font-bold text-white">3</span>
             </button>
 
-            <div
-              class="inline-flex min-w-[220px] items-center gap-2 rounded-2xl border border-indigo-100 bg-indigo-50/80 px-3 py-2"
-            >
-              <div
-                class="grid h-9 w-9 place-items-center rounded-full bg-white text-xs font-bold text-indigo-700 ring-1 ring-indigo-200"
-              >
-                A
-              </div>
-              <div class="leading-tight">
-                <p class="text-sm font-semibold text-slate-900">Rodzic</p>
-                <p class="text-xs text-slate-500">uprawnienia: administrator</p>
-              </div>
-              <span class="ml-auto rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-semibold text-indigo-700">
-                {parentLabel}
-              </span>
-            </div>
+            {
+              session.isAdministrator && (
+                <div class="inline-flex min-w-[220px] items-center gap-2 rounded-2xl border border-indigo-100 bg-indigo-50/80 px-3 py-2">
+                  {session.viewer.avatarUrl ? (
+                    <img
+                      src={session.viewer.avatarUrl}
+                      alt=""
+                      class="h-9 w-9 rounded-full object-cover ring-1 ring-indigo-200"
+                    />
+                  ) : (
+                    <div class="grid h-9 w-9 place-items-center rounded-full bg-white text-xs font-bold text-indigo-700 ring-1 ring-indigo-200">
+                      {avatarLetter(parentLabel)}
+                    </div>
+                  )}
+                  <div class="leading-tight">
+                    <p class="text-sm font-semibold text-slate-900">Rodzic</p>
+                    <p class="text-xs text-slate-500">uprawnienia: administrator</p>
+                  </div>
+                  <span class="ml-auto rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-semibold text-indigo-700">
+                    {parentLabel}
+                  </span>
+                </div>
+              )
+            }
           </div>
         </header>
 

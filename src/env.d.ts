@@ -24,8 +24,10 @@ interface ImportMetaEnv {
   readonly DATABASE_URL: string;
   readonly SUPABASE_URL: string;
   readonly SUPABASE_KEY: string;
+  readonly SUPABASE_SERVICE_ROLE_KEY: string;
   readonly PUBLIC_SUPABASE_URL: string;
   readonly PUBLIC_SUPABASE_ANON_KEY: string;
+  readonly PUBLIC_SUPABASE_KEY: string;
   readonly MODE: "development" | "production";
   readonly BASE_URL: string;
   readonly BYPASS_DATABASE?: string | boolean;
