@@ -447,6 +447,18 @@ export interface Database {
     };
     Views: Record<never, never>;
     Functions: {
+      household_accounts: {
+        Args: never;
+        Returns: {
+          avatar_url: string | null;
+          display_name: string | null;
+          email: string;
+          first_name: string | null;
+          last_name: string | null;
+          role: string;
+          user_id: string;
+        }[];
+      };
       current_profile_role: { Args: never; Returns: string };
       is_guardian_of: { Args: { target_user_id: string }; Returns: boolean };
       owns_or_guards: { Args: { target_user_id: string }; Returns: boolean };

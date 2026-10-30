@@ -1,6 +1,7 @@
 ---
 export const prerender = false;
 
+import AccountSwitcher from "../components/auth/AccountSwitcher";
 import DashboardBoard from "../components/dashboard/DashboardBoard";
 import Layout from "../layouts/Layout.astro";
 import { isAppNavActive } from "../lib/app-nav";
@@ -15,7 +16,7 @@ import {
   weekdayLabels,
 } from "../lib/calendar-range";
 import { localDayKey, withCalendarSlots } from "../lib/current-task";
-import { avatarLetter, loadSessionContext, navItemsForRole } from "../lib/household";
+import { avatarLetter, listHouseholdAccounts, loadSessionContext, navItemsForRole } from "../lib/household";
 
 const { user, supabase } = Astro.locals;
 
@@ -24,6 +25,7 @@ if (!user) {
 }
 
 const session = await loadSessionContext(supabase, user.id, user.email ?? null);
+const householdAccounts = await listHouseholdAccounts(supabase);
 const learnerId = session.activeLearnerId;
 
 type WeeklyStatus = "done" | "planned" | "upcoming";
@@ -411,6 +413,8 @@ const hasActiveChild = Boolean(child) || !session.isAdministrator;
               🔔 Powiadomienia
               <span class="rounded-full bg-rose-500 px-1.5 py-0.5 text-[10px] font-bold text-white">3</span>
             </button>
+
+            <AccountSwitcher client:load accounts={householdAccounts} currentUserId={user.id} />
 
             {
               showParentChip && (

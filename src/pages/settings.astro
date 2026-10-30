@@ -1,10 +1,11 @@
 ---
 export const prerender = false;
 
+import AccountSwitcher from "../components/auth/AccountSwitcher";
 import SettingsPanel from "../components/settings/SettingsPanel";
 import Layout from "../layouts/Layout.astro";
 import { isAppNavActive } from "../lib/app-nav";
-import { avatarLetter, loadSessionContext, navItemsForRole } from "../lib/household";
+import { avatarLetter, listHouseholdAccounts, loadSessionContext, navItemsForRole } from "../lib/household";
 
 const { user, supabase } = Astro.locals;
 
@@ -13,6 +14,7 @@ if (!user) {
 }
 
 const context = await loadSessionContext(supabase, user.id, user.email ?? null);
+const householdAccounts = await listHouseholdAccounts(supabase);
 
 if (!context.isAdministrator) {
   return Astro.redirect("/dashboard");
@@ -92,6 +94,8 @@ const parentLabel =
               <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Ustawienia</p>
               <p class="text-sm font-semibold text-slate-900">Rodzina i konta</p>
             </div>
+
+            <AccountSwitcher client:load accounts={householdAccounts} currentUserId={user.id} />
 
             <div
               class="inline-flex min-w-[220px] items-center gap-2 rounded-2xl border border-indigo-100 bg-indigo-50/80 px-3 py-2"

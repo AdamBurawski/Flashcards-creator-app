@@ -26,11 +26,12 @@ const syncSessionWithServer = async (session: Record<string, unknown>) => {
 
 interface LoginFormProps {
   returnUrl?: string;
+  initialEmail?: string;
 }
 
-const LoginForm = ({ returnUrl = "/" }: LoginFormProps) => {
+const LoginForm = ({ returnUrl = "/", initialEmail = "" }: LoginFormProps) => {
   const [formData, setFormData] = useState({
-    email: "",
+    email: initialEmail,
     password: "",
   });
   const [formErrors, setFormErrors] = useState<{

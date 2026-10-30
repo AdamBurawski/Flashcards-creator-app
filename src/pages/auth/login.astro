@@ -4,15 +4,18 @@ import LoginForm from "../../components/auth/LoginForm";
 
 // Pobranie parametru returnUrl, jeśli istnieje
 const returnUrl = Astro.url.searchParams.get("returnUrl") || "/dashboard";
+const initialEmail = Astro.url.searchParams.get("email") ?? "";
 ---
 
 <AuthLayout title="Logowanie | Flashcards Creator">
   <Fragment slot="description"> Zaloguj się, aby uzyskać dostęp do swojego konta </Fragment>
 
   <div>
-    <h1 class="text-xl font-semibold text-gray-900 text-center mb-6">Zaloguj się do swojego konta</h1>
+    <h1 class="text-xl font-semibold text-gray-900 text-center mb-6">
+      {initialEmail ? "Zaloguj wybrane konto" : "Zaloguj się do swojego konta"}
+    </h1>
 
-    <LoginForm client:load returnUrl={returnUrl} />
+    <LoginForm client:load returnUrl={returnUrl} initialEmail={initialEmail} />
   </div>
 
   <div slot="footer">

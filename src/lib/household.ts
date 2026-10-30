@@ -205,6 +205,31 @@ export async function loadSessionContext(
   };
 }
 
+export interface HouseholdAccount {
+  userId: string;
+  role: AppRole;
+  displayName: string;
+  email: string;
+  avatarUrl: string | null;
+}
+
+export async function listHouseholdAccounts(supabase: SupabaseClient<Database>): Promise<HouseholdAccount[]> {
+  const { data, error } = await supabase.rpc("household_accounts");
+  if (error || !data) return [];
+
+  return data.map((row) => ({
+    userId: row.user_id,
+    role: row.role === "user" ? "user" : "administrator",
+    displayName: profileDisplayName({
+      first_name: row.first_name,
+      last_name: row.last_name,
+      display_name: row.display_name,
+    }),
+    email: row.email,
+    avatarUrl: row.avatar_url,
+  }));
+}
+
 export function navItemsForRole(role: AppRole) {
   const all = [
     { label: "Strona główna", icon: "🏠", href: "/dashboard" },
