@@ -328,28 +328,117 @@ export interface Database {
         };
         Relationships: [];
       };
+      households: {
+        Row: {
+          created_at: string;
+          id: string;
+          owner_id: string;
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          id?: string;
+          owner_id: string;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          owner_id?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      household_members: {
+        Row: {
+          created_at: string;
+          household_id: string;
+          member_role: "administrator" | "user";
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          household_id: string;
+          member_role: "administrator" | "user";
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          household_id?: string;
+          member_role?: "administrator" | "user";
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "household_members_household_id_fkey";
+            columns: ["household_id"];
+            isOneToOne: false;
+            referencedRelation: "households";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       profiles: {
         Row: {
+          active_child_id: string | null;
           ai_usage_last_reset_at: string;
           avatar_url: string | null;
+          birth_date: string | null;
+          created_at: string;
           current_ai_token_usage: number;
+          display_name: string | null;
+          first_name: string | null;
+          last_name: string | null;
+          locale: string | null;
           monthly_ai_token_limit: number;
+          parent_note: string | null;
+          phone: string | null;
+          role: "administrator" | "user";
+          school_grade: string | null;
+          timezone: string | null;
+          updated_at: string;
           user_id: string;
           username: string | null;
         };
         Insert: {
+          active_child_id?: string | null;
           ai_usage_last_reset_at?: string;
           avatar_url?: string | null;
+          birth_date?: string | null;
+          created_at?: string;
           current_ai_token_usage?: number;
+          display_name?: string | null;
+          first_name?: string | null;
+          last_name?: string | null;
+          locale?: string | null;
           monthly_ai_token_limit?: number;
+          parent_note?: string | null;
+          phone?: string | null;
+          role?: "administrator" | "user";
+          school_grade?: string | null;
+          timezone?: string | null;
+          updated_at?: string;
           user_id: string;
           username?: string | null;
         };
         Update: {
+          active_child_id?: string | null;
           ai_usage_last_reset_at?: string;
           avatar_url?: string | null;
+          birth_date?: string | null;
+          created_at?: string;
           current_ai_token_usage?: number;
+          display_name?: string | null;
+          first_name?: string | null;
+          last_name?: string | null;
+          locale?: string | null;
           monthly_ai_token_limit?: number;
+          parent_note?: string | null;
+          phone?: string | null;
+          role?: "administrator" | "user";
+          school_grade?: string | null;
+          timezone?: string | null;
+          updated_at?: string;
           user_id?: string;
           username?: string | null;
         };
@@ -358,6 +447,21 @@ export interface Database {
     };
     Views: Record<never, never>;
     Functions: {
+      household_accounts: {
+        Args: never;
+        Returns: {
+          avatar_url: string | null;
+          display_name: string | null;
+          email: string;
+          first_name: string | null;
+          last_name: string | null;
+          role: string;
+          user_id: string;
+        }[];
+      };
+      current_profile_role: { Args: never; Returns: string };
+      is_guardian_of: { Args: { target_user_id: string }; Returns: boolean };
+      owns_or_guards: { Args: { target_user_id: string }; Returns: boolean };
       check_generation_exists: { Args: { gen_id: number }; Returns: boolean };
       check_policy: {
         Args: never;
