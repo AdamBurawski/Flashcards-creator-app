@@ -448,7 +448,11 @@ export class OpenRouterService {
     if (this.currentResponseFormat) {
       payload.response_format = {
         type: "json_schema",
-        json_schema: this.currentResponseFormat.schema,
+        json_schema: {
+          name: this.currentResponseFormat.name,
+          strict: false,
+          schema: this.currentResponseFormat.schema,
+        },
       };
     }
 

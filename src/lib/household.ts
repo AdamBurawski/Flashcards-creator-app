@@ -29,7 +29,7 @@ export function profileDisplayName(profile: Pick<ProfileRow, "first_name" | "las
   return "Bez imienia";
 }
 
-export function ageFromBirthDate(birthDate: string | null | undefined, now = new Date()): string | null {
+export function ageYearsFromBirthDate(birthDate: string | null | undefined, now = new Date()): number | null {
   if (!birthDate) return null;
   const birth = new Date(`${birthDate}T12:00:00`);
   if (Number.isNaN(birth.getTime())) return null;
@@ -37,6 +37,12 @@ export function ageFromBirthDate(birthDate: string | null | undefined, now = new
   const monthDiff = now.getMonth() - birth.getMonth();
   if (monthDiff < 0 || (monthDiff === 0 && now.getDate() < birth.getDate())) age -= 1;
   if (age < 0 || age > 120) return null;
+  return age;
+}
+
+export function ageFromBirthDate(birthDate: string | null | undefined, now = new Date()): string | null {
+  const age = ageYearsFromBirthDate(birthDate, now);
+  if (age == null) return null;
   return `${age} ${age === 1 ? "rok" : age >= 2 && age <= 4 ? "lata" : "lat"}`;
 }
 
@@ -138,6 +144,7 @@ export interface SessionContext {
   activeLearnerId: string;
   activeChild: DisplayPerson | null;
   children: DisplayPerson[];
+  locality: string | null;
 }
 
 async function ensureHouseholdForAdministrator(supabase: SupabaseClient<Database>, userId: string): Promise<void> {
@@ -183,6 +190,7 @@ export async function loadSessionContext(
       activeLearnerId: userId,
       activeChild: viewer,
       children: [],
+      locality: null,
     };
   }
 
@@ -195,6 +203,8 @@ export async function loadSessionContext(
     await supabase.from("profiles").update({ active_child_id: active.userId }).eq("user_id", userId);
   }
 
+  const { data: household } = await supabase.from("households").select("locality").eq("owner_id", userId).maybeSingle();
+
   return {
     role: "administrator",
     isAdministrator: true,
@@ -202,6 +212,7 @@ export async function loadSessionContext(
     activeLearnerId: active?.userId ?? userId,
     activeChild: active,
     children,
+    locality: household?.locality ?? null,
   };
 }
 
@@ -238,6 +249,7 @@ export function navItemsForRole(role: AppRole) {
     { label: "Postępy", icon: "📊", href: "/dashboard#overall-progress" },
     { label: "Zadania", icon: "✅", href: "/dashboard#now-todo" },
     { label: "Materiały", icon: "🗂️", href: "/dashboard#materialy" },
+    { label: "Plan lekcji", icon: "📝", href: "/plan", adminOnly: true },
     { label: "Biblioteka widgetów", icon: "💡", href: "/widgets", adminOnly: true },
     { label: "Ustawienia", icon: "⚙️", href: "/settings", adminOnly: true },
   ] as const;

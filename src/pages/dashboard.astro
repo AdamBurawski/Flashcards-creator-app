@@ -15,7 +15,9 @@ import {
   rangeCaption,
   weekdayLabels,
 } from "../lib/calendar-range";
-import { localDayKey, withCalendarSlots } from "../lib/current-task";
+import { localDayKey } from "../lib/current-task";
+import { blocksToDashboardTasks, type CurriculumItem, type ScheduleBlock } from "../lib/lesson-plan";
+import { foldEnglishLessons } from "../lib/plan-store";
 import { avatarLetter, listHouseholdAccounts, loadSessionContext, navItemsForRole } from "../lib/household";
 
 const { user, supabase } = Astro.locals;
@@ -55,18 +57,6 @@ const currentHref = calendarHref(calendarRange, 0);
 const dayRangeHref = calendarHref("day", calendarRange === "day" ? calendarOffset : 0);
 const weekRangeHref = calendarHref("week", calendarRange === "week" ? calendarOffset : 0);
 const monthRangeHref = calendarHref("month", calendarRange === "month" ? calendarOffset : 0);
-
-const weekDay = now.getDay();
-const mondayOffset = weekDay === 0 ? -6 : 1 - weekDay;
-const monday = new Date(now);
-monday.setHours(12, 0, 0, 0);
-monday.setDate(now.getDate() + mondayOffset);
-
-const scheduleDates = Array.from({ length: 7 }).map((_, index) => {
-  const date = new Date(monday);
-  date.setDate(monday.getDate() + index);
-  return date;
-});
 
 const todayKey = localDayKey(now);
 
@@ -123,65 +113,39 @@ try {
       ? Math.round(recentScores.reduce((sum, current) => sum + current, 0) / recentScores.length)
       : 0;
 
-  const upcomingEnglish = dialogues.filter((dialogue) => !completedDialogueIds.has(dialogue.id)).slice(0, 8);
+  if (session.isAdministrator) {
+    await foldEnglishLessons(supabase, learnerId);
+  }
 
-  const englishSlots = ["09:00", "10:00", "11:00", "13:00", "15:00"];
+  const [blockResponse, itemResponse] = await Promise.all([
+    supabase.from("schedule_blocks").select("*").eq("learner_id", learnerId).order("starts_at"),
+    supabase.from("curriculum_items").select("*").eq("learner_id", learnerId),
+  ]);
 
-  const englishPlanItems: WeeklyItem[] = upcomingEnglish.map((dialogue, index) => {
-    const dayIndex = index % 5;
-    const date = scheduleDates[dayIndex];
-    const dayKey = localDayKey(date);
+  const planItems: CurriculumItem[] = (itemResponse.data ?? []).map((row) => ({
+    id: row.id,
+    kind: row.kind,
+    status: row.status,
+    title: row.title,
+    subject: row.subject,
+    durationMinutes: row.duration_minutes,
+    parentGuide: row.parent_guide,
+    sourceId: row.source_id,
+    href: row.href,
+    moduleKey: row.module_key,
+  }));
+  const planBlocks: ScheduleBlock[] = (blockResponse.data ?? []).map((row) => ({
+    id: row.id,
+    curriculumItemId: row.curriculum_item_id,
+    kind: row.kind,
+    startsAt: row.starts_at,
+    endsAt: row.ends_at,
+    title: row.title,
+    href: row.href,
+    sourceId: row.source_id,
+  }));
 
-    return {
-      id: `english-${dialogue.id}`,
-      title: `${dialogue.title}`,
-      module: "English",
-      dayKey,
-      dayLabel: date.toLocaleDateString("pl-PL", { weekday: "short" }),
-      dateLabel: date.toLocaleDateString("pl-PL", { day: "numeric", month: "short" }),
-      timeLabel: englishSlots[index % englishSlots.length] ?? "09:00",
-      status: "planned",
-      href: `/english/lesson/${dialogue.level}/${dialogue.stage}/${dialogue.lesson}?dialogueId=${encodeURIComponent(dialogue.id)}`,
-    };
-  });
-
-  const mockPlanItems: WeeklyItem[] = [
-    {
-      id: "mock-reading",
-      title: "Czytanie ze zrozumieniem",
-      module: "Język polski",
-      dayKey: localDayKey(scheduleDates[1]),
-      dayLabel: scheduleDates[1].toLocaleDateString("pl-PL", { weekday: "short" }),
-      dateLabel: scheduleDates[1].toLocaleDateString("pl-PL", { day: "numeric", month: "short" }),
-      timeLabel: "12:00",
-      status: "upcoming",
-      isMock: true,
-    },
-    {
-      id: "mock-math",
-      title: "Ułamki i procenty",
-      module: "Matematyka",
-      dayKey: localDayKey(scheduleDates[2]),
-      dayLabel: scheduleDates[2].toLocaleDateString("pl-PL", { weekday: "short" }),
-      dateLabel: scheduleDates[2].toLocaleDateString("pl-PL", { day: "numeric", month: "short" }),
-      timeLabel: "14:00",
-      status: "planned",
-      isMock: true,
-    },
-    {
-      id: "mock-science",
-      title: "Przyroda: ekosystemy",
-      module: "Przyroda",
-      dayKey: localDayKey(scheduleDates[4]),
-      dayLabel: scheduleDates[4].toLocaleDateString("pl-PL", { weekday: "short" }),
-      dateLabel: scheduleDates[4].toLocaleDateString("pl-PL", { day: "numeric", month: "short" }),
-      timeLabel: "16:00",
-      status: "upcoming",
-      isMock: true,
-    },
-  ];
-
-  weeklyItems = withCalendarSlots([...englishPlanItems, ...mockPlanItems]);
+  weeklyItems = blocksToDashboardTasks(planBlocks, planItems, [...completedDialogueIds], now);
 } catch (_error) {
   collectionsCount = 0;
   englishTotalDialogues = 0;
@@ -218,7 +182,9 @@ const todayTasks = weeklyItems
   .filter((item) => item.dayKey === todayKey)
   .sort((a, b) => a.timeLabel.localeCompare(b.timeLabel));
 const backlogTasks = weeklyItems.filter((item) => item.status === "upcoming").slice(0, 4);
-const priorityTasks = weeklyItems.filter((item) => item.status === "planned" && item.dayKey !== todayKey).slice(0, 4);
+const priorityTasks = weeklyItems
+  .filter((item) => item.status === "planned" && item.dayKey !== todayKey && item.module !== "Przerwa")
+  .slice(0, 4);
 
 const moduleCards = [
   {

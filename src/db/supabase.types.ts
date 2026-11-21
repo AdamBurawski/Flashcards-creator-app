@@ -332,18 +332,21 @@ export interface Database {
         Row: {
           created_at: string;
           id: string;
+          locality: string | null;
           owner_id: string;
           updated_at: string;
         };
         Insert: {
           created_at?: string;
           id?: string;
+          locality?: string | null;
           owner_id: string;
           updated_at?: string;
         };
         Update: {
           created_at?: string;
           id?: string;
+          locality?: string | null;
           owner_id?: string;
           updated_at?: string;
         };
@@ -377,6 +380,156 @@ export interface Database {
             referencedColumns: ["id"];
           },
         ];
+      };
+      curriculum_items: {
+        Row: {
+          created_at: string;
+          duration_minutes: number;
+          href: string | null;
+          id: string;
+          kind: "main" | "extra";
+          learner_id: string;
+          module_key: string | null;
+          parent_guide: string;
+          source_id: string | null;
+          status: "proposed" | "accepted";
+          subject: string;
+          title: string;
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          duration_minutes?: number;
+          href?: string | null;
+          id?: string;
+          kind: "main" | "extra";
+          learner_id: string;
+          module_key?: string | null;
+          parent_guide?: string;
+          source_id?: string | null;
+          status: "proposed" | "accepted";
+          subject: string;
+          title: string;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          duration_minutes?: number;
+          href?: string | null;
+          id?: string;
+          kind?: "main" | "extra";
+          learner_id?: string;
+          module_key?: string | null;
+          parent_guide?: string;
+          source_id?: string | null;
+          status?: "proposed" | "accepted";
+          subject?: string;
+          title?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      schedule_blocks: {
+        Row: {
+          created_at: string;
+          curriculum_item_id: string | null;
+          ends_at: string;
+          id: string;
+          href: string | null;
+          kind: "lesson" | "break";
+          learner_id: string;
+          source_id: string | null;
+          starts_at: string;
+          title: string | null;
+        };
+        Insert: {
+          created_at?: string;
+          curriculum_item_id?: string | null;
+          ends_at: string;
+          href?: string | null;
+          id?: string;
+          kind: "lesson" | "break";
+          learner_id: string;
+          source_id?: string | null;
+          starts_at: string;
+          title?: string | null;
+        };
+        Update: {
+          created_at?: string;
+          curriculum_item_id?: string | null;
+          ends_at?: string;
+          href?: string | null;
+          id?: string;
+          kind?: "lesson" | "break";
+          learner_id?: string;
+          source_id?: string | null;
+          starts_at?: string;
+          title?: string | null;
+        };
+        Relationships: [];
+      };
+      plan_proposals: {
+        Row: {
+          author_user_id: string;
+          created_at: string;
+          id: string;
+          learner_id: string;
+          month: string | null;
+          operations: Json;
+          status: "pending" | "accepted" | "rejected";
+          summary: string;
+        };
+        Insert: {
+          author_user_id: string;
+          created_at?: string;
+          id?: string;
+          learner_id: string;
+          month?: string | null;
+          operations: Json;
+          status?: "pending" | "accepted" | "rejected";
+          summary: string;
+        };
+        Update: {
+          author_user_id?: string;
+          created_at?: string;
+          id?: string;
+          learner_id?: string;
+          month?: string | null;
+          operations?: Json;
+          status?: "pending" | "accepted" | "rejected";
+          summary?: string;
+        };
+        Relationships: [];
+      };
+      planner_messages: {
+        Row: {
+          author_user_id: string | null;
+          content: string;
+          created_at: string;
+          id: string;
+          learner_id: string;
+          proposal_id: string | null;
+          role: "user" | "assistant";
+        };
+        Insert: {
+          author_user_id?: string | null;
+          content: string;
+          created_at?: string;
+          id?: string;
+          learner_id: string;
+          proposal_id?: string | null;
+          role: "user" | "assistant";
+        };
+        Update: {
+          author_user_id?: string | null;
+          content?: string;
+          created_at?: string;
+          id?: string;
+          learner_id?: string;
+          proposal_id?: string | null;
+          role?: "user" | "assistant";
+        };
+        Relationships: [];
       };
       profiles: {
         Row: {

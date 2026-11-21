@@ -11,6 +11,7 @@ const profileSchema = z.object({
   phone: z.string().trim().max(40).optional().nullable(),
   locale: z.string().trim().max(16).optional().nullable(),
   timezone: z.string().trim().max(64).optional().nullable(),
+  locality: z.string().trim().max(120).optional().nullable(),
   avatarUrl: z.string().url().optional().nullable().or(z.literal("")),
 });
 
@@ -47,7 +48,7 @@ export const PATCH: APIRoute = async ({ request, locals }) => {
     });
   }
 
-  const { firstName, lastName, displayName, phone, locale, timezone, avatarUrl } = parsed.data;
+  const { firstName, lastName, displayName, phone, locale, timezone, avatarUrl, locality } = parsed.data;
   const { error } = await locals.supabase
     .from("profiles")
     .update({
@@ -63,6 +64,14 @@ export const PATCH: APIRoute = async ({ request, locals }) => {
 
   if (error) {
     return new Response(JSON.stringify({ success: false, message: error.message }), { status: 400 });
+  }
+
+  const localityUpdate = await locals.supabase
+    .from("households")
+    .update({ locality: locality?.trim() || null })
+    .eq("owner_id", locals.user.id);
+  if (localityUpdate.error) {
+    return new Response(JSON.stringify({ success: false, message: localityUpdate.error.message }), { status: 400 });
   }
 
   const next = await loadSessionContext(locals.supabase, locals.user.id, locals.user.email ?? null);
