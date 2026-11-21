@@ -12,6 +12,7 @@ export const appNavItems: AppNavItem[] = [
   { label: "Postępy", icon: "📊", href: "/dashboard#overall-progress" },
   { label: "Zadania", icon: "✅", href: "/dashboard#now-todo" },
   { label: "Materiały", icon: "🗂️", href: "/dashboard#materialy" },
+  { label: "Plan lekcji", icon: "📝", href: "/plan" },
   { label: "Biblioteka widgetów", icon: "💡", href: "/widgets" },
   { label: "Ustawienia", icon: "⚙️", href: "/settings" },
 ];

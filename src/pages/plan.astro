@@ -1,0 +1,108 @@
+---
+export const prerender = false;
+
+import AccountSwitcher from "../components/auth/AccountSwitcher";
+import LessonPlanBoard from "../components/plan/LessonPlanBoard";
+import Layout from "../layouts/Layout.astro";
+import { isAppNavActive } from "../lib/app-nav";
+import { avatarLetter, listHouseholdAccounts, loadSessionContext, navItemsForRole } from "../lib/household";
+import { monthKey } from "../lib/lesson-plan";
+import { loadLessonPlan } from "../lib/plan-store";
+
+const { user, supabase } = Astro.locals;
+
+if (!user) {
+  return Astro.redirect("/auth/login?returnUrl=/plan");
+}
+
+const context = await loadSessionContext(supabase, user.id, user.email ?? null);
+const householdAccounts = await listHouseholdAccounts(supabase);
+
+if (!context.isAdministrator) {
+  return Astro.redirect("/dashboard");
+}
+
+const requestedMonth = Astro.url.searchParams.get("month") ?? "";
+const month = /^\d{4}-\d{2}$/.test(requestedMonth) ? requestedMonth : monthKey(new Date());
+const plan = context.activeChild ? await loadLessonPlan(supabase, context.activeLearnerId) : null;
+
+const mainNav = navItemsForRole(context.role).map((item) => ({
+  ...item,
+  isActive: isAppNavActive(item.href, Astro.url.pathname),
+}));
+
+const child = context.activeChild;
+const parentLabel =
+  context.viewer.displayName !== "Bez imienia" ? context.viewer.displayName : (user.email ?? "Rodzic");
+---
+
+<Layout title="Plan lekcji | EduDom" hideHeader={true}>
+  <div class="min-h-screen bg-gradient-to-b from-sky-50/60 via-white to-amber-50/40 text-slate-800">
+    <div class="mx-auto flex w-full max-w-[1500px] gap-4 px-3 py-4 sm:px-5 sm:py-5">
+      <aside class="hidden w-72 shrink-0 rounded-3xl border border-slate-200 bg-white/90 p-4 shadow-sm lg:flex lg:flex-col">
+        <a href="/dashboard" class="mb-5 block rounded-2xl border border-sky-100 bg-gradient-to-r from-sky-50 to-indigo-50 px-3 py-3">
+          <p class="text-lg font-bold text-slate-900">EduDom</p>
+          <p class="text-xs text-slate-500">Nauka. Razem. Na całe życie.</p>
+        </a>
+        <nav class="space-y-1.5">
+          {
+            mainNav.map((item) => (
+              <a
+                href={item.href}
+                class={`flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium transition ${
+                  item.isActive
+                    ? "bg-blue-50 text-blue-700 shadow-sm ring-1 ring-blue-100"
+                    : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                }`}
+              >
+                <span aria-hidden="true">{item.icon}</span>
+                {item.label}
+              </a>
+            ))
+          }
+        </nav>
+      </aside>
+
+      <main class="min-w-0 flex-1">
+        <header class="mb-5 rounded-3xl border border-slate-200 bg-white/95 px-4 py-3 shadow-sm sm:px-5">
+          <div class="flex flex-wrap items-center gap-3">
+            <div class="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50/80 px-3 py-2">
+              <div class="grid h-9 w-9 place-items-center rounded-full bg-white text-xs font-bold text-slate-600 ring-1 ring-slate-200">
+                {child ? avatarLetter(child.displayName) : "?"}
+              </div>
+              <div class="leading-tight">
+                <p class="text-sm font-semibold text-slate-900">{child?.displayName ?? "Brak dziecka"}</p>
+                <p class="text-xs text-slate-500">{child?.ageLabel ?? "Dodaj dziecko w ustawieniach"}</p>
+              </div>
+            </div>
+            <div class="grow text-center">
+              <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Plan lekcji</p>
+              <p class="text-sm font-semibold text-slate-900">Lista i kalendarz</p>
+            </div>
+            <AccountSwitcher client:load accounts={householdAccounts} currentUserId={user.id} />
+            <div class="inline-flex items-center gap-2 rounded-2xl border border-indigo-100 bg-indigo-50/80 px-3 py-2">
+              <div class="grid h-9 w-9 place-items-center rounded-full bg-white text-xs font-bold text-indigo-700">
+                {avatarLetter(parentLabel)}
+              </div>
+              <p class="text-sm font-semibold text-slate-900">Rodzic</p>
+            </div>
+          </div>
+        </header>
+
+        {
+          plan ? (
+            <LessonPlanBoard client:load initialMonth={month} initialPlan={plan} />
+          ) : (
+            <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+              <h1 class="text-2xl font-bold text-slate-900">Najpierw dodaj dziecko</h1>
+              <p class="mt-2 text-sm text-slate-600">Plan lekcji układa się dla konta dziecka.</p>
+              <a href="/settings" class="mt-4 inline-flex rounded-full bg-blue-600 px-4 py-2 text-sm font-semibold text-white">
+                Przejdź do ustawień
+              </a>
+            </div>
+          )
+        }
+      </main>
+    </div>
+  </div>
+</Layout>

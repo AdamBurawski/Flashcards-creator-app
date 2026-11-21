@@ -36,6 +36,7 @@ export default function SettingsPanel({ initialContext }: SettingsPanelProps) {
     phone: context.viewer.phone ?? "",
     locale: context.viewer.locale ?? "pl",
     timezone: context.viewer.timezone ?? "Europe/Warsaw",
+    locality: context.locality ?? "",
   });
 
   const [childForm, setChildForm] = useState({
@@ -265,6 +266,11 @@ export default function SettingsPanel({ initialContext }: SettingsPanelProps) {
             label="Strefa czasowa"
             value={parentForm.timezone}
             onChange={(value) => setParentForm({ ...parentForm, timezone: value })}
+          />
+          <Field
+            label="Okolica zamieszkania"
+            value={parentForm.locality}
+            onChange={(value) => setParentForm({ ...parentForm, locality: value })}
           />
         </div>
         <button

@@ -6,6 +6,7 @@ const protectedRoutes = [
   "/subjects",
   "/widgets",
   "/settings",
+  "/plan",
   "/collections",
   "/collections/create",
   "/collections/edit",
@@ -15,7 +16,7 @@ const protectedRoutes = [
   "/english",
 ];
 
-const administratorOnlyRoutes = ["/settings", "/widgets", "/generate", "/collections/create"];
+const administratorOnlyRoutes = ["/settings", "/plan", "/widgets", "/generate", "/collections/create"];
 
 // Trasy, które mogą być używane zarówno przez zalogowanych jak i niezalogowanych użytkowników
 const _hybridRoutes = ["/flashcards"];
